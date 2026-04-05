@@ -1,0 +1,146 @@
+Lecture 2
+Database Management Systems (DBMS)
+
+Learning Objectives
+In this lecture, you will learn:
+What is Database Management System (DBMS).
+Core functions of DBMS.
+Key components of a DBMS architecture.
+Types of data models.
+Types of DBMS.
+
+Database Management System (DBMS)
+A collection of programs that manages the database structure and controls access to data stored in the database.
+
+Role of the DBMS
+Acts as an intermediary between the user and the database.
+Enables data to be shared easily.
+Presents the end user with an integrated view of the data.
+Receives and translates application requests into operations required to fulfill those requests.
+Hides the database’s internal complexity from application programs and users.
+
+Advantages and Need for the DBMS
+Better data integration and less data inconsistency.
+Data inconsistency occurs when different versions of the same data appear in different places.
+Reduces data redundancy.
+Increased end-user productivity.
+Searching and retrieving data is easy in DBMS systems.
+Improved data sharing.
+Improved data security.
+Improved data access.
+
+Advantages of the DBMS
+Data concurrency: Data is stored in one or more servers in the network, and software locking mechanisms prevent the same data from being changed by two users at the same time.
+Automatic backup and recovery.
+Better decision making.
+Improved data quality by promoting accuracy, validity, and timeliness.
+
+Core Functions of DBMS
+
+1. Data Definition (DDL)
+   Defines, manages, creates, and maintains the database structure (schema).
+   Involves creating, modifying, and removing database objects such as tables and indexes.
+
+2. Data Retrieval and Reporting
+   Allows extraction of data to generate reports for analysis and decision making.
+   Supports predefined templates or custom report layouts for better visualization.
+
+3. Data Manipulation
+   Enables inserting, updating, and deleting data.
+   Supports querying and retrieving data.
+
+4. Access Control
+   Manages simultaneous access by multiple users without data loss or corruption.
+   Authentication confirms the user’s identity.
+   Authorization determines the level of access granted to the authenticated user.
+
+5. Data Sharing and Transformation
+   Transforms raw data into consistent formats.
+   Enables consolidation and integration of data for analysis, reporting, and business purposes.
+
+6. Data Integrity and Security
+   Ensures data is complete, accurate, and consistent.
+
+Key Components of a DBMS Architecture
+
+1. Query Processor
+   Parses, validates, optimizes, and executes DML commands such as SQL.
+   Query processing includes parsing and translation, optimization, and evaluation.
+
+2. Storage Manager
+   Handles low-level data access and manages interaction between the database and physical storage (disk).
+   Includes the Buffer Manager, which manages data transfer between main memory and disk.
+   Also known as the Database Control System.
+
+3. Transaction Manager (ACID)
+   Ensures transactions (logical units of work) are executed reliably.
+   ACID stands for Atomicity, Consistency, Isolation, and Durability.
+
+4. Data Dictionary (Catalog/Metadata)
+   Stores metadata such as table structures, user permissions, and constraints.
+
+Types of Data Models
+
+1. Hierarchical Model (1960s)
+   Data is organized in a tree-like parent-child structure.
+   Supports strictly one-to-many relationships.
+   A child can have only one parent.
+   Cannot easily represent many-to-many relationships and is complex to navigate.
+
+2. Network Model (1970s)
+   Data is organized in a graph structure.
+   Allows many-to-many relationships.
+   Complex to design and implement, and navigation is procedural.
+
+3. Relational Model
+   Developed by E.F. Codd (IBM) in 1970 and is the predominant model today.
+   Data is represented as tables (relations).
+   Table (Relation) is the structure.
+   Row (Tuple) is a single record.
+   Column (Attribute) is a data field.
+   Advantages include mathematical foundation (Relational Algebra), simplicity, data independence, and support for SQL.
+   Primary Key uniquely identifies each row in a table.
+   Foreign Key links a column in one table to the primary key of another table.
+
+4. Entity Relationship Model
+   Used for conceptual database design and represents entities and their relationships.
+
+5. Object-Oriented Model
+   Stores data as objects and supports object-oriented programming concepts.
+
+Types of DBMS
+
+1. Relational Database Management System (RDBMS)
+   Organizes data into tables composed of rows and columns.
+   Uses primary keys and foreign keys to establish relationships.
+   Uses SQL for data manipulation and retrieval.
+   Examples include MySQL, Oracle, Microsoft SQL Server, and PostgreSQL.
+
+2. NoSQL DBMS
+   Designed for large-scale data and high performance.
+   Stores data in non-relational formats such as key-value pairs, documents, graphs, or columns.
+   Suitable for unstructured or semi-structured data.
+   Examples include MongoDB, Apache Cassandra, and DynamoDB.
+
+3. Object-Oriented DBMS (OODBMS)
+   Integrates object-oriented programming concepts into databases.
+   Stores data as objects.
+   Supports complex data types and relationships.
+   Examples include ObjectDB and db4o.
+
+Difference between DBMS and RDBMS
+DBMS may not use the relational model and may not enforce relationships strictly.
+RDBMS uses the relational model, enforces relationships using primary and foreign keys, and follows strict integrity constraints.
+
+Choosing the Right Database
+First, understand how the database will be used according to project requirements.
+One type of database may not fulfill all needs.
+Performance should be considered after matching database features with requirements.
+There is always a tradeoff between consistency, availability, and partition tolerance (CAP theorem).
+
+Disadvantages of Database Systems
+Increased costs.
+Management complexity.
+Maintaining currency.
+Vendor dependence.
+Frequent upgrade or replacement cycles.

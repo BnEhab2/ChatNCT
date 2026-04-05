@@ -1,0 +1,326 @@
+﻿Programming Essentials to C++
+ICT Prqogram
+Dr. Mohamed Ramadan
+Lec. 6 - October 2025
+
+
+--------------------------------------------------
+Lecture Content
+--------------------------------------------------
+• Conditions
+• Loops
+
+--------------------------------------------------
+Learning Outcomes
+--------------------------------------------------
+After this lecture, the student should be able to use:
+
+✓ if
+✓ else
+✓ else if
+✓ switch
+✓ while loop
+✓ do...while loop
+✓ for loop
+✓ break
+✓ continue
+
+--------------------------------------------------
+1) IF Statement
+--------------------------------------------------
+
+Syntax:
+
+if (condition) {
+    // code executes if condition is true
+}
+
+Example:
+
+int x = 20;
+int y = 18;
+
+if (x > y) {
+    cout << "x is greater than y";
+}
+
+--------------------------------------------------
+2) IF – ELSE
+--------------------------------------------------
+
+if (condition) {
+    // executes if true
+}
+else {
+    // executes if false
+}
+
+Example:
+
+int d;
+cout << "Enter student degree: ";
+cin >> d;
+
+if (d >= 50) {
+    cout << "Student is Pass";
+}
+else {
+    cout << "Student is Failed";
+}
+
+--------------------------------------------------
+3) IF – ELSE IF – ELSE
+--------------------------------------------------
+
+if (condition1) {
+    // if condition1 true
+}
+else if (condition2) {
+    // if condition1 false and condition2 true
+}
+else {
+    // if all conditions false
+}
+
+--------------------------------------------------
+4) SWITCH Statement
+--------------------------------------------------
+
+Used to compare a variable with multiple values.
+
+Syntax:
+
+switch(expression) {
+
+case value1:
+    // code
+    break;
+
+case value2:
+    // code
+    break;
+
+default:
+    // if no case matches
+}
+
+Example (Simple Calculator):
+
+float n1, n2;
+char op;
+
+cout << "Enter first number: ";
+cin >> n1;
+
+cout << "Enter second number: ";
+cin >> n2;
+
+cout << "Enter operator (+ - * / %): ";
+cin >> op;
+
+switch(op) {
+
+case '+':
+    cout << "Result = " << n1 + n2;
+    break;
+
+case '-':
+    cout << "Result = " << n1 - n2;
+    break;
+
+case '*':
+    cout << "Result = " << n1 * n2;
+    break;
+
+case '/':
+    if(n2 != 0)
+        cout << "Result = " << n1 / n2;
+    else
+        cout << "Cannot divide by zero";
+    break;
+
+case '%':
+    if(n2 != 0)
+        cout << "Result = " << int(n1) % int(n2);
+    else
+        cout << "Cannot divide by zero";
+    break;
+
+default:
+    cout << "Invalid operator";
+}
+
+--------------------------------------------------
+5) WHILE Loop
+--------------------------------------------------
+
+Used when number of iterations is unknown.
+
+Syntax:
+
+while(condition) {
+    // code
+}
+
+Example:
+
+int i = 0;
+
+while (i < 5) {
+    cout << i << endl;
+    i++;
+}
+
+Output:
+0
+1
+2
+3
+4
+
+--------------------------------------------------
+6) DO...WHILE Loop
+--------------------------------------------------
+
+Executes at least once.
+
+Syntax:
+
+do {
+    // code
+}
+while(condition);
+
+Example:
+
+int i = 0;
+
+do {
+    cout << i << endl;
+    i++;
+}
+while (i < 5);
+
+--------------------------------------------------
+7) FOR Loop
+--------------------------------------------------
+
+Used when number of iterations is known.
+
+Syntax:
+
+for(initialization; condition; update) {
+    // code
+}
+
+Example:
+
+for (int i = 0; i <= 10; i = i + 2) {
+    cout << i << endl;
+}
+
+Output:
+0
+2
+4
+6
+8
+10
+
+--------------------------------------------------
+8) Factorial Program
+--------------------------------------------------
+
+Definition:
+n! = n × (n-1) × ... × 1
+
+Example:
+
+int n;
+long factorial = 1;
+
+cout << "Enter a number: ";
+cin >> n;
+
+if (n < 0) {
+    cout << "Factorial not defined for negative numbers";
+}
+else {
+    for (int i = 1; i <= n; ++i) {
+        factorial *= i;
+    }
+
+    cout << "Factorial = " << factorial;
+}
+
+Example:
+5! = 5 × 4 × 3 × 2 × 1 = 120
+
+--------------------------------------------------
+9) Nested Loop (Star Pattern)
+--------------------------------------------------
+
+Example:
+
+int n;
+cout << "Enter number of rows: ";
+cin >> n;
+
+for (int i = 1; i <= n; ++i) {
+
+    for (int j = 1; j <= i; ++j) {
+        cout << "*";
+    }
+
+    cout << endl;
+}
+
+If n = 4
+Output:
+*
+**
+***
+****
+
+Outer loop → controls rows
+Inner loop → controls stars per row
+
+--------------------------------------------------
+10) break and continue
+--------------------------------------------------
+
+break:
+Stops the loop immediately.
+
+continue:
+Skips current iteration and goes to next loop iteration.
+
+Example:
+
+for (int i = 1; i <= 5; i++) {
+
+    if (i == 3)
+        continue;
+
+    cout << i << endl;
+}
+
+Output:
+1
+2
+4
+5
+
+--------------------------------------------------
+Tasks
+--------------------------------------------------
+
+1) Write a program to print inverted triangle pattern.
+2) Write a program to print multiplication table.
+3) Trace execution of nested loops.
+4) Modify calculator using switch.
+
+--------------------------------------------------
+
+Thank you
+Lecture 6 – Dr. Mohamed Ramadan

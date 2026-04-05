@@ -1,0 +1,103 @@
+﻿OPERATING SYSTEM – Lecture 3: CPU SCHEDULING
+
+## Introduction
+CPU scheduling is the basis for multiprogrammed operating systems, switching the CPU among processes. Process execution consists of a cycle: CPU execution (CPU burst) → I/O wait (I/O burst). The last CPU burst ends with a system request to terminate execution.
+
+## CPU Scheduling
+Short-term scheduler selects a process from the ready queue and allocates the CPU. CPU scheduling decisions occur when a process:
+1. Switches from running → ready (choice in scheduling)
+2. Switches from waiting → ready (preemptive)
+3. Switches from running → waiting
+4. Terminates (nonpreemptive; no choice)
+
+## Preemption
+Preemption allows the CPU to remove a running process in favor of another. The new process may have higher priority, smaller execution time, or other advantages compared to the currently executing process.
+
+## Nonpreemptive vs Preemptive Scheduling
+Nonpreemptive: Once CPU is allocated, process keeps it until termination or waiting state.
+Preemptive: While processes share data, one may be blocked so another can run. Interrupts during critical OS activities may preempt a process, requiring careful handling of kernel structures.
+
+## Dispatcher
+Dispatcher gives CPU control to the process selected by the short-term scheduler, involving context switching, switching to user mode, and jumping to the proper location in the user program. Dispatch latency is the time taken to stop one process and start another.
+
+## Scheduling Criteria
+Different CPU-scheduling algorithms favor different process classes. Criteria include: CPU utilization, throughput (# of processes completed per time unit), turnaround time (time to execute a process), waiting time (time spent in ready queue), and response time (time from request submission to first response, for time-sharing systems).
+
+## Scheduling Algorithm Optimization Criteria
+Max CPU utilization, Max throughput, Min turnaround time, Min waiting time, Min response time.
+
+## Rules
+Turnaround Time = Completion Time – Arrival Time
+Waiting Time = Turnaround Time – Burst Time
+Throughput = Total number of processes / Total completion time
+
+## Scheduling Algorithms
+1. First-Come, First-Served (FCFS) Scheduling
+2. Shortest-Job-First (SJF) Scheduling
+3. Priority Scheduling
+4. Round-Robin (RR) Scheduling
+5. Multilevel Queue Scheduling
+6. Multilevel Feedback Queue Scheduling
+
+## First-Come, First-Served (FCFS) Scheduling
+Process requesting CPU first is allocated CPU first. Implemented with a FIFO queue. PCB linked at queue tail on ready queue entry. CPU allocated to process at head when free.
+Example: Process Burst Times: P1=24, P2=3, P3=3, Arrival Order: P1, P2, P3. Gantt Chart: P1 P2 P3 | Waiting times: P1=0, P2=24, P3=27 | Average waiting = 17.
+Arrival Order: P2, P3, P1 | Gantt Chart: P2 P3 P1 | Waiting times: P1=6, P2=0, P3=3 | Average waiting = 3. Convoy effect: short process behind long process.
+Pros: Easy to implement.
+Cons: Average waiting time may not be minimal; low CPU/device utilization; not ideal for time-sharing systems.
+
+Exercise Example: Process IDs, Arrival Times, Burst Times, Priorities:
+1 0 20 10, 2 2 10 1, 3 4 58 2, 4 8 40 4, 5 12 30 3.
+Calculate Gantt chart, Turnaround Time, Waiting Time, Throughput.
+
+## Shortest-Job-First (SJF) Scheduling
+Schedule process with the shortest next CPU burst. SJF is optimal (min average waiting time). Next CPU burst can be predicted using exponential averaging: τn+1 = α * tn + (1-α) * τn, α usually 0.5.
+Example: Default expected burst=5. Actual bursts: 10,10,10,1,1,1 → Predictions adjust gradually: e(2)=7.5, e(3)=8.75, … e(7)=2.05.
+SJF Example: Processes P1(0,6), P2(2,8), P3(4,7), P4(5,3) → Gantt Chart: P4 P1 P3 P2 → Avg waiting time = 7.
+Pros: Minimum avg waiting time.
+Cons: Execution times must be estimated; possible starvation.
+
+## Shortest Remaining Time First (Preemptive SJF)
+Processes preempted if a shorter remaining CPU burst arrives.
+Example: Processes P1(0,8), P2(1,4), P3(2,9), P4(3,5) → Gantt Chart: P1 P2 P4 P1 P3 → Avg waiting = 6.5.
+Pros: Reduces average waiting time.
+Cons: Requires burst prediction; possible starvation; excessive context switching may reduce performance.
+
+## Priority Scheduling
+Each process has a priority. CPU allocated to highest priority (smallest integer). Can be preemptive or nonpreemptive. Aging can prevent starvation.
+Example: Processes P1(10,3), P2(1,1), P3(2,4), P4(1,5), P5(5,2) → Gantt Chart → Avg waiting = 8.2.
+Pros: SJF is a form of priority scheduling.
+Cons: Starvation possible for low-priority processes.
+
+## Round Robin (RR)
+Processes get CPU for a time quantum (q, usually 10–100ms). Preempted processes go to queue tail. Timer interrupts every quantum.
+Large q → FIFO behavior
+Small q → higher context switch overhead
+Example: P1=24, P2=3, P3=3, q=4 → Gantt: P1 P2 P3 P1… Avg waiting ~ better than FIFO for response.
+Performance depends on q and context switch time.
+
+## Multilevel Queue Scheduling
+Ready queue partitioned: foreground (interactive) → RR, background (batch) → FCFS. Fixed priority scheduling between queues; time slices assigned per queue.
+
+## Multilevel Feedback Queue
+Processes can move between queues. Parameters: number of queues, scheduling algorithms per queue, promotion/demotion rules, entry queue rules.
+Example: Q0 RR q=8ms, Q1 RR q=16ms, Q2 FCFS. New jobs enter Q0, promoted/demoted based on CPU time used.
+
+## Algorithm Evaluation
+Deterministic Modeling: Uses predetermined workloads; calculates waiting times for comparison.
+Queueing Models: Approximate performance; Little’s formula: n = λ × W.
+Simulations: Programmed models, clock-driven, gather statistics.
+Implementation: Real coding and testing in OS; most accurate but costly.
+Difficulties: High cost, environment changes, user behavior impacts scheduling.
+
+## Comparing Scheduling Algorithms
+| Algorithm                | Avg Waiting | Avg Turnaround | Throughput |
+| ------------------------ | ----------- | -------------- | ---------- |
+| FIFO                     | 5.0         | 9.0            | 0.25       |
+| SJF (nonpreemptive)      | 4.8         | 8.8            | 0.25       |
+| SJF (preemptive)         | 2.0         | 6.0            | 0.25       |
+| Priority (nonpreemptive) | 5.6         | 9.6            | 0.25       |
+| Priority (preemptive)    | 4.2         | 8.2            | 0.25       |
+| Round Robin              | 3.6         | 7.6            | 0.25       |
+
+Round Robin Example with Context Switch: Total CPU utilization = 66.67%, Avg waiting = 10, Avg turnaround = 14, Throughput = 0.17.

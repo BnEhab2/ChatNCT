@@ -1,0 +1,298 @@
+﻿Programming Essentials to C++
+ICT Prqogram
+Dr. Mohamed Ramadan
+Lec. 5 - October 2025
+
+
+--------------------------------------------------
+Lecture Content
+--------------------------------------------------
+• Creating a project using Visual Studio
+• Solution and project structure
+• Basic components for building a program (Input / Output)
+• Comments
+• Escape sequences
+• Data types in C++
+• Assignment operators
+• Comparison operators
+• Logical operators
+• Bitwise operators
+• Arithmetic operations
+
+--------------------------------------------------
+Learning Outcomes
+--------------------------------------------------
+After this lecture, the student should be able to:
+
+• Understand Data Types in C++
+• Understand the concept of variables in C++
+• Work with different types of operations and data
+• Know the uses of each data type
+
+--------------------------------------------------
+Creating a C++ Project in Visual Studio
+--------------------------------------------------
+
+1) Open Visual Studio 2022
+2) Choose "Create a new project"
+3) Select "Empty Project"
+4) Enter project name (example: Project_NTCU)
+5) Select project location
+6) Click Create
+
+--------------------------------------------------
+Adding a C++ File (.cpp)
+--------------------------------------------------
+
+1) Right click on "Source Files"
+2) Choose Add → New Item
+3) Select C++ File (.cpp)
+4) Name it (example: first_program.cpp)
+5) Click Add
+
+--------------------------------------------------
+Run the Program
+--------------------------------------------------
+
+Start Debugging → F5  
+Start Without Debugging → Ctrl + F5  
+
+Difference:
+
+Start Debugging (F5)
+• Debugger attached
+• Used to find and fix bugs
+• Console closes automatically (unless changed in settings)
+
+Start Without Debugging (Ctrl + F5)
+• No debugger attached
+• Console stays open
+• Used when you only want to run and see output
+
+Note:
+A project can contain only ONE file with main() function  
+If there are two main() functions → Exclude one file from Build.
+
+--------------------------------------------------
+Exclude File from Build
+--------------------------------------------------
+
+1) Right click file → Properties
+2) Configuration: Active (Debug)
+3) Platform: x64
+4) Configuration Properties → General
+5) Excluded From Build → Yes
+6) Apply → OK
+
+--------------------------------------------------
+Visual Studio Project Structure
+--------------------------------------------------
+
+1) first_program.cpp
+Contains your actual program code (main, functions, logic)
+
+2) Project_NTCU.sln
+Solution file that manages one or more projects
+
+3) Project_NTCU.vcxproj
+Main C++ project file (XML format)
+Contains compiler settings and build configuration
+
+4) Project_NTCU.vcxproj.filters
+Controls how files appear in Solution Explorer
+
+5) Project_NTCU.vcxproj.user
+User-specific settings (debug options, etc.)
+
+--------------------------------------------------
+C++ Syntax Examples
+--------------------------------------------------
+
+Example 1:
+cout << 3;
+
+Example 2:
+cout << 9 + 3;
+
+Example 3:
+cout << 9 * 3;
+
+--------------------------------------------------
+Escape Sequences
+--------------------------------------------------
+
+\n   → New line  
+\t   → Horizontal tab  
+\\   → Backslash  
+\"   → Double quote  
+
+Example:
+cout << "Hello\nWorld";
+
+--------------------------------------------------
+Comments in C++
+--------------------------------------------------
+
+Single line:
+ // This is a comment
+
+Multi-line:
+/*
+   This is a
+   multi-line comment
+*/
+
+--------------------------------------------------
+Data Types in C++
+--------------------------------------------------
+
+Basic Data Types:
+
+int       → 2 or 4 bytes → Integer numbers
+float     → 4 bytes → Decimal numbers (6-7 digits precision)
+double    → 8 bytes → Decimal numbers (up to 15 digits precision)
+char      → 1 byte → Single character ('A')
+string    → Text (must use double quotes)
+bool      → true or false
+
+--------------------------------------------------
+Variables in C++
+--------------------------------------------------
+
+Declaration:
+int x;
+
+Assignment:
+x = 20;
+
+Initialization:
+int x = 20;
+
+Important:
+If a variable is declared without value and printed,
+it may display garbage value.
+
+--------------------------------------------------
+Arithmetic Operators
+--------------------------------------------------
+
++   Addition
+-   Subtraction
+*   Multiplication
+/   Division
+%   Modulus
+++  Increment
+--  Decrement
+
+Example:
+int N1 = 10;
+int N2 = 5;
+
+cout << N1 + N2;
+cout << N1 - N2;
+cout << N1 * N2;
+cout << N1 / N2;
+cout << N1 % N2;
+
+--------------------------------------------------
+Assignment Operators
+--------------------------------------------------
+
+=    Basic assignment
++=   Add and assign
+-=   Subtract and assign
+*=   Multiply and assign
+/=   Divide and assign
+%=   Modulus and assign
+&=   Bitwise AND assign
+|=   Bitwise OR assign
+^=   Bitwise XOR assign
+>>=  Right shift assign
+
+Example:
+int x = 10;
+x += 5;
+
+--------------------------------------------------
+Comparison Operators
+--------------------------------------------------
+
+==   Equal to
+!=   Not equal
+>    Greater than
+<    Less than
+>=   Greater than or equal
+<=   Less than or equal
+
+Example:
+cout << (x == y);
+
+Returns:
+1 → True
+0 → False
+
+--------------------------------------------------
+Logical Operators
+--------------------------------------------------
+
+&&  Logical AND
+||  Logical OR
+!   Logical NOT
+
+Example:
+(a > 4 && a < 10)
+
+--------------------------------------------------
+String Concatenation
+--------------------------------------------------
+
+string firstName = "Mohamed ";
+string lastName = "Ramadan";
+
+string fullName = firstName + lastName;
+
+OR
+
+string fullName = firstName.append(lastName);
+
+--------------------------------------------------
+Combine Number with String
+--------------------------------------------------
+
+Wrong:
+string text = "My tel is: " + 12345;  ❌
+
+Correct:
+int number = 565655656;
+string result = text + to_string(number);
+
+--------------------------------------------------
+User Input
+--------------------------------------------------
+
+int x;
+cout << "Enter number: ";
+cin >> x;
+
+--------------------------------------------------
+Operator Precedence (High → Low)
+--------------------------------------------------
+
+()  
+*, /, %  
++, -  
+>, <, >=, <=  
+==, !=  
+&&  
+||  
+=  
+
+Order:
+1) Parentheses
+2) Multiplication / Division
+3) Addition / Subtraction
+
+--------------------------------------------------
+
+Thank you
+Lecture Five – Dr. Mohamed Ramadan

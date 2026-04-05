@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatNCT - Prompt Generator</title>
+    <meta name="description" content="ChatNCT Prompt Generator — Create professional AI prompts using CO-STAR framework.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;600&family=Poetsen+One&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        body { overflow: auto; }
+        .main-container {
+            width: 100%; max-width: 1400px; margin: 0 auto;
+            padding: 120px 20px 40px; position: relative; z-index: 10;
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+        }
+        .prompt-card {
+            width: 100%; background: var(--panel-bg); border-radius: 30px;
+            border: 3px solid var(--panel-border);
+            box-shadow: 0 0 50px rgba(124,102,227,0.3);
+            overflow: hidden; display: flex; backdrop-filter: blur(25px);
+            animation: fadeInUp 0.8s ease, pulse-glow 5s infinite alternate ease-in-out;
+        }
+        @keyframes pulse-glow { from{box-shadow:0 0 40px rgba(124,102,227,0.3);} to{box-shadow:0 0 70px rgba(124,102,227,0.6);} }
+
+        .panel { flex: 1; padding: 40px; display: flex; flex-direction: column; }
+        .panel-left { border-right: 3px solid rgba(255,255,255,0.4); }
+        .panel-title {
+            color: var(--text-dark); font-family: 'Montserrat', sans-serif;
+            font-size: 22px; font-weight: 800; margin-bottom: 20px;
+            background: linear-gradient(135deg, #2d1b69 0%, #7c66e3 100%);
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent; letter-spacing: 1px;
+        }
+        .divider-line { width: 100%; height: 2px; background: linear-gradient(90deg, rgba(45,27,105,0.3), rgba(45,27,105,0.5)); margin-bottom: 25px; border-radius: 2px; }
+        .idea-input, .prompt-output {
+            width: 100%; background: rgba(255,255,255,0.3);
+            border: 2px solid rgba(45,27,105,0.3); border-radius: 15px;
+            padding: 20px; color: var(--text-dark);
+            font-family: 'Montserrat', sans-serif; font-size: 16px;
+            resize: none; outline: none;
+            transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
+        }
+        .idea-input { min-height: 120px; margin-bottom: 30px; }
+        .idea-input::placeholder, .prompt-output::placeholder { color: var(--text-light); }
+        .idea-input:focus, .prompt-output:focus {
+            border-color: #7c66e3; background: rgba(255,255,255,0.5);
+            box-shadow: 0 10px 30px rgba(124,102,227,0.3); transform: translateY(-3px);
+        }
+        .prompt-output { flex: 1; min-height: 300px; overflow-y: auto; line-height: 1.6; }
+
+        .upload-area { text-align: center; margin-bottom: 20px; }
+        .upload-text { color: var(--text-light); font-size: 14px; margin-bottom: 15px; }
+        .or-separator { display: flex; align-items: center; justify-content: center; gap: 15px; margin: 20px 0; color: var(--text-light); font-size: 14px; }
+        .or-line { flex: 1; height: 1px; background: rgba(45,27,105,0.4); max-width: 120px; }
+
+        .action-buttons { display: flex; gap: 20px; justify-content: center; margin-bottom: 30px; }
+        .action-btn {
+            width: 120px; height: 120px; background: var(--button-bg);
+            border: 2px solid var(--button-border); border-radius: 25px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 10px; cursor: pointer; transition: all 0.3s ease;
+            color: var(--text-dark); font-family: 'Montserrat', sans-serif;
+            font-size: 14px; font-weight: 600;
+        }
+        .action-btn:hover { background: var(--button-hover); border-color: #7c66e3; transform: translateY(-5px); box-shadow: 0 10px 25px rgba(124,102,227,0.4); }
+        .action-btn i { font-size: 32px; color: #7c66e3; }
+
+        .generate-btn, .execute-btn {
+            align-self: flex-end; padding: 14px 30px;
+            background: rgba(124,102,227,0.4); border: 2px solid rgba(124,102,227,0.6);
+            border-radius: 20px; color: var(--text-dark);
+            font-family: 'Montserrat', sans-serif; font-size: 15px;
+            font-weight: 700; cursor: pointer; transition: all 0.3s ease;
+        }
+        .generate-btn:hover, .execute-btn:hover {
+            background: rgba(124,102,227,0.6); border-color: #7c66e3;
+            transform: translateY(-2px); box-shadow: 0 8px 20px rgba(124,102,227,0.5);
+        }
+        .generate-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .execute-btn { margin-top: 30px; }
+
+        @media (max-width: 968px) {
+            .prompt-card { flex-direction: column; }
+            .panel-left { border-right: none; border-bottom: 3px solid rgba(255,255,255,0.4); }
+            .panel { padding: 30px 25px; }
+            .action-buttons { flex-wrap: wrap; }
+            .action-btn { width: 100px; height: 100px; }
+        }
+        @media (max-width: 480px) {
+            .prompt-card { border-radius: 20px; }
+            .panel { padding: 25px 20px; }
+            .panel-title { font-size: 18px; }
+            .idea-input { min-height: 100px; font-size: 14px; }
+            .action-btn { width: 90px; height: 90px; font-size: 13px; }
+            .action-btn i { font-size: 28px; }
+            .generate-btn, .execute-btn { padding: 12px 25px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><img src="img/Logo.png" alt="ChatNCT"></div>
+            <button class="sidebar-close" id="sidebarClose"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-item" onclick="navigateTo('dashboard')"><i class="fas fa-th-large"></i><span>Dashboard</span></div>
+            <div class="menu-item" onclick="navigateTo('chat')"><i class="fas fa-plus-square"></i><span>New Chat</span></div>
+            <div class="menu-item" onclick="navigateTo('attendance')"><i class="fas fa-clipboard-check"></i><span>Attendance</span></div>
+            <div class="menu-item" onclick="navigateTo('instructor')"><i class="fas fa-chalkboard-teacher"></i><span>Instructor Panel</span></div>
+            <div class="menu-item active" onclick="navigateTo('prompt')"><i class="fas fa-magic"></i><span>Prompt Generator</span></div>
+            <div class="menu-divider"></div>
+        </div>
+        <div class="sidebar-footer">
+            <div class="user-info-brief">
+                <div class="user-avatar" id="userAvatar">G</div>
+                <div class="user-name" id="userNameDisplay">Guest</div>
+            </div>
+            <a href="#" class="sidebar-login" onclick="logout(); return false;"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+        </div>
+    </div>
+
+    <nav class="navbar">
+        <button class="menu-toggle" id="menuToggle"><span></span><span></span><span></span></button>
+        <div class="header-logo"><img src="img/Logo.png" alt="ChatNCT"></div>
+    </nav>
+
+    <div class="animated-bg">
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="glow-orb"></div><div class="glow-orb"></div>
+    </div>
+
+    <div class="main-container">
+        <div class="prompt-card">
+            <div class="panel panel-left">
+                <h2 class="panel-title">Your idea</h2>
+                <div class="divider-line"></div>
+                <textarea class="idea-input" placeholder="What do you want the model to do?"></textarea>
+                <div class="upload-area">
+                    <p class="upload-text">Drag and drop files to upload</p>
+                    <div class="or-separator"><div class="or-line"></div><span>or</span><div class="or-line"></div></div>
+                    <div class="action-buttons">
+                        <button class="action-btn" id="pasteBtn" type="button" aria-label="Paste content">
+                            <i class="fas fa-paste"></i><span>Paste</span>
+                        </button>
+                        <button class="action-btn" id="uploadBtn" type="button" aria-label="Upload files">
+                            <i class="fas fa-upload"></i><span>Upload</span>
+                        </button>
+                    </div>
+                    <input type="file" id="fileInput" style="display: none;" multiple>
+                </div>
+                <button class="generate-btn" type="button">Generate Prompt</button>
+            </div>
+            <div class="panel panel-right">
+                <h2 class="panel-title">Your Prompt</h2>
+                <div class="divider-line"></div>
+                <textarea class="prompt-output" placeholder="Your generated prompt will appear here"></textarea>
+                <button class="execute-btn" type="button">Execute Prompt</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script src="js/prompt.js"></script>
+</body>
+</html>

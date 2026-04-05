@@ -1,0 +1,302 @@
+﻿IT Essentials – ICT Program  
+Instructor: Dr. Ayat Taha  
+Lecture 3 – October 2024  
+
+Lecture 3: Number Systems  
+
+Module Objective:  
+Calculate numbers between decimal, binary, octal, and hexadecimal systems.  
+
+
+1) Introduction to Numbering Systems  
+
+Definition:  
+A numbering system is a method used to represent numbers using a specific base (radix).  
+
+Common Number Systems:  
+• Binary (Base 2)  
+• Decimal (Base 10)  
+• Octal (Base 8)  
+• Hexadecimal (Base 16)  
+
+Each numbering system uses a different base and a specific set of digits.  
+
+
+2) Decimal Number System (Base 10)  
+
+Base: 10  
+Digits Used: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9  
+
+Structure:  
+Each digit represents a power of 10 depending on its position.  
+
+Example: 527  
+
+527 = (5 × 10²) + (2 × 10¹) + (7 × 10⁰)  
+= 500 + 20 + 7  
+= 527  
+
+Positional Notation Example (1234):  
+
+Thousands   Hundreds   Tens   Ones  
+10³         10²        10¹    10⁰  
+
+1234 = (1 × 10³) + (2 × 10²) + (3 × 10¹) + (4 × 10⁰)  
+= 1000 + 200 + 30 + 4  
+= 1234  
+
+Importance:  
+The decimal system is the standard numbering system used in everyday life.  
+
+
+3) Binary Number System (Base 2)  
+
+Base: 2  
+Digits Used: 0, 1  
+
+Structure:  
+Each digit represents a power of 2 depending on its position.  
+
+Binary Positional Values (8-bit example):  
+
+Position:        7   6   5   4   3   2   1   0  
+Power of 2:     2⁷ 2⁶ 2⁵ 2⁴ 2³ 2² 2¹ 2⁰  
+Decimal Value: 128 64  32  16   8   4   2   1  
+
+Example: Convert 11000000 to Decimal  
+
+= (1 × 128) + (1 × 64) + (0 × 32) + (0 × 16) +  
+  (0 × 8) + (0 × 4) + (0 × 2) + (0 × 1)  
+= 128 + 64  
+= 192  
+
+Usage:  
+Binary is used by computers because digital circuits operate using two states (ON/OFF).  
+
+
+Binary to Decimal Example (IP Address):  
+
+Convert 11000000.10101000.00001011.00001010  
+
+11000000 = 192  
+10101000 = 168  
+00001011 = 11  
+00001010 = 10  
+
+Result: 192.168.11.10  
+
+
+4) Octal Number System (Base 8)  
+
+Base: 8  
+Digits Used: 0, 1, 2, 3, 4, 5, 6, 7  
+
+Structure:  
+Each digit represents a power of 8.  
+
+Example: Convert Octal 17 to Decimal  
+
+17₈ = (1 × 8¹) + (7 × 8⁰)  
+= 8 + 7  
+= 15₁₀  
+
+Historical Note:  
+Octal was used in computing as a shorthand for binary but is less common today compared to hexadecimal.  
+
+
+5) Hexadecimal Number System (Base 16)  
+
+Base: 16  
+Digits Used: 0–9 and A, B, C, D, E, F  
+
+A = 10  
+B = 11  
+C = 12  
+D = 13  
+E = 14  
+F = 15  
+
+Structure:  
+Each digit represents a power of 16.  
+
+Example: Convert 1F to Decimal  
+
+1F₁₆ = (1 × 16¹) + (15 × 16⁰)  
+= 16 + 15  
+= 31₁₀  
+
+Usage:  
+• Used in programming  
+• Used for web color codes (e.g., #FF5733)  
+• Used in MAC addresses  
+• Used in IPv6 addresses  
+
+Note:  
+IPv6 addresses are 128 bits long.  
+Every 4 bits = 1 hexadecimal digit (32 hex digits total).  
+
+
+6) Conversion Between Number Systems  
+
+
+A) Decimal to Binary (Division Method)  
+
+Steps:  
+1. Divide the decimal number by 2.  
+2. Record the remainder.  
+3. Continue dividing until the quotient becomes 0.  
+4. Read remainders from bottom to top.  
+
+Example: Convert 13 to Binary  
+
+13 ÷ 2 = 6 remainder 1  
+6 ÷ 2 = 3 remainder 0  
+3 ÷ 2 = 1 remainder 1  
+1 ÷ 2 = 0 remainder 1  
+
+Binary = 1101  
+
+
+B) Decimal to Binary (Subtraction Method)  
+
+Example: Convert 168 to Binary  
+
+168 ≥ 128 → 1 (168 − 128 = 40)  
+40 < 64 → 0  
+40 ≥ 32 → 1 (40 − 32 = 8)  
+8 < 16 → 0  
+8 ≥ 8 → 1 (8 − 8 = 0)  
+Remaining positions → 0  
+
+Binary = 10101000  
+
+
+C) Decimal to Octal  
+
+Steps:  
+1. Divide by 8.  
+2. Record remainders.  
+3. Repeat until quotient = 0.  
+4. Read remainders in reverse.  
+
+Example:  
+65₁₀ = 101₈  
+
+
+D) Decimal to Hexadecimal  
+
+Steps:  
+1. Divide by 16.  
+2. Record remainder.  
+3. Convert remainder above 9 to A–F.  
+4. Read remainders in reverse order.  
+
+Example:  
+255₁₀ = FF₁₆  
+
+
+E) Octal to Binary  
+
+Convert each octal digit to 3-bit binary.  
+
+Example:  
+57₈  
+
+5 → 101  
+7 → 111  
+
+Result: 101111₂  
+
+
+F) Binary to Octal  
+
+Group binary digits into sets of 3 from the right.  
+
+Example:  
+110101011₂ = 653₈  
+
+
+G) Hexadecimal to Binary  
+
+Convert each hex digit to 4-bit binary.  
+
+Example:  
+2A3₁₆  
+
+2 → 0010  
+A → 1010  
+3 → 0011  
+
+Binary = 001010100011₂  
+
+
+H) Binary to Hexadecimal  
+
+Group binary digits into sets of 4 from the right.  
+
+Example:  
+110101101₂  
+= 0001 1010 1101  
+= 1AD₁₆  
+
+
+I) Octal to Hexadecimal  
+
+Step 1: Convert octal to binary.  
+Step 2: Convert binary to hexadecimal.  
+
+Example:  
+(345)₈ = E5₁₆  
+
+
+J) Hexadecimal to Octal  
+
+Step 1: Convert hex to binary (4 bits per digit).  
+Step 2: Group binary digits into sets of 3 from the right.  
+Step 3: Convert each group to octal.  
+
+
+7) Practice and Quiz  
+
+1. Convert decimal numbers to binary then hexadecimal:  
+a) 157  
+b) 365  
+c) 1023  
+
+2. Convert hexadecimal to binary then decimal:  
+a) 3F  
+b) C7A  
+c) 4B2  
+
+3. Convert octal to binary then decimal:  
+a) 127  
+b) 345  
+
+4. Convert binary 11100110 to octal then hexadecimal.  
+
+5. Convert decimal to octal, then binary, then hexadecimal:  
+a) 145  
+b) 511  
+
+6. Convert binary 101101001 to octal then decimal.  
+
+
+Theory Questions:  
+
+1. Show steps to convert decimal 250 to binary then hexadecimal.  
+2. Convert binary 11101100 to octal then decimal.  
+3. Explain steps to convert octal 63 to hexadecimal.  
+4. Convert octal 375 to decimal then hexadecimal.  
+5. Convert octal 1000 to hexadecimal and explain the process.  
+
+
+8) What You Learned in This Module  
+
+• Binary is a base 2 system using bits (0 and 1).  
+• Decimal is a base 10 system used in daily life.  
+• Binary is used by computers and networking devices.  
+• Hexadecimal is base 16 using digits 0–9 and A–F.  
+• Hexadecimal represents IPv6 and MAC addresses.  
+• IPv6 addresses are 128 bits long.  
+• 4 binary bits = 1 hexadecimal digit.  
+• Conversions between number systems follow systematic mathematical steps.  

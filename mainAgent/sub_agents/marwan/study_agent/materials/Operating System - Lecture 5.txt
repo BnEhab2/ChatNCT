@@ -1,0 +1,142 @@
+﻿Lecture 4: PROCESS SYNCHRONIZATION
+Operating System Concepts – 9th Edition Silberschatz, Galvin and Gagne ©2013
+
+--- BACKGROUND ---
+Processes can execute concurrently. They may be interrupted at any time, partially completing execution. Concurrent access to shared data may result in data inconsistency. Maintaining data consistency requires mechanisms to ensure the orderly execution of cooperating processes.
+
+Illustration of the problem:
+Suppose that we wanted to provide a solution to the consumer-producer problem that fills all the buffers. We can do so by having an integer counter that keeps track of the number of full buffers. Initially, counter is set to 0. It is incremented by the producer after it produces a new buffer and is decremented by the consumer after it consumes a buffer.
+
+Producer Code:
+while (true) {
+    /* produce an item in next produced */
+    while (counter == BUFFER_SIZE) ; /* do nothing */
+    buffer[in] = next_produced;
+    in = (in + 1) % BUFFER_SIZE;
+    counter++;
+}
+
+Consumer Code:
+while (true) {
+    while (counter == 0) ; /* do nothing */
+    next_consumed = buffer[out];
+    out = (out + 1) % BUFFER_SIZE;
+    counter--;
+    /* consume the item in next consumed */
+}
+
+--- RACE CONDITION ---
+counter++ could be implemented as:
+    register1 = counter
+    register1 = register1 + 1
+    counter = register1
+
+counter-- could be implemented as:
+    register2 = counter
+    register2 = register2 - 1
+    counter = register2
+
+Consider this execution interleaving with “count = 5” initially:
+S0: producer execute register1 = counter {register1 = 5}
+S1: producer execute register1 = register1 + 1 {register1 = 6}
+S2: consumer execute register2 = counter {register2 = 5}
+S3: consumer execute register2 = register2 – 1 {register2 = 4}
+S4: producer execute counter = register1 {counter = 6}
+S5: consumer execute counter = register2 {counter = 4}
+
+--- THE CRITICAL-SECTION PROBLEM ---
+Consider system of n processes {p0, p1, … pn-1}. Each process has a critical section segment of code. Process may be changing common variables, updating table, writing file, etc. When one process is in its critical section, no other may be in its critical section. The critical section problem is to design a protocol to solve this. Each process must ask permission to enter critical section in the entry section, may follow critical section with an exit section, then a remainder section.
+
+Solution Requirements:
+1. Mutual Exclusion - If process Pi is executing in its critical section, then no other processes can be executing in their critical sections.
+2. Progress - If no process is executing in its critical section and there exist some processes that wish to enter their critical section, then the selection of the processes that will enter the critical section next cannot be postponed indefinitely.
+3. Bounded Waiting - A bound must exist on the number of times that other processes are allowed to enter their critical sections after a process has made a request to enter its critical section and before that request is granted.
+
+--- CRITICAL-SECTION HANDLING IN OS ---
+Two approaches depending on if kernel is preemptive or non-preemptive:
+- Preemptive – allows preemption of process when running in kernel mode.
+- Non-preemptive – runs until exits kernel mode, blocks, or voluntarily yields CPU. Essentially free of race conditions in kernel mode.
+
+--- PETERSON’S SOLUTION ---
+Two process solution. Assume that the load and store machine-language instructions are atomic (cannot be interrupted).
+The two processes share two variables:
+- int turn;
+- Boolean flag[2];
+
+The variable turn indicates whose turn it is to enter the critical section. The flag array is used to indicate if a process is ready to enter the critical section. flag[i] = true implies that process Pi is ready.
+
+Algorithm for Process Pi:
+do {
+    flag[i] = true;
+    turn = j;
+    while (flag[j] && turn == j);
+    /* critical section */
+    flag[i] = false;
+    /* remainder section */
+} while (true);
+
+--- SYNCHRONIZATION HARDWARE ---
+Many systems provide hardware support for implementing the critical section code. All solutions below are based on the idea of locking.
+- Uniprocessors – could disable interrupts. Currently running code would execute without preemption. Generally too inefficient on multiprocessor systems.
+- Modern machines provide special atomic hardware instructions (non-interruptible):
+    1. test_and_set: Returns the original value of passed parameter and sets new value to TRUE.
+    2. compare_and_swap: The swap takes place only if value == expected.
+
+--- MUTEX LOCKS ---
+OS designers build software tools to solve the critical section problem. Simplest is the mutex lock.
+- Protect a critical section by first acquire() a lock then release() the lock.
+- Boolean variable indicates if lock is available or not.
+- Calls to acquire() and release() must be atomic.
+- Usually implemented via hardware atomic instructions.
+- Requires busy waiting (spinlock).
+
+--- SEMAPHORES ---
+Synchronization tool that provides more sophisticated ways for processes to synchronize.
+Semaphore S – integer variable accessed via two atomic operations: wait() and signal() (originally P() and V()).
+
+Definition of wait(S):
+wait(S) {
+    while (S <= 0) ; // busy wait
+    S--;
+}
+
+Definition of signal(S):
+signal(S) {
+    S++;
+}
+
+Types:
+- Counting semaphore – integer value can range over an unrestricted domain.
+- Binary semaphore – integer value can range only between 0 and 1 (same as a mutex lock).
+
+Implementation with no Busy Waiting:
+With each semaphore there is an associated waiting queue.
+- block – place the process invoking the operation on the appropriate waiting queue.
+- wakeup – remove one process in the waiting queue and place it in the ready queue.
+
+--- DEADLOCK AND STARVATION ---
+- Deadlock – two or more processes are waiting indefinitely for an event that can be caused by only one of the waiting processes.
+- Starvation – indefinite blocking; a process may never be removed from the semaphore queue in which it is suspended.
+- Priority Inversion – scheduling problem when lower-priority process holds a lock needed by a higher-priority process. Solved via priority-inheritance protocol.
+
+--- CLASSICAL PROBLEMS OF SYNCHRONIZATION ---
+1. Bounded-Buffer Problem: n buffers, each holds one item. Semaphores used: mutex (1), full (0), empty (n).
+2. Readers-Writers Problem: Multiple readers allowed at once; only one single writer can access shared data at a time.
+3. Dining-Philosophers Problem: Philosophers alternate thinking and eating. Need 2 chopsticks to eat. Illustrates deadlock risks.
+
+--- MONITORS ---
+A high-level abstraction that provides a convenient and effective mechanism for process synchronization.
+- Abstract data type where internal variables are only accessible by code within the procedure.
+- Only one process may be active within the monitor at a time.
+- Condition Variables: x.wait() (process is suspended) and x.signal() (resumes a suspended process).
+
+--- SYNCHRONIZATION EXAMPLES ---
+- Solaris: Adaptive mutexes, semaphores, condition variables, readers-writers locks, and turnstiles.
+- Windows: Interrupt masks (uniprocessor), spinlocks (multiprocessor), dispatcher objects (mutexes, semaphores, events, timers).
+- Linux: Disables interrupts (short critical sections), semaphores, atomic integers, spinlocks.
+- Pthreads: Mutex locks, condition variables, read-write locks, spinlocks.
+
+--- ALTERNATIVE APPROACHES ---
+- Transactional Memory: Memory transactions performed atomically.
+- OpenMP: Compiler directives (e.g., #pragma omp critical) for atomic sections.
+- Functional Programming Languages: Handle data races by treating variables as immutable (Erlang, Scala).

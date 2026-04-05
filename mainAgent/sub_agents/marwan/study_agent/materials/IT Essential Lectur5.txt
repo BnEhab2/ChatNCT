@@ -1,0 +1,277 @@
+﻿كلية تكنولوجيا الصناعة والطاقة  
+IT Essentials – ICT Program  
+Lecture 5: Networking Concepts  
+Date: 17-11-2024  
+
+
+============================================================  
+Lecture 5 – Sections & Objectives  
+============================================================  
+
+5.1 Network Components and Types  
+• Explain components and types of computer networks.  
+  – Describe the types of networks.  
+  – Describe internet connection types.  
+
+5.2 Network Protocols, Standards, and Services  
+• Explain networking protocols, standards, and services.  
+  – Explain the purpose and characteristics of transport layer protocols.  
+  – Explain the significance of application port numbers.  
+  – Explain wireless protocols.  
+  – Explain network services.  
+
+5.3 Network Devices  
+• Explain the purpose of devices on a network.  
+  – Explain basic network devices.  
+  – Explain security devices.  
+  – Explain other network devices.  
+
+5.4 Network Cables  
+• Explain the characteristics of network cables.  
+  – Describe networking tools and their purpose.  
+  – Explain the purpose and characteristics of common copper network cables and connectors.  
+  – Explain the purpose and characteristics of common fiber network cables and connectors.  
+
+
+============================================================  
+Network History  
+============================================================  
+
+1950s–1960s:  
+• Early experimental military networks.  
+• Development of ARPANET.  
+• Introduction of packet-switching technology.  
+
+1970s:  
+• Introduction of Ethernet (local networks).  
+• Development of TCP/IP protocols.  
+• Creation of USENET (early social networking form).  
+
+1980s:  
+• ARPANET adopted TCP/IP.  
+• NSFNET expanded connectivity to universities and research centers.  
+
+1990s:  
+• World Wide Web introduced by Tim Berners-Lee.  
+• Graphical web browsers made internet user-friendly.  
+• Commercial ISPs emerged.  
+• Search engines such as Google improved information retrieval.  
+
+2000s:  
+• Broadband and Wi-Fi became widespread.  
+• Social media and smartphones increased connectivity.  
+
+2010s:  
+• Growth of Cloud Computing.  
+• Expansion of IoT (Internet of Things).  
+• Development of 5G technology.  
+
+2020s:  
+• Focus on 5G, edge computing, AI integration, and IoT expansion.  
+• Continued improvements in speed, security, and global connectivity.  
+
+
+============================================================  
+What is a Network?  
+============================================================  
+
+A network is a collection of interconnected devices such as computers, servers, printers, and smartphones that communicate to share data, resources, and services.  
+
+Networks can range from small local networks (LAN) to global networks (Internet).  
+
+Networks may be:  
+• Wired (using cables)  
+• Wireless (using radio waves)  
+
+Networks enable:  
+• File sharing  
+• Printer sharing  
+• Application access  
+• Communication services  
+
+
+============================================================  
+5.1 Network Components and Types  
+============================================================  
+
+Principles of Networking:  
+• Networks are systems formed by links.  
+• Examples of everyday networks:  
+  – Mail delivery system  
+  – Telephone system  
+  – Public transportation system  
+  – Corporate computer networks  
+  – The Internet  
+
+Computer Data Network:  
+• Collection of hosts connected by networking devices.  
+• Devices include computers, printers, scanners, smartphones, servers.  
+
+Network Connections:  
+• Copper cabling  
+• Fiber-optic cabling  
+• Wireless connections  
+
+Benefits of Networking:  
+• Fewer peripherals required  
+• Lower licensing costs  
+• Increased communication  
+• Centralized administration  
+• Reduced file duplication  
+• Resource conservation  
+
+
+Network Components:  
+
+1) Host Devices  
+   – Devices that send and receive data (PCs, printers, servers).  
+
+2) Intermediary Devices  
+   – Devices between hosts that manage data flow.  
+
+3) Network Media  
+   – The physical path for data transmission (cables or wireless).  
+
+
+============================================================  
+5.3 Basic Network Devices  
+============================================================  
+
+Network Interface Card (NIC):  
+• Connects a computer to a wired or wireless network.  
+
+Repeaters:  
+• Regenerate and extend network signals.  
+
+Hub:  
+• Receives data on one port and sends it to all other ports.  
+
+Bridge:  
+• Divides a network into segments and tracks device locations.  
+
+Modem (Modulator/Demodulator):  
+• Connects to the internet via ISP.  
+• Converts digital signals to analog and vice versa.  
+• Uses RJ-11 connectors.  
+• Can be internal or external.  
+
+Switch:  
+• Records MAC addresses of connected devices.  
+• Forwards data based on destination MAC address.  
+• Types:  
+  – Managed switch (used in companies)  
+  – Unmanaged switch (used in homes/small offices)  
+
+Wireless Access Point (AP):  
+• Provides wireless network access within limited range.  
+
+Router:  
+• Connects different networks.  
+• Uses IP addresses to forward traffic.  
+• May include switching and wireless features.  
+
+Firewall:  
+• Protects network from unauthorized access.  
+• Uses Access Control Lists (ACLs) to allow or deny traffic.  
+
+
+============================================================  
+5.4 Network Cables  
+============================================================  
+
+Network Tools:  
+
+• Wire cutters – Trim wires.  
+• Wire strippers – Remove outer cable jacket.  
+• Crimper – Attach RJ-45 connectors.  
+• Punch down tool – Terminate wires into patch panels.  
+• Multimeter – Check voltage and electrical continuity.  
+• Cable tester – Test Ethernet cable wiring (T568A/T568B).  
+• Wi-Fi analyzer – Analyze wireless signal strength and interference.  
+• Tone generator – Trace and identify cables.  
+• Loopback adapter – Test network ports and NIC functionality.  
+
+
+Cable Types:  
+• Twisted-pair  
+• Coaxial  
+• Fiber-optic  
+
+
+------------------------------------------------------------  
+Coaxial Cable  
+------------------------------------------------------------  
+
+• Made of copper or aluminum core.  
+• Used in cable TV and satellite systems.  
+• Harder to install and troubleshoot.  
+
+Types:  
+• Thicknet (10Base5) – 500m, 10 Mbps  
+• Thinnet (10Base2) – 185m, 10 Mbps  
+• RG-59 – Common for cable TV  
+• RG-6 – Higher quality, more bandwidth  
+
+
+------------------------------------------------------------  
+Twisted-Pair Cable  
+------------------------------------------------------------  
+
+Types:  
+• UTP (Unshielded Twisted Pair)  
+• STP (Shielded Twisted Pair)  
+
+UTP:  
+• Most common  
+• Four color-coded wire pairs  
+• Prone to EMI and RFI  
+
+STP:  
+• Better EMI/RFI protection  
+• More expensive  
+
+Wiring Standards:  
+• T568A  
+• T568B  
+
+Cable Types:  
+• Straight-through cable – Same wiring both ends (connect unlike devices).  
+• Crossover cable – Different wiring each end (connect like devices).  
+
+
+Twisted-Pair Categories:  
+
+Category 3 – 100 Mb/s at 100 MHz  
+Category 5e – 1 Gb/s at 100 MHz  
+Category 6 – 1 Gb/s at 250 MHz  
+Category 6a – Up to 500 MHz  
+
+Higher categories provide better performance and EMI protection.  
+
+
+------------------------------------------------------------  
+Fiber-Optic Cable  
+------------------------------------------------------------  
+
+• Transmits data using light.  
+• Not affected by EMI or RFI.  
+• Higher bandwidth and longer distance.  
+• More expensive than copper cables.  
+
+Types:  
+
+Single-Mode Fiber (SMF):  
+• Small core  
+• Uses laser  
+• Long distances (hundreds of km)  
+
+Multimode Fiber (MMF):  
+• Larger core  
+• Uses LEDs  
+• Shorter distance (up to 550m)  
+• Cheaper  
+
+
+============================================================  
+End of Lecture 5  
+============================================================  

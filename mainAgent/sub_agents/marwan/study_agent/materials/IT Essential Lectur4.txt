@@ -1,0 +1,282 @@
+﻿كلية تكنولوجيا الصناعة والطاقة  
+IT Essentials – ICT Program  
+Dr. Ayat Taha  
+Lecture 4 – November 2024  
+
+Lecture 4: Arithmetic Operations of Numbering Systems  
+Solving Problems on BCD, ASCII Code, and Unicode  
+
+
+Module Objectives:  
+• Perform arithmetic operations in the binary number system.  
+• Solve problems involving BCD (Binary-Coded Decimal).  
+• Solve problems using ASCII code.  
+• Solve problems using Unicode.  
+
+
+============================================================  
+1) Arithmetic Operations in Numbering Systems  
+============================================================  
+
+Binary Arithmetic Operations:  
+• Binary Addition  
+• Binary Subtraction  
+• Binary Multiplication  
+• Binary Division  
+
+
+------------------------------------------------------------  
+1.1 Binary Addition  
+------------------------------------------------------------  
+
+Binary addition follows four basic rules:  
+
+0 + 0 = 0  
+0 + 1 = 1  
+1 + 0 = 1  
+1 + 1 = 10  (Sum = 0, Carry = 1)  
+
+When adding multiple bits, always add from right to left and carry when necessary.  
+
+
+------------------------------------------------------------  
+1.2 Binary Subtraction  
+------------------------------------------------------------  
+
+Binary subtraction rules:  
+
+0 − 0 = 0  
+1 − 0 = 1  
+1 − 1 = 0  
+0 − 1 = 1 (Borrow 1 from the next higher bit)  
+
+If the top bit is smaller than the bottom bit, borrowing is required.  
+
+
+------------------------------------------------------------  
+1.3 Binary Multiplication  
+------------------------------------------------------------  
+
+Binary multiplication rules:  
+
+0 × 0 = 0  
+0 × 1 = 0  
+1 × 0 = 0  
+1 × 1 = 1  
+
+Binary multiplication is similar to decimal multiplication but simpler because digits are only 0 and 1.  
+Shift left for each new row (just like multiplying by 10 in decimal).  
+
+
+------------------------------------------------------------  
+1.4 Binary Division  
+------------------------------------------------------------  
+
+Binary division follows the same long division method used in decimal division.  
+Division is based on repeated subtraction and shifting.  
+
+
+============================================================  
+2) ASCII Code  
+============================================================  
+
+ASCII (American Standard Code for Information Interchange) is a character encoding standard used to represent text in computers and digital devices.  
+
+Character Set:  
+• ASCII defines 128 characters (0–127).  
+
+Categories:  
+
+1) Control Characters (0–31)  
+   Non-printable characters (e.g., newline, carriage return).  
+
+2) Printable Characters (32–126)  
+   • Digits (0–9)  
+   • Uppercase letters (A–Z)  
+   • Lowercase letters (a–z)  
+   • Punctuation and symbols  
+
+
+ASCII Table Key Ranges:  
+
+• Digits: 48 (0) to 57 (9)  
+• Uppercase Letters: 65 (A) to 90 (Z)  
+• Lowercase Letters: 97 (a) to 122 (z)  
+
+
+------------------------------------------------------------  
+2.1 Solving Problems on ASCII Code  
+------------------------------------------------------------  
+
+Example: Convert the word "computer" to binary using ASCII.  
+
+Step 1: Convert Characters to ASCII Values  
+
+c → 99  
+o → 111  
+m → 109  
+p → 112  
+u → 117  
+t → 116  
+e → 101  
+r → 114  
+
+Step 2: Convert ASCII Values to 8-bit Binary  
+
+99  → 01100011  
+111 → 01101111  
+109 → 01101101  
+112 → 01110000  
+117 → 01110101  
+116 → 01110100  
+101 → 01100101  
+114 → 01110010  
+
+Step 3: Combine Binary Values  
+
+The word "computer" in binary is the sequence of all 8-bit values combined.  
+
+
+Quiz:  
+Convert Binary to Text using ASCII Code.  
+
+
+============================================================  
+3) Binary-Coded Decimal (BCD)  
+============================================================  
+
+Binary-Coded Decimal (BCD) is a binary encoding method where each decimal digit is represented separately using four bits.  
+
+In BCD:  
+Each decimal digit (0–9) = 4-bit binary equivalent.  
+
+
+------------------------------------------------------------  
+3.1 Decimal to BCD Example  
+------------------------------------------------------------  
+
+Convert 27 to BCD.  
+
+Step 1: Separate digits  
+2 and 7  
+
+Step 2: Convert each digit to 4-bit binary  
+
+2 → 0010  
+7 → 0111  
+
+Step 3: Combine  
+
+27 in BCD = 0010 0111  
+
+
+------------------------------------------------------------  
+3.2 BCD to Decimal Example  
+------------------------------------------------------------  
+
+Convert 0101 1001 to decimal.  
+
+Step 1: Separate into 4-bit groups  
+
+0101 → 5  
+1001 → 9  
+
+Step 2: Combine digits  
+
+Result = 59  
+
+
+============================================================  
+4) Unicode  
+============================================================  
+
+Pre-Unicode Era:  
+• Different systems used different encodings (ASCII, ISO 8859, etc.).  
+• ASCII was limited to 128 characters.  
+• Many languages could not be represented properly.  
+
+Character Set Conflicts:  
+Different countries developed their own encodings, causing compatibility issues.  
+
+
+Birth of Unicode:  
+
+• Unicode Consortium formed in 1987.  
+• First Unicode Standard released in 1991 with over 7,000 characters.  
+• Currently includes more than 143,000 characters.  
+
+
+------------------------------------------------------------  
+4.1 Unicode Features  
+------------------------------------------------------------  
+
+Universal Character Set:  
+Includes characters from most writing systems (Latin, Arabic, Chinese, Cyrillic, etc.).  
+
+Unicode Code Points:  
+Written as U+ followed by hexadecimal digits.  
+
+Examples:  
+
+Basic Latin:  
+A → U+0041  
+a → U+0061  
+
+Symbols:  
+© → U+00A9  
+® → U+00AE  
+
+Emojis:  
+😊 → U+1F60A  
+🍕 → U+1F355  
+
+
+------------------------------------------------------------  
+4.2 Unicode Encoding Forms  
+------------------------------------------------------------  
+
+UTF-8:  
+• Variable length (1–4 bytes).  
+• Backward compatible with ASCII.  
+• Widely used on the web.  
+
+UTF-16:  
+• Uses one or two 16-bit units.  
+• Used in many platforms and programming languages.  
+
+UTF-32:  
+• Fixed 32-bit unit.  
+• Easy indexing but less memory efficient.  
+
+
+============================================================  
+5) Module Practice and Quiz  
+============================================================  
+
+Question 1: Binary Addition  
+Add 1010 and 1101.  
+
+Question 2: Binary Subtraction  
+Subtract 1010 from 1101.  
+
+Question 3: Binary Multiplication  
+Multiply 101 and 11.  
+
+Question 4: Binary Addition with Carry  
+Add 1110 and 1011. What is the result and carry?  
+
+Question 5:  
+(1101 + 1010) − (0110)  
+
+Question 6:  
+(1011 + 1101) − (0101) + (0010)  
+
+Question 7:  
+Add 1100, 1010, and 0110.  
+
+Question 8:  
+((1101 − 0110) + (1011)) × (0010)  
+
+============================================================  
+End of Lecture 4  
+============================================================  

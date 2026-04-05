@@ -1,0 +1,190 @@
+
+Dr. Amany AbdElSamea Saeed
+10/7/2025 3:37 PM
+
+Lec. 3 User Management in Linux
+October 2024
+
+Outline
+
+- Linux User Accounts
+- Superuser
+- Sudo command
+- Permission of users
+- Chmod command
+- Passwd command
+- Linux groups
+
+Linux User
+
+- In Linux, a user is an individual who interacts with the system. Each user has a unique username and a user ID (UID).
+- User accounts are used to log in, run processes, and access files and directories.
+- Linux systems typically have several user accounts, including the root user, which has superuser privileges and can perform administrative tasks.
+- After installation, ID 0 is assigned to the root user and IDs 1 to 999 are assigned to system users. Local user IDs start from 1000.
+- In a single directory, we can create up to 60,000 users.
+
+User Accounts
+
+- Root: Superuser with complete control. Can run any command. Acts as system administrator.
+- System: Needed for system-specific components, e.g., mail and sshd accounts. Modifications may affect system operations.
+- User Accounts: Interactive access for regular users. Typically limited access to critical system files.
+
+The Superuser
+
+- One account has elevated privileges to issue any command, access any file, and perform every function.
+- Superuser, a.k.a. root
+- User and group number 0
+- Limit root usage to avoid harm
+- Strong password recommended
+
+The sudo command in Linux
+
+- Allows ordinary users to execute commands as another user (usually root)
+- Syntax: sudo [options] [-u user] command
+- If no user specified, root is assumed
+- Opens new shell with user privileges and executes specified command
+
+Benefits of Sudo Command
+
+- Records all actions performed as root
+- Prevents users from running continually as root
+- Prevents need to know root password
+- Limits unauthorized command execution
+
+sudoers
+
+- Configure users to run commands as another user
+- Permissions stored in /etc/sudoers
+- Use visudo to edit this file
+- Permissions granted to users or groups, certain commands, with or without password
+
+su command
+
+- Short for substitute or switch user
+- Switches to root user if no username provided
+- Syntax: su [options] [username]
+- Prompted for password
+- Opens new shell with privileges of that user
+
+Other Permissions Models
+
+- Some distributions (like Ubuntu) obscure root account
+- End user may not know root password, cannot login as root, must rely on sudo
+- Users in admin group can use sudo to perform root tasks
+- Syntax: sudo su - (becomes root without typing root password, uses user’s password)
+
+Permissions
+
+- Permissions are for system resources, not users
+- Access rights: Read (r), Write (w), Execute (x)
+- Levels: User (u), Group (g), World/Others (o)
+- Modes: Absolute (chmod numeric) or Symbolic (chmod symbolic)
+
+Linux Groups
+
+- Groups are collections of users to simplify permissions
+- Users in the same group share file permissions
+- Groups have unique group ID (GID)
+- File group ownership defaults to primary group of creator
+
+Linux Administration Files
+
+- /etc/passwd − user account info
+- /etc/shadow − encrypted password
+- /etc/group − group info
+- /etc/gshadow − secure group info
+
+Display Current Username
+
+- whoami
+- Shows current username
+- Syntax: whoami
+
+w command
+
+- Displays logged in users and their activity
+- Syntax: w
+
+id command
+
+- Shows user ID, primary group ID, list of groups
+- Syntax: id [options]
+- Options:
+  - -g: effective group ID
+  - -G: all group IDs
+  - -n: display names instead of numeric IDs
+  - -r: real ID
+  - -u: user ID
+  - --help: show help
+  - --version: show version info
+
+Creating and Managing User Accounts
+
+Command | Description
+--------|------------
+useradd | Adds user accounts
+usermod | Modifies account attributes
+userdel | Deletes accounts
+groupadd | Adds groups
+groupmod | Modifies groups
+groupdel | Removes groups
+
+useradd Command
+
+- Adds user accounts
+- Updates /etc/passwd, /etc/shadow, /etc/group, /etc/gshadow
+- Creates home directory in /home
+- Options: Specify home directory, UID, GID, expiry date, login shell, comment, unencrypted password
+
+usermod Command
+
+- Modifies user properties (password, home directory, group, login, expiry, shell, UID)
+- Syntax: usermod [options] username
+
+userdel Command
+
+- Deletes a user account
+- Does not remove home directory unless -r option is used
+- Common options:
+  - -f: force removal
+  - -r: remove home directory and mail
+  - -h: display help
+  - -R: apply in CHROOT_DIR
+  - -Z: remove SELinux mapping
+
+Linux User Password
+
+- passwd command sets or changes password
+- sudo can grant root privileges to change root password
+- Force password change at next login
+- Lock/unlock account
+- Set password expiry (-x option)
+
+Create a Group
+
+- Groups must exist before assigning users
+- Listed in /etc/groups
+- Syntax: groupadd [options] groupname
+
+groups and groupmod Commands
+
+- groups: show current user’s groups
+- groupmod: modify group name
+
+Set Group Password
+
+- gpasswd: set group password
+- Password confirmed by typing twice
+- Groups listed in /etc/groups
+
+Adding User to Existing Group
+
+- usermod -a -G groupname username
+- Adding a user to new group removes them from previous groups
+
+groupdel Command
+
+- Deletes a group permanently
+- Syntax: groupdel groupname
+
+Thank You

@@ -1,0 +1,421 @@
+﻿IT Essentials
+Dr. Ayat Taha
+End of Lecture 1
+
+--------------------------------------------------
+Course Grade Distribution
+--------------------------------------------------
+Total: 150
+
+Final Exam: 45
+Assignment 1: 30
+Assignment 2: 45
+Quizzes and Tasks: 30
+
+--------------------------------------------------
+IT Essentials Content
+--------------------------------------------------
+• Chapter 1: Introduction to the Personal Computer Hardware
+• Chapter 2: PC Assembly
+• Chapter 3: Advanced Computer Hardware
+• Chapter 4: Preventive Maintenance and Troubleshooting
+• Chapter 5: Networking Concepts
+• Chapter 6: Applied Networking
+• Chapter 7: Laptops and Other Mobile Devices
+• Chapter 8: Printers
+• Chapter 9: Virtualization and Cloud Computing
+• Chapter 10: Windows Installation
+• Chapter 11: Windows Configuration
+• Chapter 12: Mobile, Linux, and macOS Operating Systems
+• Chapter 13: Security
+• Chapter 14: The IT Professional
+
+--------------------------------------------------
+Lecture 1
+Introduction to the Personal Computer Hardware
+--------------------------------------------------
+
+--------------------------------------------------
+Sections & Objectives
+--------------------------------------------------
+
+1.1 Personal Computers
+• Explain how to keep personal computer components safe.
+• Explain components in a computer.
+• Explain electrical and ESD safety.
+
+1.2 PC Components
+• Explain the features and functions of computer components.
+• Describe cases and power supplies.
+• Describe motherboards.
+• Describe CPUs.
+• Explain types of memory.
+
+1.2 PC Components (Cont.)
+• Describe adapter cards and expansion slots.
+• Describe hard disk drives and SSDs.
+• Describe optical storage devices.
+• Describe ports, cables and adapters.
+• Describe input devices.
+• Describe output devices.
+
+1.3 Disassemble a PC
+• Explain the features and functions of each component in the toolkit.
+• Disassemble a computer.
+
+--------------------------------------------------
+1.1 Personal Computer
+--------------------------------------------------
+
+Computer Definition:
+A computer can be defined as:
+
+1) A person who makes calculations, especially with a calculating machine.
+2) A programmable device that can store, retrieve, and process data.
+3) An electronic device that can retrieve, store, process, and output data in binary form according to instructions in a program.
+4) A programmable electronic device designed to accept data, perform mathematical and logical operations, store data, and display results.
+
+Examples of computers:
+Mainframes, desktop computers, laptops, tablets, smartphones, smartwatches, and IoT devices.
+
+--------------------------------------------------
+Basic Personal Computer System
+--------------------------------------------------
+
+A computer system consists of:
+• Hardware
+• Software
+
+Hardware:
+Physical components such as case, storage drives, keyboard, monitor, cables, speakers, and printers.
+
+Software:
+• Operating System (controls computer operation)
+• Applications (perform specific tasks)
+
+--------------------------------------------------
+1.2 PC Components
+--------------------------------------------------
+
+Case:
+• Houses internal components such as PSU, motherboard, CPU, RAM, drives, and adapter cards.
+• Types: Super tower, full tower, mid tower, mini tower, cube case.
+
+Quiz Answer:
+Two important factors when choosing a case:
+• Number of internal drive locations.
+• Size of the motherboard and power supply.
+
+--------------------------------------------------
+Power Supply (PSU)
+--------------------------------------------------
+
+• Provides power to all components.
+• Converts AC to low-voltage DC.
+• Measured in Watts.
+• Must support current and future upgrades.
+• Uses input voltage selector.
+• Ohm’s Law: W = V × A
+
+Common Connectors:
+• 20/24-pin main power connector
+• SATA connector
+• Molex connector
+• Berg connector
+• 4/8-pin CPU connector (ATX12V)
+• 6/8-pin PCIe connector
+
+Common Voltages:
+• 3.3V
+• 5V
+• 12V
+
+Rails:
+Single rail, dual rail, multi rail (Modular PSU)
+
+--------------------------------------------------
+Motherboard
+--------------------------------------------------
+
+• Main printed circuit board.
+• Connects all components.
+• Contains buses for data transfer.
+• Includes CPU socket, RAM slots, expansion slots, chipset, BIOS/UEFI, SATA connectors, USB headers.
+
+Main Power Connector:
+20 or 24-pin.
+
+--------------------------------------------------
+Chipset
+--------------------------------------------------
+
+Controls communication between:
+• CPU
+• RAM
+• Expansion slots
+• Storage devices
+
+Northbridge:
+• RAM
+• Video card
+• CPU communication
+
+Southbridge:
+• I/O devices
+• Hard drives
+• USB ports
+
+--------------------------------------------------
+Motherboard Form Factors
+--------------------------------------------------
+
+• ATX
+• Micro-ATX
+• ITX
+
+Form factor determines:
+• Case type
+• Power supply type
+• Component compatibility
+
+--------------------------------------------------
+CPU (Central Processing Unit)
+--------------------------------------------------
+
+• Brain of the computer.
+• Executes instructions.
+• Measured in MHz or GHz.
+• Data bus size affects processing amount.
+
+CPU Architectures:
+• PGA
+• LGA
+• BGA
+
+Multi-Core CPUs:
+• Dual Core
+• Triple Core
+• Quad Core
+• Hexa Core
+• Octa Core
+• 16-core and more
+
+Technologies:
+• Hyper-Threading
+• HyperTransport
+
+--------------------------------------------------
+Cooling Systems
+--------------------------------------------------
+
+Active Cooling:
+• Fans
+• Liquid cooling
+
+Passive Cooling:
+• Heat sink (no power required)
+
+--------------------------------------------------
+Memory Types
+--------------------------------------------------
+
+ROM:
+• Non-volatile
+• Stores boot instructions
+
+ROM Types:
+• ROM
+• PROM
+• EPROM
+• EEPROM
+
+RAM:
+• Volatile
+• Temporary storage
+• Limited by motherboard chipset
+
+RAM Types:
+• SRAM
+• DRAM
+• SDRAM
+• DDR
+• DDR2
+• DDR3
+• DDR4
+• GDDR
+
+Cache:
+• L1
+• L2
+• L3
+• Uses SRAM
+
+--------------------------------------------------
+Storage Devices
+--------------------------------------------------
+
+Magnetic:
+• HDD (5400, 7200, 10000 RPM)
+• Tape Drive
+• Floppy Disk
+
+Solid State:
+• SSD
+• mSATA
+• M.2
+
+Optical:
+• CD
+• DVD
+• Blu-ray
+
+SATA Versions:
+• SATA 1
+• SATA 2
+• SATA 3
+
+--------------------------------------------------
+Adapter Cards
+--------------------------------------------------
+
+• Sound Card
+• NIC
+• Wireless NIC
+• Video Card
+• USB Card
+• eSATA Card
+
+Expansion Slots:
+• PCI
+• PCI-X
+• PCIe
+• AGP
+• Mini-PCI
+• Riser card
+
+--------------------------------------------------
+Ports and Cables
+--------------------------------------------------
+
+Common Ports:
+• USB
+• HDMI
+• VGA
+• DVI
+• DisplayPort
+• Thunderbolt
+• RJ-45
+• RJ-11
+• PS/2
+• Serial
+• Parallel
+• SCSI
+• SATA
+• eSATA
+• FireWire
+
+--------------------------------------------------
+Adapters and Converters
+--------------------------------------------------
+
+Adapter:
+Physically connects two technologies.
+
+Converter:
+Converts signal type.
+
+Examples:
+• DVI to VGA
+• USB to Ethernet
+• HDMI to VGA
+• Molex to SATA
+
+--------------------------------------------------
+Input Devices
+--------------------------------------------------
+
+Traditional:
+• Keyboard
+• Mouse
+• Scanner
+• Joystick
+• KVM Switch
+
+New:
+• Touch screen
+• Stylus
+• Barcode scanner
+• Magnetic strip reader
+• Digital camera
+• Webcam
+• Signature pad
+• Smart card reader
+• Microphone
+
+Biometric:
+• Facial recognition
+• Fingerprint scanner
+• Voice recognition
+• NFC devices
+
+--------------------------------------------------
+Output Devices
+--------------------------------------------------
+
+• Monitor
+• Projector
+• Printer
+• Speakers
+• Headphones
+• VR Headset
+
+Monitor Types:
+• LCD
+• LED
+• OLED
+• Plasma
+
+Projectors:
+• LCD
+• DLP
+
+Resolution Factors:
+• Pixel
+• Contrast ratio
+• Refresh rate
+• Aspect ratio
+
+--------------------------------------------------
+Printers
+--------------------------------------------------
+
+Types:
+• Inkjet
+• Laser
+• Thermal
+• Impact
+• 3D Printer
+
+Require:
+• Driver
+• Ink/Toner/Material
+• Wired or Wireless connection
+
+--------------------------------------------------
+Speakers and Headphones
+--------------------------------------------------
+
+• Audio output devices
+• Wired or wireless
+• Bluetooth/Wi-Fi supported
+
+--------------------------------------------------
+1.3 Computer Disassembly
+--------------------------------------------------
+
+• Identify toolkit components.
+• Safely disassemble a PC.
+
+--------------------------------------------------
+End of Lecture 1
+--------------------------------------------------

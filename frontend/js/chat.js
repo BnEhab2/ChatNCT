@@ -1,0 +1,210 @@
+// ══════════════════════════════════════════════════════════════
+// ChatNCT — Chat Page Logic
+// ══════════════════════════════════════════════════════════════
+
+const API_URL = '/api/chat';
+let isWaiting = false;
+
+// ── View Switching ─────────────────────────────────────────
+function switchView(viewName, element) {
+    if (element) {
+        document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+        element.classList.add('active');
+    }
+    const dashboardView = document.getElementById('dashboardView');
+    const chatView = document.getElementById('chatView');
+    if (viewName === 'dashboard') {
+        if (dashboardView) dashboardView.classList.add('active');
+        if (chatView) chatView.classList.remove('active');
+    } else if (viewName === 'chat') {
+        if (dashboardView) dashboardView.classList.remove('active');
+        if (chatView) chatView.classList.add('active');
+        const input = document.getElementById('messageInput');
+        if (input) setTimeout(() => input.focus(), 100);
+    }
+    if (window.innerWidth <= 768) closeSidebar();
+}
+
+function startChat(initialMessage = '') {
+    const dashboardView = document.getElementById('dashboardView');
+    const chatView = document.getElementById('chatView');
+    if (dashboardView) dashboardView.classList.remove('active');
+    if (chatView) chatView.classList.add('active');
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset && item.dataset.view === 'chat') item.classList.add('active');
+    });
+    if (initialMessage) {
+        const input = document.getElementById('messageInput');
+        if (input) {
+            input.value = initialMessage;
+            setTimeout(() => sendMessage(), 300);
+        }
+    }
+}
+
+// ── Chat Logic ─────────────────────────────────────────────
+const messageInput = document.getElementById('messageInput');
+const sendButton = document.getElementById('sendButton');
+const chatMessages = document.getElementById('chatMessages');
+const studyBtn = document.getElementById('studyBtn');
+const studyPopup = document.getElementById('studyPopup');
+
+if (studyBtn && studyPopup) {
+    studyBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        studyPopup.classList.toggle('active');
+    });
+    document.addEventListener('click', (e) => {
+        if (studyPopup && !studyPopup.contains(e.target) && e.target !== studyBtn) {
+            studyPopup.classList.remove('active');
+        }
+    });
+}
+
+function addMessage(text, sender, isLoading = false) {
+    if (!chatMessages) return null;
+    const wrapper = document.createElement('div');
+    wrapper.className = `message-wrapper ${sender}`;
+    if (isLoading) wrapper.id = `loading-${Date.now()}`;
+    const avatarSrc = sender === 'bot' ? 'img/Head of Charcter.png' : 'img/Group 26.png';
+
+    let displayText;
+    if (isLoading) {
+        displayText = text;
+    } else if (sender === 'bot') {
+        displayText = marked.parse(text);
+    } else {
+        displayText = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+    }
+
+    const dir = detectDirection(text);
+
+    wrapper.innerHTML = `
+        <div class="message-avatar">
+            <img src="${avatarSrc}" alt="${sender}" onerror="this.style.display='none'">
+        </div>
+        <div class="message-bubble ${sender}" dir="${dir}">${displayText}</div>
+    `;
+    chatMessages.appendChild(wrapper);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return wrapper.id;
+}
+
+async function sendToBackend(message) {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: message, user_id: getUsername() })
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        return data.status === 'success' ? data.response : (data.message || 'حدث خطأ');
+    } catch (e) {
+        console.error('Backend:', e);
+        return "عذراً، تأكد إن الـ Backend شغال";
+    }
+}
+
+async function sendMessage() {
+    const message = messageInput ? messageInput.value.trim() : '';
+    if (!message || isWaiting) return;
+
+    const dashboardView = document.getElementById('dashboardView');
+    const chatView = document.getElementById('chatView');
+    if (dashboardView && chatView) {
+        dashboardView.classList.remove('active');
+        chatView.classList.add('active');
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    addMessage(message, 'user');
+    if (messageInput) { messageInput.value = ''; autoResizeTextarea(); }
+    if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    isWaiting = true;
+    if (sendButton) sendButton.disabled = true;
+    if (messageInput) messageInput.disabled = true;
+
+    const loadingId = addMessage(
+        '<span class="typing-dot">جاري الرد</span><span class="typing-dot">.</span><span class="typing-dot">.</span><span class="typing-dot">.</span>',
+        'bot', true
+    );
+
+    try {
+        const botReply = await sendToBackend(message);
+        document.getElementById(loadingId)?.remove();
+        addMessage(botReply, 'bot');
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById(loadingId)?.remove();
+        addMessage("عذراً، حدث خطأ في الاتصال", 'bot');
+    }
+
+    isWaiting = false;
+    if (sendButton) sendButton.disabled = false;
+    if (messageInput) { messageInput.disabled = false; messageInput.focus(); }
+}
+
+function autoResizeTextarea() {
+    if (!messageInput) return;
+    messageInput.style.height = 'auto';
+    const newHeight = Math.min(messageInput.scrollHeight, 200);
+    messageInput.style.height = newHeight + 'px';
+    messageInput.style.overflowY = messageInput.scrollHeight > 200 ? 'auto' : 'hidden';
+}
+
+if (sendButton) sendButton.addEventListener('click', sendMessage);
+if (messageInput) {
+    messageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+    messageInput.addEventListener('input', () => {
+        autoResizeTextarea();
+        const val = messageInput.value.trim();
+        if (val) {
+            messageInput.dir = detectDirection(val);
+            messageInput.style.textAlign = detectDirection(val) === 'rtl' ? 'right' : 'left';
+        } else {
+            messageInput.dir = 'auto';
+            messageInput.style.textAlign = '';
+        }
+    });
+}
+
+// ── Typing Animation Styles ───────────────────────────────
+const style = document.createElement('style');
+style.textContent = `
+    .typing-dot { display:inline-block; animation:blink 1.4s infinite both; }
+    .typing-dot:nth-child(2){animation-delay:.2s}
+    .typing-dot:nth-child(3){animation-delay:.4s}
+    .typing-dot:nth-child(4){animation-delay:.6s}
+    @keyframes blink{0%,100%{opacity:.2}20%{opacity:1}}
+`;
+if (document.head) document.head.appendChild(style);
+
+// ── Init: Check URL params ─────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('view') === 'chat') {
+        switchView('chat');
+    }
+
+    // Set greeting
+    const greetingEl = document.getElementById('greetingText');
+    if (greetingEl) {
+        greetingEl.innerHTML = `Hi, ${getUsername()}<br>I'm ChatNCT`;
+    }
+
+    // Handle pending prompt from Prompt Generator page
+    if (params.get('prompt') === 'true') {
+        const pendingPrompt = localStorage.getItem('chatnct_pending_prompt');
+        if (pendingPrompt) {
+            localStorage.removeItem('chatnct_pending_prompt');
+            setTimeout(() => startChat(pendingPrompt), 500);
+        }
+    }
+});
+

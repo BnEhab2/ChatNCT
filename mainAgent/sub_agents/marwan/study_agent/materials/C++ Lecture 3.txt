@@ -1,0 +1,240 @@
+﻿Programming Essentials to C++
+ICT Prqogram
+Dr. Mohamed Ramadan
+Lec. 3 - October 2025
+
+
+OUTLINE – Learning Outcomes
+
+After this lecture, the student should be able to:
+• Define concepts of Programming and problem-solving techniques.
+• Analyze the elements of the problem.
+• Understand algorithms.
+• Focus on writing the algorithmic steps using:
+  - Pseudocode
+  - Flowchart
+
+Problem Solving
+
+Solving problems is the core of computer science. Programmers must first understand how a human solves a problem, then understand how to translate this "algorithm" into something a computer can do, and finally how to write the specific syntax required by a computer to get the job done. It is sometimes the case that a machine will solve a problem in a completely different way than a human.
+
+The Stages of Problem Solving Include:
+
+1. Analyzing the problem.
+2. Writing the algorithm steps:
+   - Writing pseudocode
+   - Drawing flowcharts
+3. Writing the program in a programming language.
+4. Translating the program into machine code.
+5. Executing, testing, and debugging the program.
+6. Documenting the software.
+
+Definition of an Algorithm:
+
+An algorithm is defined as a set of rules and procedures for solving a problem in a finite number of steps.
+• Step-by-step instructions to solve a problem.
+• An algorithm is an ordered set of unambiguous steps that describes a process.
+• An algorithm can be implemented in more than one programming language.
+
+Characteristics of a Good (Correct) Algorithm:
+
+Each step must be clearly and unambiguously defined.
+1. The steps must be described using precise language.
+2. The algorithm must terminate after a finite number of steps.
+3. The overall process must lead to the correct solution to the problem.
+
+Algorithms can be designed using flowcharts or pseudocode.
+
+• Flowchart: Graphically depicts the logical steps to carry out a task and shows how the steps relate to each other.
+• Pseudocode: Uses English-like phrases to outline the program.
+
+Pseudocode:
+
+• It is a method for representing the steps of a solution using simplified commands written in a language similar to programming languages.
+• It is considered a simplified version of a real computer program.
+• With pseudocode, the programmer focuses on the steps to solve the problem, rather than the syntax of a specific programming language.
+• The programmer can write the algorithm in any programming language without adhering to its specific rules.
+• Once the pseudocode is complete, it can easily be converted into actual programming code.
+
+Components of Pseudocode (Statement Structures):
+
+• Keywords
+• Sections
+• Statements
+
+Statement Structures:
+
+• Sequential Statements (Executed one after another): They are executed in order, unless one of them disrupts the sequence.
+• Decision Statements (If-Else, Switch-Case): This is done using an if statement, which provides two alternative options, one of which will be executed.
+• Looping Statements (For, While, Do-While): It involves repeatedly executing a specific command or set of commands a certain number of times until a desired condition is met.
+
+Flowchart:
+
+It is a graphic representation that shows the sequence of steps that a process or program goes through from beginning to end in the form of illustrative maps. It is a set of globally agreed-upon geometric shapes considered one of the most successful methods for analyzing systems. Each geometric shape represents a specific function in the program.
+
+Importance of Flowcharts:
+
+1. Simplify Understanding of Problems and Solutions
+• Flowcharts visually show the sequence of steps in a process or program.
+• They make it easy for both programmers and non-programmers to understand the logic.
+
+2. Help in System or Program Analysis
+• Used during the analysis phase to show the relationship between inputs, processes, and outputs.
+• Help identify errors, redundancies, or inefficiencies in the process.
+
+3. Assist in Program Development
+• Each step in the flowchart can be directly translated into code (for example, in C++).
+• Reduce logical errors before coding begins.
+
+4. Useful for Documentation and Maintenance
+• Serve as a reference document that explains how the system works.
+• Make it easier to update, modify, or debug the program later.
+
+5. Improve Communication
+• Flowcharts provide a common visual language between analysts, programmers, and users.
+• They make technical discussions and teamwork clearer.
+
+6. Detect Logic Errors Early
+• Flowcharts allow programmers to test the logic before implementing the code.
+• This saves time and effort during debugging and testing.
+
+Flowchart Symbols:
+
+1. Ovals: Used to signify the start and end points of a process.
+2. Arrows (Data Flow Direction): Connect the shapes and indicate the direction of flow from one step to another.
+3. Rectangles: Indicate a process step or activity.
+4. Diamonds: Represent decision points where the flow can branch based on yes/no questions or conditions.
+5. Parallelograms: Indicate data input or output (I/O) for a process.
+6. Connector Point: Used to connect different parts of the chart, especially when the flow continues from one page or area to another.
+7. Text Labels (Document Symbol): Each shape usually contains text that describes the action or decision represented by that shape.
+8. Hexagon Shape (Preparation Symbol): Used to represent the for loop. The symbol is divided into three parts to represent the initial condition, the increment, and the terminating condition.
+
+Note: It can also be used only to define an initial value or condition.
+
+Guidelines for Drawing Flowcharts:
+
+• The flowchart must be neat, complete, easy to follow, and unambiguous.
+• The natural direction of the flowchart is from left to right and from top to bottom.
+• The terminal symbol (Start) has only one outgoing flow line.
+• The terminal symbol (End) has only one incoming flow line.
+• The processing symbol (Process/Operation) has only one outgoing flow line.
+• The decision symbol (Selection/Condition) has one incoming flow line and can have two outgoing flow lines.
+• The annotation symbol (Comment/Note) is used to write notes or explanations on the flowchart.
+
+Explanation of a Good Flowchart:
+
+Neat: The flowchart should be tidy and well-organized. Lines should not cross unnecessarily, and symbols should be evenly spaced.
+
+Complete: It should include all the steps in the process from start to finish.
+
+Easy to Follow: The flow of logic should be clear and simple to trace, usually from top to bottom or left to right.
+
+Unambiguous: The meaning of each symbol and statement should be clear and precise.
+
+Advantages of Flowcharts:
+
+• Communication
+• Action Analysis
+• Proper Documentation
+• Efficient Coding
+• Error Detection
+• Efficient Program Correction
+
+Disadvantages of Flowcharts:
+
+• Complex Method
+• Making Changes
+• Copying Difficulty
+• Too Many Details
+
+Flowchart to Add Two Numbers:
+
+BEGIN
+1. Input first number (N1)
+2. Input second number (N2)
+3. Sum = N1 + N2
+4. Output sum
+END
+
+Find the Area and Perimeter of a Circle:
+
+BEGIN
+Set PI = 3.14
+Input R
+A = PI * r * r
+P = 2 * PI * r
+Print A, P
+END
+
+Algorithm to Find the Maximum of Three Numbers:
+
+BEGIN
+Input A, B, C
+IF A > B THEN
+   IF A > C THEN
+      Print "The maximum value is that of A"
+   ELSE
+      Print "The maximum value is that of C"
+   ENDIF
+ELSE
+   IF B > C THEN
+      Print "The maximum value is that of B"
+   ELSE
+      Print "The maximum value is that of C"
+   ENDIF
+ENDIF
+END
+
+Repetition Structure:
+
+Each loop has a termination condition to stop the repetition.
+• Pre-test loop: Condition checked at the beginning.
+• Post-test loop: Condition checked at the end.
+
+Algorithm to Print the First Five Natural Numbers:
+
+BEGIN
+Set i = 1
+WHILE i <= 5 DO
+   Print i
+   Set i = i + 1
+ENDWHILE
+END
+
+Solve the Following Tasks:
+
+1. Write the algorithm to print the first five natural numbers and trace it in a table.
+2. Write the algorithm to sum the odd numbers of the first 5 integers and trace it in a table.
+3. Write the algorithm to convert Celsius to Fahrenheit.
+4. Write the algorithm to check if a number is even or odd.
+5. Write the algorithm to find the largest of two numbers.
+6. Write an algorithm for a grading system based on marks.
+7. Multiplication table.
+8. List the factors of an integer.
+9. Print prime numbers.
+10. Write the algorithm to calculate the next mathematical series.
+
+Task 11:
+
+Draw a flowchart to read the sales representative file of a major company including:
+• Representative number (N)
+• Sales amount (A)
+• Representative name (M)
+
+Calculate the sales commission:
+• 2.5% for sales less than 50,000
+• 5.5% for sales above 50,000
+
+Print lists including:
+• Representative number
+• Sales amount
+• Commission value
+• Representative name
+
+The list ends with:
+• Total sales amount
+• Total commission value
+
+Note: The sale ends when three fives equal one.
+
+Thank you

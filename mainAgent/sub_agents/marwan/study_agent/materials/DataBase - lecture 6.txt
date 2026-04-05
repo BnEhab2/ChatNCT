@@ -1,0 +1,148 @@
+Lecture 6
+RDBMS vs. NoSQL
+Dr. Iman Ahmed ElSayed
+Second Year – ICT
+
+DATABASE EVOLUTION
+
+NOSQL VS. SQL – MAIN SOURCES
+
+CHALLENGES FACED BY RDBMS
+Scalability and Performance Challenges
+Schema Rigidity
+Consistency / Availability Trade-off (CAP Theorem)
+
+A. SCALABILITY AND PERFORMANCE CHALLENGES
+
+Vertical Scaling Limitation
+RDBMS traditionally scales vertically (scaling up) by adding more CPU, RAM, or faster disks to a single powerful server.
+
+This approach is:
+
+* Expensive: High-end servers are costly.
+* Finite: There is a physical limit to how much a single machine can scale.
+
+Difficulty with Horizontal Scaling
+Horizontal scaling (scaling out) means distributing data across multiple servers.
+Although possible using sharding or replication, it is complex in RDBMS, especially while maintaining ACID properties.
+
+Performance Bottlenecks with Complex Joins
+RDBMS uses normalization (splitting data into multiple tables).
+Retrieving related data requires joins between tables.
+With massive datasets, multi-table joins become slow and computationally expensive.
+
+B. SCHEMA RIGIDITY
+
+Fixed/Rigid Schema
+RDBMS requires a predefined schema (table structure) before inserting data.
+
+Challenges in Agile/Dynamic Environments
+In fast-changing systems (e.g., user-generated content, IoT, product catalogs), schema updates are difficult.
+Altering a schema may require complex migrations and can cause downtime.
+
+Handling Unstructured/Semi-Structured Data
+RDBMS is optimized for structured data.
+Storing JSON or XML is inefficient and may require large text fields or complex relationships.
+
+C. CONSISTENCY / AVAILABILITY TRADE-OFF (CAP THEOREM)
+
+The CAP theorem (Brewer’s Theorem) states:
+
+A distributed system cannot simultaneously guarantee all three:
+Consistency (C)
+Availability (A)
+Partition Tolerance (P)
+
+Consistency (C)
+Every read receives the most recent write or an error.
+
+Availability (A)
+Every request receives a response (not necessarily the most recent data).
+
+Partition Tolerance (P)
+The system continues to operate despite network failures between nodes.
+
+RDBMS Priority
+Traditional distributed RDBMS prioritize Consistency and Partition Tolerance (CP).
+During network failures, availability may be reduced.
+
+NoSQL Priority
+Many NoSQL databases prioritize Availability and Partition Tolerance (AP).
+They use Eventual Consistency, which is acceptable in many modern web applications (e.g., social media feeds, shopping carts).
+
+FUNDAMENTAL CHARACTERISTICS: RELATIONAL VS. NOSQL
+
+1. DOCUMENT DATABASES
+
+Description
+Data is stored in documents (JSON, BSON, or XML).
+Each document is self-contained and may contain nested data.
+
+Characteristics
+
+* Flexible schema: Documents in the same collection can have different fields.
+* Developer-friendly: Maps naturally to programming objects.
+* Good read performance: Related data is stored together, reducing joins.
+
+Example
+MongoDB
+
+2. KEY–VALUE STORES
+
+Description
+Data is stored as key-value pairs.
+The key is unique, and the value can be string, JSON, blob, etc.
+
+Characteristics
+
+* Extremely fast lookups.
+* Highly scalable.
+* Limited querying (mainly by key only).
+
+Best Use Cases
+Session management, caching, shopping carts, leaderboards.
+
+Examples
+Redis
+Amazon DynamoDB
+
+3. COLUMN-FAMILY STORES (Wide-Column)
+
+Description
+Data is stored in tables, rows, and column families.
+Rows do not need to contain all columns (flexible and sparse structure).
+
+Characteristics
+
+* Massive horizontal scalability.
+* High write throughput.
+* Efficient for analytics queries on specific columns.
+
+Best Use Cases
+Time-series data, logging, real-time analytics, big data processing.
+
+Examples
+Apache Cassandra
+HBase
+
+4. GRAPH DATABASE
+
+Description
+Focuses on relationships between data.
+Data is stored as:
+
+* Nodes (entities)
+* Edges (relationships)
+  Both can have properties.
+
+Characteristics
+
+* Optimized for relationship traversal.
+* Faster than relational joins for complex relationships.
+* Flexible schema.
+
+Best Use Cases
+Social networks, recommendation engines, fraud detection, knowledge graphs.
+
+Example
+Neo4j

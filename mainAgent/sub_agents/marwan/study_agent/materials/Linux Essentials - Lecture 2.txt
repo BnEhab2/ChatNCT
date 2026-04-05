@@ -1,0 +1,195 @@
+PEARSON BTEC International Standards Verifier
+ICT Program
+
+Dr. Amany AbdElSamea Saeed
+10/1/2025 12:02 PM
+
+Lec. 2 Linux Directories
+September 2025
+
+Outline
+
+- Linux directories
+- Linux directory commands
+- pwd
+- cd
+- ls
+- mkdir
+- rmdir
+- mv
+
+Directory
+
+- What is Directory?
+  It’s a bunch of system files and also data files
+
+- How the Linux directory differs from Windows?
+  In Windows every drive has its own root. In Linux, there is only a single drive and single root.
+
+Difference between ‘/’ and ‘/root’
+
+- Root is ambiguous in one respect
+  - It can refer to the top of the file structure
+  - It can also be the name of the administrator account in Linux
+
+- / 
+  - ‘/’ is called root
+  - Root directory of the whole Linux file system
+  - Every directory is “under” root ultimately
+
+- /root
+  - Root is the user with strong powers over the system
+  - It’s the administrative user’s home directory
+
+/boot
+
+- Contains the boot loader, GRUB, and Linux kernel
+- Contains everything required for the boot process except configuration files not needed at boot time
+- Stores data used before the kernel begins executing user-mode programs
+- /boot is static and unsharable
+- If /boot is lost, the OS cannot boot
+
+Linux Directory Commands
+
+Command | Description
+--------|------------
+pwd | Print working directory. Displays current directory path. Built-in command.
+ls | Lists files in a folder.
+cd | Change directory.
+mkdir | Create a new directory.
+rmdir | Remove an empty directory.
+
+Linux pwd Command
+
+- 'pwd' stands for “print working directory”
+- Prints the path of the current working directory
+- pwd can be a shell built-in or a binary (/bin/pwd)
+- Syntax: pwd [options]
+
+$PWD Environment variable
+
+- Stores the path of the current working directory
+- Holds the same value as 'pwd -L' (symbolic path)
+
+pwd --help
+
+- Displays help information
+
+pwd --version
+
+- Prints the version of pwd command
+
+cd Command
+
+- 'cd' stands for change directory
+- Changes the current working directory
+- Syntax: cd [directory]
+- Examples:
+  - Move to a subdirectory named “Documents”
+  - Move to root directory
+  - Move inside a directory from current directory
+  - Move to home directory (cd with no arguments)
+  - Move to parent directory (one level up)
+  - Use absolute or relative paths
+
+Linux Absolute and Relative Paths
+
+- Absolute path starts with '/'
+- Relative path starts from current directory
+- Path completion: Use Tab to auto-complete commands or file names
+
+ls Command
+
+- Lists contents of a directory
+- Syntax: ls [options] [directory]
+
+ls Command Options
+
+Option | Description
+-------|------------
+-l | Long format, detailed info
+-a | Include hidden files
+-t | Sort by modification time
+-r | Reverse order
+-S | Sort by size
+-R | List recursively
+-i | Display inode number
+-g | Display group instead of owner
+-h | Human-readable sizes
+-d | List directories themselves
+
+ls -l
+
+- Displays files in long format
+- Fields:
+  1. File permissions (rwx for user, group, others)
+  2. Number of links
+  3. Owner
+  4. Group
+  5. Size (bytes)
+  6. Last modified date/time
+  7. File name
+
+ls -l --block-size=[SIZE]
+
+- Display file size in specific units: K, M, G, T, P, E, Z, Y
+
+ls -a
+
+- Shows all hidden files (starting with .)
+- Includes '.' (current) and '..' (parent)
+- Hidden files used for cleanup, backups, or protection
+
+ls -A
+
+- Shows hidden files but excludes '.' and '..'
+
+ls -g
+
+- Exclude owner info
+
+ls -R
+
+- List files recursively
+
+ls ~
+
+- Show contents of home directory
+- ls ../ lists parent directory
+
+mkdir Command
+
+- 'mkdir' stands for make directory
+- Syntax: mkdir [options] [directory]
+- Options:
+  - -p: Create parent directories as needed
+  - -v: Verbose, print message for each created directory
+  - -m: Set access permissions (like chmod)
+  - --help: Display help
+  - --version: Display version info
+
+rmdir Command
+
+- Removes empty directories
+- Syntax: rmdir <dirname>
+- rmdir -p: Delete directory including all subdirectories
+
+Rename Folders in Linux
+
+- Use 'mv' command to rename folders
+- Syntax: mv [options] Old_folder New_folder
+- Options:
+  - --backup: Create backup
+  - -f: Force overwrite
+  - -i: Prompt before overwrite
+  - -v: Verbose, explain actions
+
+Rename Command
+
+- Not available on all distributions
+- Install with:
+  - Debian/Ubuntu: sudo apt install rename
+  - Fedora: sudo yum install prename
+  - Arch Linux: sudo pacman -S rename
+
+Thank You

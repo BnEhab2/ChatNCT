@@ -1,0 +1,240 @@
+
+Dr. Amany AbdElSamea Saeed
+Lec. 1 Introduction to Linux
+September 2025
+
+Outline
+What is the Operating System?
+History of Linux
+Linux vs. Unix vs. Windows
+Features of Linux
+Linux Architecture
+Linux Distributions
+Bash, Shell, Shell Script
+Man Command
+
+What is an Operating System?
+The Operating System (OS) is the program that starts when you turn on your computer and runs underneath all other programs. Without it, nothing would work.
+
+In simple terms, the OS is a manager. It manages all computer resources such as CPU, memory, and hard disk.
+
+Main Tasks of the Operating System:
+Control Hardware – Controls all computer components and makes them work together.
+Run Applications – Runs programs such as word processors, browsers, and games.
+Manage Data and Files – Allows users to copy, move, delete, rename, and organize files.
+
+Before Linux
+In the 1980s:
+Microsoft DOS was the dominant OS for PCs.
+Apple Mac was better but expensive.
+Unix was powerful but very expensive.
+People wanted a cheaper Unix-based system that could run on PCs.
+
+Linux
+Linux is a widely used Unix-like operating system similar to Windows, Mac, and Android.
+It is based on Unix.
+It is free and open source. Anyone can use, modify, and redistribute it.
+Originally designed for PCs, later used in servers, mainframes, and supercomputers.
+Runs on nearly every hardware platform (PCs, servers, mobile devices, embedded systems).
+
+Linux vs Unix vs Windows
+
+Inception Year
+Linux: 1991
+Unix: 1969
+Windows: 1985
+
+Availability
+Linux: Open-source and free
+Unix: Mostly proprietary
+Windows: Paid proprietary system
+
+Developer
+Linux: Created by Linus Torvalds
+Unix: AT&T Bell Laboratories
+Windows: Microsoft
+
+Security
+Linux: Secure
+Unix: Secure
+Windows: Less secure compared to Linux/Unix
+
+Interface
+Linux: GUI + CLI
+Unix: Mainly CLI
+Windows: Mainly GUI
+
+Language
+Linux: C and Assembly
+Unix: C and Assembly
+Windows: C++ and Assembly
+
+License
+Linux: GNU GPL v2
+Unix: Proprietary
+Windows: Commercial proprietary license
+
+History of Linux
+Linux Kernel was created by Linus Torvalds in 1991.
+Licensed under GNU General Public License (GPL) version 2.
+
+Linux Operating System
+The Linux OS is built on the Linux Kernel.
+The Kernel is the core of the system and manages hardware and system resources.
+To create a full OS, the Kernel is combined with software packages.
+This combination is called a Linux Distribution.
+
+Features of Linux
+
+Open Source & Free
+Source code is available.
+Users can modify and distribute it freely.
+
+Multi-User & Multiprogramming
+Multiple users can use the system at the same time.
+Multiple applications can run simultaneously.
+
+Security
+Strong authentication and authorization.
+Less vulnerable to viruses.
+
+Lightweight
+Requires fewer system resources.
+Can run on low hardware specs.
+
+GUI Support
+Primarily command-line based.
+Can install GUI environments.
+
+Stability & Performance
+Rarely crashes.
+Handles many users efficiently.
+
+Portability & Compatibility
+Runs on desktops, servers, supercomputers, and embedded devices.
+
+Community Support
+Large active community for help and documentation.
+
+Architecture of Linux
+
+Kernel
+Core of the OS. Manages hardware and system resources.
+
+System Libraries
+Provide functions used by applications.
+
+Shell
+Interface between user and kernel. Interprets commands.
+
+Hardware Layer
+Physical components like CPU, RAM, HDD, input/output devices.
+
+System Utilities
+Tools for system management (install software, configure network, manage users).
+
+What is a Distribution?
+A Linux distribution is a complete OS built from:
+Linux Kernel
+Device drivers
+Shells (bash, sh, etc.)
+GUI (X.org)
+Window managers (KDE, GNOME)
+Boot managers (GRUB, LILO)
+Applications and tools
+
+Examples of Linux Distributions
+Ubuntu
+Linux Mint
+Fedora
+
+How to Check Distribution and Kernel Version
+
+cat /etc/issue → Shows distribution name
+uname -a → Shows kernel version
+
+Factors to Choose a Distribution
+Hardware compatibility
+Application requirements
+Security and stability
+Community support
+Customizability
+User experience
+
+Linux Licensing
+Linux Kernel is licensed under GNU GPL v2.
+GPL ensures source code remains open and modifiable.
+Linux Kernel does not use GPL v3.
+
+What are Commands?
+A command is an instruction given to the computer.
+In Linux/Mac it is called Terminal.
+Commands are case-sensitive.
+Executed by typing and pressing Enter.
+
+Types of Commands
+Built-in commands
+External commands
+
+Command Format
+command -options arguments
+
+What is Shell?
+The shell is the interface between user and kernel.
+It interprets and executes commands.
+Default shell in Linux is Bash.
+
+To check default shell:
+echo $SHELL
+
+Popular shells:
+sh (Bourne shell)
+bash (Bourne Again Shell)
+csh
+tcsh
+
+Linux Bash
+Bash stands for Bourne Again Shell.
+Default shell in most Linux distributions.
+Works as command interpreter and scripting language.
+Supports variables, functions, loops, conditions.
+
+Shell Script
+A script is a small program to perform tasks.
+Shell script = file containing multiple commands.
+
+Steps to create a bash script:
+
+1. Write commands in a file.
+2. Add header:
+   #!/bin/bash
+3. Give execute permission:
+   chmod u+x script.sh
+4. Run it:
+   ./script.sh
+
+Other ways to run:
+bash script.sh
+source script.sh
+
+Man Command
+Used to display manual pages.
+
+Example:
+man ls
+
+Manual sections include:
+General commands
+System calls
+Library functions
+File formats
+Kernel routines
+System administration commands
+
+Useful man options
+man -aw command
+man -f command
+man -k keyword
+whereis -m command
+
+Thank You

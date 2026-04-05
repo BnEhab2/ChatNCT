@@ -1,0 +1,106 @@
+﻿Lecture 5: DEADLOCKS
+
+INTRODUCTION
+In a multiprogramming environment, several processes may compete for a finite number of resources. A process requests resources; if the resources are not available at that time, the process enters a waiting state. Sometimes, a waiting process is never again able to change state, because the resources it has requested are held by other waiting processes. This situation is called a deadlock.
+
+OBJECTIVES OF THE CHAPTER
+- To develop a description of deadlocks, which prevent sets of concurrent processes from completing their tasks.
+- To present a number of different methods for preventing or avoiding deadlocks in a computer system.
+
+SYSTEM MODEL
+- System consists of resources.
+- Resource types R1, R2, . . ., Rm (CPU cycles, memory space, I/O devices).
+- Each resource type Ri has Wi instances. For example: If a system has two CPUs, then the resource type CPU has two instances. Similarly, the resource type printer may have five instances.
+- If a process requests an instance of a resource type, the allocation of any instance of the type should satisfy the request. If it does not, then the instances are not identical.
+- Each process utilizes a resource as follows: 1. Request, 2. Use, 3. Release.
+
+EXAMPLES OF DEADLOCK CASES
+- Deadlock involving the same resource type: Consider a system with three CD RW drives. Suppose each of three processes holds one of these CD RW drives. If each process now requests another drive, the three processes will be in a deadlocked state. Each is waiting for the event “CD RW is released,” which can be caused only by one of the other waiting processes.
+- Deadlock involving different resource types: Consider a system with one printer and one DVD drive. Suppose that process Pi is holding the DVD and process Pj is holding the printer. If Pi requests the printer and Pj requests the DVD drive, a deadlock occurs.
+
+DEADLOCK CHARACTERIZATION
+Deadlock can arise if four conditions hold simultaneously:
+1. Mutual exclusion: only one process at a time can use a resource.
+2. Hold and wait: a process holding at least one resource is waiting to acquire additional resources held by other processes.
+3. No preemption: a resource can be released only voluntarily by the process holding it, after that process has completed its task.
+4. Circular wait: there exists a set {P0, P1, …, Pn} of waiting processes such that P0 is waiting for a resource that is held by P1, P1 is waiting for a resource that is held by P2, …, Pn–1 is waiting for a resource that is held by Pn, and Pn is waiting for a resource that is held by P0.
+
+RESOURCE-ALLOCATION GRAPH
+A set of vertices V and a set of edges E. V is partitioned into two types:
+- P = {P1, P2, …, Pn}, the set consisting of all the processes in the system.
+- R = {R1, R2, …, Rm}, the set consisting of all resource types in the system.
+- Request edge – directed edge Pi → Rj.
+- Assignment edge – directed edge Rj → Pi.
+
+
+BASIC FACTS
+- If graph contains no cycles => no deadlock.
+- If graph contains a cycle => 
+  - if only one instance per resource type, then deadlock.
+  - if several instances per resource type, possibility of deadlock.
+
+EXERCISE: RESOURCE ALLOCATION GRAPH DRAWING
+Consider: P = {P1,P2,P3,P4}, R = {R1,R2,R3}. 
+E = {R1 --> P1, P1 --> R2, R2 --> P2, P2 --> R3, R3 --> P3, P3 --> R1, R1 --> P4}.
+Resource instances: R1=2, R2=1, R3=1.
+
+METHODS FOR HANDLING DEADLOCKS
+- Ensure that the system will never enter a deadlock state: Deadlock prevention or Deadlock avoidance.
+- Allow the system to enter a deadlock state and then recover.
+- Ignore the problem and pretend that deadlocks never occur in the system; used by most operating systems.
+
+DEADLOCK PREVENTION VS. DEADLOCK AVOIDANCE
+- Deadlock prevention: A situation when deadlock is bound to happen but using some logic we are preventing it.
+- Deadlock avoidance: We are completely ruling out any chances of deadlock.
+
+DEADLOCK PREVENTION
+- Mutual Exclusion – not required for sharable resources; must hold for non-sharable resources.
+- Hold and Wait – must guarantee that whenever a process requests a resource, it does not hold any other resources. (Requires requesting all resources at once; leads to low resource utilization and potential starvation).
+- No Preemption – If a process holding resources requests another that cannot be immediately allocated, all resources currently held are released. Preempted resources are added to the waiting list.
+- Circular Wait – impose a total ordering of all resource types, and require that each process requests resources in an increasing order of enumeration.
+
+DEADLOCK AVOIDANCE
+Requires additional a priori information. Simplest model requires each process to declare the maximum number of resources of each type that it may need. The algorithm dynamically examines the resource-allocation state to ensure there can never be a circular-wait condition.
+- Safe State: System is in safe state if there exists a sequence <P1, P2, …, Pn> of ALL processes such that for each Pi, the resources Pi can still request can be satisfied by currently available resources + resources held by all Pj (where j < i).
+- If system is in safe state => no deadlocks.
+- If system is in unsafe state => possibility of deadlock.
+
+AVOIDANCE ALGORITHMS
+- Resource-allocation graph Algorithm (Single instance of a resource type).
+- Banker’s algorithm (Multiple instances of a resource type).
+
+RESOURCE-ALLOCATION GRAPH SCHEME
+- Claim edge Pi → Rj: Indicates process Pi may request resource Rj; represented by a dashed line.
+- Converts to request edge when requested, and assignment edge when allocated.
+- Request can be granted only if converting the edge does not result in a cycle.
+
+BANKER’S ALGORITHM
+- Max: n x m matrix. Maximum demand of each process.
+- Allocation: n x m matrix. Current resources allocated to each process.
+- Available: Vector of length m. Instances of resource types available.
+- Need: n x m matrix. Need[i,j] = Max[i,j] – Allocation[i,j].
+
+
+SAFETY ALGORITHM
+1. Initialize Work = Available, Finish[i] = false for all i.
+2. Find i such that Finish[i] == false and Needi <= Work.
+3. If found, Work = Work + Allocationi, Finish[i] = true, go to step 2.
+4. If Finish[i] == true for all i, system is in safe state.
+
+RESOURCE-REQUEST ALGORITHM FOR Pi
+1. If Requesti <= Needi, go to step 2.
+2. If Requesti <= Available, go to step 3.
+3. Pretend to allocate: Available = Available – Requesti; Allocationi = Allocationi + Requesti; Needi = Needi – Requesti.
+4. If safe => allocate resources. If unsafe => Pi must wait and old state is restored.
+
+DEADLOCK DETECTION
+- Single Instance: Maintain "wait-for" graph (Nodes are processes). Pi → Pj if Pi is waiting for Pj. Periodically search for a cycle (O(n^2)).
+
+- Multiple Instances: Use detection algorithm similar to Safety Algorithm. If Finish[i] == false for some process, that process is deadlocked.
+
+RECOVERY FROM DEADLOCK
+- Process Termination: Abort all deadlocked processes, or abort one at a time until the cycle is eliminated. (Selection based on priority, time computed, resources used, etc.)
+- Resource Preemption: 
+  - Selecting a victim: Minimize cost.
+  - Rollback: Return to a safe state, restart process.
+  - Starvation: Ensure process is not always picked as victim by including number of rollbacks in cost factor.
