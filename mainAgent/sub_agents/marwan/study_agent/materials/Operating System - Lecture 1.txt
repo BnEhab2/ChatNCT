@@ -1,0 +1,66 @@
+Lecture 1
+OPERATING SYSTEM
+
+LEARNING OBJECTIVES
+Define what an operating system is and understand its goals. Describe computer system structure. Explain services provided by operating systems. Understand historical overview of operating systems. Learn about computer system organization, interrupts, digital data representation, storage hierarchy, and caching.
+
+WHAT IS AN OPERATING SYSTEM?
+An operating system is a program that acts as an intermediary between a user of a computer and the computer hardware. Operating system goals: Execute user programs and make solving user problems easier. Make the computer system convenient to use. Use the computer hardware in an efficient manner. “The one program running at all times on the computer” is the kernel. Everything else is either a system program (ships with the operating system) or an application program.
+
+COMPUTER SYSTEM STRUCTURE
+Provides basic computing resources: CPU, memory, I/O devices. Defines the ways in which the system resources are used to solve the computing problems of the users: word processors, compilers, web browsers, database systems, video games. Includes people, machines, other computers.
+
+DYNAMIC VIEW OF SYSTEM COMPONENTS
+
+1. CPU
+2. Memory
+3. I/O Devices
+4. Device Controllers
+5. Operating System
+6. Application Programs
+7. Users
+8. Networks
+
+SERVICES PROVIDED BY OPERATING SYSTEMS
+
+1. Program execution: The system must be able to load a program into memory and run it. The program must be able to end its execution, either normally or abnormally.
+2. I/O operations: A running program may require I/O, which may involve a file or an I/O device. For efficiency and protection, users usually cannot control I/O devices directly. Therefore, the OS must provide a means to do I/O.
+3. File-system manipulation: Programs need to read and write files and directories. They also need to create and delete them by name, search for a given file, and list file information. Some operating systems include permissions management to allow or deny access to files or directories based on file ownership.
+4. Communications: One process may need to exchange information with another process. This may occur between processes on the same computer or between processes on different computer systems connected via a network. Communications may be implemented via shared memory or message passing.
+5. Error detection: The OS needs to detect and correct errors constantly. Errors may occur in CPU and memory hardware, I/O devices, or user programs. For each type of error, the OS should take appropriate action to ensure correct and consistent computing.
+6. Resource allocation: When multiple users or jobs run simultaneously, resources must be allocated to each of them. The OS manages many types of resources.
+7. Accounting: Keeps track of which users use what and how much of computer resources.
+8. Protection and security: Ensures controlled access to system resources. Security includes defending external I/O devices from invalid access and recording connections to detect break-ins.
+
+HISTORICAL OVERVIEW
+Mainframe Systems: Physically enormous machines run from a console. Common input devices were card readers and tape drivers; output devices were line printers, tape drivers, and card punches. Users prepared jobs as punch cards and submitted to the operator. The OS was simple, transferring control automatically from one job to another. Operators batched similar jobs together.
+
+Batch Systems: Jobs with similar needs run as a group to speed up processing.
+
+Multiprogrammed Systems: Several jobs are kept in memory simultaneously, and the CPU is multiplexed among them. If a job waits for I/O, the OS switches to another job.
+
+Time-Sharing Systems: Logical extension of multiprogramming. CPU executes multiple jobs by switching frequently so the user can interact with each program while running. Allows multiple users to share the computer simultaneously.
+
+Personal-Computer Systems: Dedicated to a single user. I/O devices include keyboards, mice, display screens, small printers. Focus on user convenience and responsiveness. Can adopt technology from larger OS; advanced CPU utilization or protection may not be required.
+
+Multiprocessor Systems (Parallel Systems): More than one CPU in close communication. Tightly coupled systems share memory and a clock. Advantages: increased throughput, economical (share peripherals and power), increased reliability (failure of one CPU does not halt system). Symmetric multiprocessing (SMP): Each CPU runs identical OS; many processes run without performance loss. Asymmetric multiprocessing: Each CPU assigned a specific task; master schedules slave processors.
+
+Distributed Systems: Computation distributed among several physical processors. Loosely coupled systems; each CPU has local memory and communicates via high-speed buses or telephone lines. Advantages: resource sharing, faster computation via load sharing, reliability, communication.
+
+COMPUTER SYSTEM ORGANIZATION
+One or more CPUs, device controllers connect through a common bus providing access to shared memory. CPU and devices execute concurrently competing for memory cycles. Each device controller is in charge of a device type and has a local buffer. CPU moves data to/from main memory to controller buffers. Device controller informs CPU via interrupts.
+
+COMMON FUNCTIONS OF INTERRUPTS
+Interrupt transfers control to the interrupt service routine via the interrupt vector, which contains addresses of all service routines. Interrupt architecture must save the address of the interrupted instruction. Hardware may trigger interrupts anytime. Software may trigger interrupts via system calls.
+
+DIGITAL DATA REPRESENTATION
+Bit: smallest unit of data recognized by a binary computer. Byte = 8 bits. Byte terminology used for size of documents, files, programs. Kilobytes (KB) = 1024 bytes, Megabytes (MB) = 1024 KB, Gigabytes (GB) = 1024 MB, Terabytes (TB) = 1024 GB. Larger units: Petabyte (PB), Exabyte (EB), Zettabyte (ZB), Yottabyte (YB).
+
+STORAGE HIERARCHY
+Storage organized by speed, cost, volatility. Caching: copying info into faster storage. Main memory acts as cache for secondary storage. Device driver manages I/O and provides uniform interface between controller and kernel.
+
+STORAGE STRUCTURE
+Main memory: only storage directly accessible by CPU, typically volatile, random access. Secondary storage: extension of main memory, nonvolatile, large capacity. Hard disks: magnetic platters divided into tracks and sectors; disk controller manages interactions. Solid-state disks: faster than hard disks, nonvolatile, various technologies, increasingly popular.
+
+CACHING
+Performed at many levels in computer (hardware, OS, software). Information in use copied from slower to faster storage temporarily. Faster storage (cache) checked first; if present, used directly. If not, data copied to cache. Cache smaller than storage cached. Cache management, size, and replacement policy are important design concerns.

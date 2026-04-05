@@ -1,0 +1,220 @@
+
+Dr. Amany AbdElSamea Saeed
+10/23/2025 3:17 PM
+
+Lec. 4 Vi Text Editor
+October 2025
+
+Outline
+
+- Characteristics of vi editor
+- Modes of operation
+- Starting & Exiting vi
+- Inserting text in vi
+- Cursor and word navigation
+- Scrolling
+- Cut, Copy, Paste
+- Searching for pattern
+- Set commands
+
+Introduction to the vi Editor
+
+- Before vi, the primary editor on Unix was a line editor.
+- User could see/edit only one line at a time.
+- Vi was originally written by Bill Joy in 1976.
+- Default editor in Linux/Unix is vi (visual editor).
+- Vim is an advanced version, invoked with "vi".
+- Can edit existing files or create new files.
+- Not a text formatter (cannot set margins, center headings, etc.)
+
+Characteristics of vi
+
+- Very powerful
+- Hard to learn, especially for Windows users
+- Navigate file and make changes easily
+- Available on all UNIX systems
+- Case-sensitive
+
+Starting vi
+
+- Open vi editor: $ vi vifile
+- If file doesn’t exist, it will be created
+- Otherwise, opens existing file
+
+Modes of Operation
+
+- Command Mode
+- Insert (Input) Mode
+- Last Line Mode (Escape Mode)
+
+Command Mode
+
+- Default mode when vi starts
+- Characters typed are interpreted as commands
+- Allows moving through file, delete/copy/paste text
+- Enter command mode from any mode: [Esc] key
+
+Insert Mode
+
+- Enables text insertion
+- Enter insert mode: i
+- Exit insert mode: Esc key
+
+Adding Text
+
+- $ vi vifile
+- keystroke: i
+- Start typing text
+
+Last Line Mode (Escape Mode)
+
+- Invoked by typing colon [:] in Command Mode
+- Cursor jumps to last line
+- Enables tasks like saving files, executing commands
+
+Exiting the Editor
+
+- Save and exit: :wq or :x or <shift-zz>
+- Quit without saving: :q!
+- Commands:
+  - :wq - Save and quit
+  - :w - Save
+  - :q - Quit
+  - :w fname - Save as fname
+  - ZZ - Save and quit
+  - :q! - Quit discarding changes
+  - :w! - Save (write to non-writable file)
+
+Input Mode Commands
+
+- i – insert before cursor
+- I – insert at beginning of line
+- o – insert line below
+- O – insert line above
+- a - append after cursor
+- A - append at end of line
+- r - replace character
+- R – overwrite text
+- To return to command mode: <ESC>
+
+Navigation/Cursor Movement
+
+- h - left
+- j - down
+- k - up
+- l - right
+- Word Navigation:
+  - b - move back to beginning of word
+  - e - move forward to end of word
+  - w - move forward to beginning of word
+  - <n>w - move n words forward
+  - <n>b - move n words back
+  - dw - delete one word
+  - yw - copy one word
+  - <n>dw - delete n words
+
+Moving to Line Extremes
+
+- 0 or | - move to first character of line
+- 30| - move to column 30
+- $ - move to end of line
+- ^ - start of current line
+- d0 - delete to start of line
+- d$ - delete to end of line
+- dθ - delete to start of line
+
+Scrolling
+
+- ctrl-f - scroll forward
+- ctrl-b - scroll backward
+- 10ctrl-f - scroll 10 pages forward
+- ctrl-d - scroll half page forward
+- ctrl-u - scroll half page backward
+
+Absolute Movement
+
+- Ctrl-g - display total lines and current line
+- 40G - go to line 40
+- 1G - go to line 1
+- G - go to end of file
+
+Cut, Copy, and Paste
+
+- dd - delete current line
+- yy - copy current line
+- p - paste after cursor
+- P - paste before cursor
+- Operators: 
+  - d - delete
+  - y - yank (copy)
+  - 6dd - delete 6 lines including current
+
+Deleting Text
+
+- x - delete character
+- X - delete character before cursor
+- r - replace character
+- xp - swap two characters
+- dd - delete current line
+- D - delete from cursor to end of line
+- dG - delete from current line to end of file
+- :20,40d - delete range of lines
+- u - undo last change
+- U - undo all changes to current line
+
+Joining Lines
+
+- J - join current line with next line
+- 4J - join next 3 lines with current
+- yyp - repeat current line
+- ddp - swap two lines
+
+Jump Lines
+
+- G - go to last line
+- `` - return to last position
+
+Undoing
+
+- u - undo last change
+- U - discard all changes to current line
+
+Repeating Last Command
+
+- . - repeat last command
+- Example: 2dd deletes 2 lines; type . to repeat
+
+Searching for a Pattern
+
+- /string - forward search
+- ?string - backward search
+- /^string - search at beginning of line
+- /string$ - search at end of line
+- n - repeat search in same direction
+- /\<he\> - search exact word "he"
+- /pl[abc]ce - search patterns like place, plbce, plcce
+
+Replace All
+
+- :1,$ s/readable/changed/ - replace readable with changed globally
+- :3,6 s/letters/neww/g - replace letters with neww from line 3 to 6
+
+Text Buffers
+
+- "add - delete current line into buffer a
+- "ap - paste line from buffer a
+
+Set Commands
+
+- :set ic - ignore case
+- :set ai - autoindent
+- :set noai - unset autoindent
+- :set nu - show line numbers
+- :set sw=4 - set shift width
+- :set ws - wrapscan option
+- :set wm=2 - wrap margin
+- :set ro - read only
+- :set term - terminal type
+- :set - discard control characters
+
+Thank You

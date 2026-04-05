@@ -1,0 +1,181 @@
+Lecture 5
+Relational Algebra
+Dr. Iman Ahmed ElSayed
+Second Year – ICT
+
+Relational Query Language
+Query languages are categorized into procedural and non-procedural languages.
+
+Procedural language:
+The user interacts with the system to perform a sequence of operations on the database to compute the desired result.
+
+Non-Procedural language:
+The user describes the desired information without specifying the procedure for obtaining that information.
+
+Relational Algebra
+Relational Algebra is a procedural query language.
+It provides a set of operations that can be applied to one relation or two relations.
+Each operation produces a new relation as a result.
+It gives a step-by-step process to obtain the result of a query using operators.
+
+Types of Relational Operations
+Select Operation
+Project Operation
+Union Operation
+Intersection Operation
+Difference Operation
+
+1. Select Operation (σ)
+   The select operation chooses tuples (rows) that satisfy a given condition.
+   It does not change the number of columns.
+
+Example: LOAN relation
+
+BRANCH_NAME | LOAN_NO | AMOUNT
+Downtown | L-17 | 1000
+Nasr City | L-23 | 2000
+Fifth settlement | L-15 | 1500
+Downtown | L-14 | 1500
+Fifth settlement | L-16 | 1300
+
+Query:
+Select loans where branch_name = "Fifth settlement"
+
+σ branch_name = "Fifth settlement" (LOAN)
+
+Result:
+
+BRANCH_NAME | LOAN_NO | AMOUNT
+Fifth settlement | L-15 | 1500
+Fifth settlement | L-16 | 1300
+
+Example: BOOKS table
+
+subject | Book_isbn
+database | 345h-e6ck
+OOP with java | 827g-y90j
+Artificial intelligence | 4h7k-0jde
+Database | Ledu-4520
+Database | L129-8nge
+
+Query:
+σ subject = "database" (BOOKS)
+
+Result:
+
+subject | Book_isbn
+database | 345h-e6ck
+Database | Ledu-4520
+Database | L129-8nge
+
+Example with two conditions:
+
+σ subject = "database" AND price = 450 (BOOKS)
+
+This selects rows where subject is database and price equals 450.
+
+Example with AND / OR:
+
+σ subject = "database" AND price = 450 OR publication_yr > 2010 (BOOKS)
+
+This selects books where:
+subject = database and price = 450
+OR
+publication year > 2010
+
+2. Project Operation (π)
+   The project operation selects specific columns (attributes).
+   It may remove duplicate rows.
+
+Example: CUSTOMER relation
+
+Name | Street | City
+Jones | Main | Harrison
+Smith | North | Rye
+Hays | Main | Harrison
+Brooks | Senator | Brooklyn
+
+Query:
+π Name, City (CUSTOMER)
+
+Result:
+
+Name | City
+Jones | Harrison
+Smith | Rye
+Hays | Harrison
+Brooks | Brooklyn
+
+Example: BOOKS table
+
+subject | Book_isbn | price | publication_yr | author
+
+Query:
+π subject, author (BOOKS)
+
+Result:
+
+subject | author
+database | ElMasry
+Artificial intelligence | Rowing
+Database | Steve
+Database | Jones
+
+3. Union Operation (∪)
+   The union operation combines tuples from two relations.
+   Both relations must be union-compatible (same number of attributes and same data types).
+   Duplicate rows are removed.
+
+Example:
+
+DEPOSITOR relation
+Customer_name | Acc_no
+Johnson | A-101
+Smith | A-121
+Mayes | A-321
+Johnson | A-273
+Jones | A-472
+
+BORROW relation
+Customer_name | Acc_no
+Jones | L-17
+Smith | L-23
+Hayes | L-15
+Curry | L-93
+Jackson | L-14
+
+Query:
+π Customer_name (DEPOSITOR) ∪ π Customer_name (BORROW)
+
+Result:
+
+Customer_name
+Johnson
+Smith
+Mayes
+Jones
+Hayes
+Curry
+Jackson
+
+4. Intersection Operation (∩)
+   Returns tuples that appear in both relations.
+
+Example result:
+
+Customer_name
+Smith
+Jones
+
+5. Difference Operation (−)
+   Returns tuples that appear in the first relation but not in the second relation.
+
+Example:
+π Customer_name (BORROW) − π Customer_name (DEPOSITOR)
+
+Result:
+
+Customer_name
+Hayes
+Curry
+Jackson

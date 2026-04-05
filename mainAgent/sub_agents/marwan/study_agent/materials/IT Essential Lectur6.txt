@@ -1,0 +1,331 @@
+﻿كلية تكنولوجيا الصناعة والطاقة  
+IT Essentials – ICT Program  
+Lecture 6: Networking Concepts (Part 2)  
+Date: 26-11-2024  
+
+
+============================================================  
+1) Network Topologies  
+============================================================  
+
+Network topology refers to the arrangement of devices and connections in a network.
+
+Two Types of LAN Topologies:
+
+1) Physical Topology  
+   • The physical layout of devices and cables on the network.  
+
+2) Logical Topology  
+   • Determines how hosts access the medium and communicate.  
+
+
+------------------------------------------------------------  
+Logical Topologies  
+------------------------------------------------------------  
+
+1) Broadcast Topology  
+   • A host sends a message to all hosts on the same segment.  
+   • No fixed order for transmission.  
+   • Uses First In, First Out (FIFO).  
+   • Ethernet is based on broadcast topology.  
+
+2) Token Passing  
+   • An electronic token is passed sequentially between hosts.  
+   • A host can only transmit data when it has the token.  
+   • If no data to send, it passes the token to the next host.  
+
+
+------------------------------------------------------------  
+Physical LAN Topologies  
+------------------------------------------------------------  
+
+1) Bus Topology  
+   • All devices connect to a single common cable.  
+   • Terminators at both ends prevent signal reflection.  
+   • Only one device can transmit at a time (collisions possible).  
+
+2) Ring Topology  
+   • Devices connected in a circular shape.  
+   • A token travels around the ring.  
+   • Types: Single Ring and Dual Ring.  
+
+3) Star Topology  
+   • Central device (hub, switch, router).  
+   • Easy troubleshooting.  
+   • Each device has its own cable to the center.  
+
+4) Extended Star (Hierarchical)  
+   • Star topology with additional networking devices.  
+   • Used for larger networks.  
+
+5) Mesh Topology  
+   • Every device connects to every other device.  
+   • Common in WANs.  
+   • The Internet is an example.  
+
+6) Hybrid Topology  
+   • Combination of two or more topologies (e.g., star-bus).  
+   • Flexible for different environments.  
+
+
+============================================================  
+2) Types of Networks  
+============================================================  
+
+LAN (Local Area Network)  
+• Covers a small area (home, office, building).  
+• Shares files, printers, internet.  
+
+WLAN (Wireless LAN)  
+• Wireless devices connected via access points.  
+
+VLAN (Virtual LAN)  
+• Logical segmentation of a physical network.  
+• Improves security and management.  
+
+PAN (Personal Area Network)  
+• Connects personal devices (Bluetooth).  
+• Supports up to 7 devices.  
+
+MAN (Metropolitan Area Network)  
+• Covers a city or large campus.  
+
+WAN (Wide Area Network)  
+• Connects multiple LANs over large distances.  
+• Internet is the best example.  
+
+
+------------------------------------------------------------  
+Network Models  
+------------------------------------------------------------  
+
+Peer-to-Peer Network  
+• No dedicated server.  
+• Each device shares its own resources.  
+• No centralized administration.  
+
+Client-Server Network  
+• Dedicated server.  
+• Centralized management and security.  
+• Central storage and backups.  
+
+
+============================================================  
+3) Bandwidth and Latency  
+============================================================  
+
+Bandwidth  
+• Amount of data transmitted per second.  
+• Measured in:  
+  - bps  
+  - Kbps  
+  - Mbps  
+  - Gbps  
+
+Latency  
+• Time required for data to travel from source to destination.  
+
+
+------------------------------------------------------------  
+Data Transmission Modes  
+------------------------------------------------------------  
+
+Simplex  
+• One-way communication.  
+• Example: Radio broadcast.  
+
+Half-Duplex  
+• Two-way, but one direction at a time.  
+• Example: Walkie-talkies.  
+
+Full-Duplex  
+• Two-way communication simultaneously.  
+• Example: Telephone call.  
+
+
+============================================================  
+4) Networking Protocols, Standards, and Services  
+============================================================  
+
+Reference Models  
+• Developed by organizations such as IEEE, IETF, ISO.  
+• OSI and TCP/IP are reference models.  
+• Encapsulation: Adding protocol information at each layer.  
+
+
+------------------------------------------------------------  
+TCP/IP Model (4 Layers)  
+------------------------------------------------------------  
+
+1) Application Layer  
+   • Provides services to applications.  
+   • Protocols: HTTP, FTP, SMTP, DNS, Telnet.  
+
+2) Transport Layer  
+   • End-to-end communication.  
+   • Protocols: TCP, UDP.  
+
+3) Internet Layer  
+   • Logical addressing and routing.  
+   • Protocols: IP, ICMP, ARP, RIP.  
+
+4) Network Access Layer  
+   • MAC addressing and physical transmission.  
+
+
+------------------------------------------------------------  
+OSI Model (7 Layers)  
+------------------------------------------------------------  
+
+7) Application – Network services to applications  
+6) Presentation – Data formatting and encryption  
+5) Session – Establishes and manages sessions  
+4) Transport – Reliable data transport  
+3) Network – Logical addressing and routing  
+2) Data Link – Physical addressing (MAC)  
+1) Physical – Electrical and physical transmission  
+
+Mnemonic:  
+"Please Do Not Throw Sausage Pizza Away"  
+
+
+------------------------------------------------------------  
+Encapsulation Process  
+------------------------------------------------------------  
+
+1) Data  
+2) Segments  
+3) Packets  
+4) Frames  
+5) Bits  
+
+
+============================================================  
+5) TCP and UDP  
+============================================================  
+
+TCP  
+• Reliable  
+• Acknowledges data  
+• Resends lost data  
+• Ensures correct order  
+
+UDP  
+• Fast  
+• Low overhead  
+• No acknowledgments  
+• Best-effort delivery  
+
+
+============================================================  
+6) Common Port Numbers  
+============================================================  
+
+Web  
+• HTTP – Port 80  
+• HTTPS – Port 443  
+
+Email  
+• SMTP – Port 25  
+• POP3 – Port 110  
+• IMAP – Port 143  
+
+Remote Access  
+• SSH – Port 22  
+• Telnet – Port 23  
+• RDP – Port 3389  
+
+File Transfer  
+• FTP – Ports 20/21  
+• TFTP – Port 69  
+• SMB – Port 445  
+
+Network Services  
+• DNS – Port 53  
+• DHCP – Ports 67/68  
+• SNMP – Ports 161/162  
+
+
+============================================================  
+7) Networking Standards  
+============================================================  
+
+IEEE 802.3  
+• Ethernet  
+• Uses CSMA/CD  
+
+IEEE 802.11  
+• Wireless LAN  
+• Uses CSMA/CA  
+
+Ethernet Types  
+• 10Base-T  
+• 100Base-TX  
+• 1000Base-T  
+• 10GBase-T  
+
+
+------------------------------------------------------------  
+Wireless Standards  
+------------------------------------------------------------  
+
+802.11a – 5 GHz – 54 Mbps  
+802.11b – 2.4 GHz – 11 Mbps  
+802.11g – 2.4 GHz – 54 Mbps  
+802.11n – 2.4/5 GHz – 540 Mbps  
+802.11ac – 5 GHz – 1.3 Gbps  
+
+Bluetooth – 802.15.1 – PAN  
+
+
+============================================================  
+8) Cellular Generations  
+============================================================  
+
+1G – Analog  
+2G – Digital voice  
+2.5G – Web browsing  
+3G – Video streaming  
+4G – High-speed IP services  
+LTE – Enhanced 4G  
+5G – AR, VR, Smart devices  
+
+
+============================================================  
+9) Network Servers  
+============================================================  
+
+DHCP Server  
+• Provides IP addresses.  
+
+DNS Server  
+• Translates domain names to IP addresses.  
+
+File Server  
+• Provides file access (FTP, SFTP, SCP).  
+
+Web Server  
+• HTTP (80)  
+• HTTPS (443)  
+
+Mail Server  
+• SMTP (send)  
+• POP / IMAP (receive)  
+
+Print Server  
+• Manages network printers.  
+
+Proxy Server  
+• Caches web pages.  
+• Hides internal network.  
+
+Authentication Server  
+• AAA (Authentication, Authorization, Accounting).  
+
+Syslog Server  
+• Stores network log messages.  
+
+
+============================================================  
+End of Lecture 6  
+============================================================  

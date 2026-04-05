@@ -1,0 +1,74 @@
+Lecture 1
+Database Systems
+
+How Can Database help here for a Day in Sussan’s life?
+
+Google receives over 63,000 searches per second on any given day. That is the average figure of how many people use Google a day, which translates into at least 2 trillion searches per year, 3.8 million searches per minute, 228 million searches per hour, and 5.6 billion searches per day.
+
+What is the difference between Data, Information, and Knowledge?
+
+Data vs. Information
+
+Data
+Raw facts.
+Raw data has not yet been processed to reveal meaning.
+Building blocks of information.
+Data management includes generation, storage, and retrieval of data.
+
+Information
+Produced by processing data.
+Reveals the meaning of data.
+Enables knowledge creation.
+Should be accurate, relevant, and timely to enable good decision making.
+
+Keep in mind that raw data must be properly formatted for storage, processing, and presentation. Dates might be stored in Julian calendar format. For example, January 1, 2025 may be represented as 2025001, and December 31, 2025 as 2025365 within the database, but displayed in a day-month-year format for different purposes. Respondents’ yes/no responses might be converted to Y/N or 0/1 format for data storage. More complex formatting is required when working with complex data types such as sounds, videos, or images.
+
+Key Learned Points
+Data constitutes the building blocks of information.
+Information is produced by processing data.
+Information reveals the meaning of data.
+Accurate, relevant, and timely information is the key to good decision making.
+Good decision making is the key to organizational survival in a global environment.
+
+Database
+A shared, integrated computer structure that stores a collection of end-user data and metadata.
+End-user data are raw facts of interest to the end user.
+Metadata is data about data, describing data characteristics and relationships. Metadata shows how end-user data are integrated and managed.
+
+Types of Databases
+
+Types of Databases by User
+Single-user database supports one user at a time.
+Desktop database runs on a personal computer.
+Multiuser database supports multiple users at the same time.
+Workgroup database supports a small number of users or a specific department.
+Enterprise database supports many users across many departments.
+
+Types of Databases by Network
+Centralized database stores data at a single site.
+Distributed database distributes data across different sites.
+Cloud database is created and maintained using cloud data services that provide defined performance measures for the database.
+
+Types of Databases by Purpose
+General-purpose database contains a wide variety of data used in multiple disciplines.
+Discipline-specific database contains data focused on specific subject areas.
+
+Types of Databases by Operations
+Operational database is designed to support a company’s day-to-day operations.
+Analytical database stores historical data and business metrics used for tactical or strategic decision making.
+Data warehouse stores data in a format optimized for decision support using extract, transform, and load processes.
+
+Types of Databases by Business Type
+Online Analytical Processing (OLAP) enables retrieving, processing, and modeling data from the data warehouse.
+Business intelligence captures and processes business data to generate information that supports decision making.
+
+Types of Databases by Data Type
+Unstructured data exists in its original state.
+Structured data results from formatting and applying structure based on the type of processing to be performed.
+Semistructured data is partially processed.
+Extensible Markup Language (XML) represents data elements in textual format.
+
+Database Design
+Database design focuses on creating the database structure used to store and manage end-user data.
+A well-designed database facilitates data management and generates accurate and valuable information.
+A poorly designed database causes difficult-to-trace errors.

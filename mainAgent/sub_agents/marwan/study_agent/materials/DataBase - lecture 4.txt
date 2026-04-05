@@ -1,0 +1,92 @@
+Lecture 4
+Normalization
+Dr. Iman Ahmed ElSayed
+Second Year – ICT
+
+OUTLINE
+Normalization
+Anomalies
+Functional Dependency
+First Normal Form (1NF)
+Second Normal Form (2NF)
+Third Normal Form (3NF)
+Boyce-Codd Normal Form (BCNF)
+
+Normalization
+Normalization is the process of organizing data to minimize data redundancy (data duplication).
+If the same piece of information is stored more than once, it is called redundant information.
+The goal of normalization is to decompose relations with anomalies to produce smaller and well-structured tables.
+Normalization theory is based on functional dependencies.
+The most commonly used normal forms are 1NF, 2NF, 3NF, BCNF, 4NF, and 5NF.
+
+Anomalies
+Database anomalies refer to errors and inconsistencies in the database.
+Anomalies negatively affect inserting, deleting, and modifying data.
+It is important to remove anomalies to ensure smooth data processing.
+Types of anomalies include insertion anomaly, update anomaly, and deletion anomaly.
+
+Functional Dependency (FD)
+A functional dependency is a relationship between an attribute Y and a determinant X (one or more attributes) such that for a given value of X, the value of Y is uniquely determined.
+It is written as X → Y.
+X is called the determinant.
+Y is functionally dependent on X.
+Example: Student_ID → Student_Name.
+Each student ID determines exactly one student name. However, a name does not determine Student_ID because multiple students can share the same name.
+
+First Normal Form (1NF)
+A table is in 1NF if:
+
+1. Each column contains atomic (indivisible) values. No multiple values separated by commas.
+2. The table does not contain repeating groups of columns.
+3. Each record is uniquely identified using a primary key.
+   1NF removes repeating columns and ensures each field contains only one value.
+
+Exercise A (1NF) Concept
+Split multi-valued attributes such as category or multiple prices into separate rows so that each row contains a single value per column.
+
+Exercise B (1NF) Concept
+Remove repeating course columns (Course1, Course2, etc.) and store each course in a separate row linked to the student.
+
+Second Normal Form (2NF)
+A table is in 2NF if:
+
+1. It is already in 1NF.
+2. Every non-primary key attribute is fully functionally dependent on the entire primary key.
+   There should be no partial dependency on part of a composite key.
+   If a table is not in 2NF, decompose it into separate tables where each non-key attribute depends on the whole primary key.
+   If a table has a single primary key (not composite), it is automatically in 2NF once it satisfies 1NF.
+
+Decomposition into 2NF
+Identify attributes that depend only on part of a composite key.
+Move those attributes into a new table with the appropriate primary key.
+Establish relationships between the new tables using foreign keys.
+
+Third Normal Form (3NF)
+A table is in 3NF if:
+
+1. It is in 1NF and 2NF.
+2. There are no transitive dependencies.
+   A transitive dependency occurs when a non-key attribute depends on another non-key attribute instead of directly on the primary key.
+   In other words, non-key attributes must depend only on the primary key.
+
+Decomposition into 3NF
+Remove transitive dependencies by moving dependent attributes into a new table.
+Assign a primary key to the new table.
+Place the new table’s primary key as a foreign key in the original table.
+
+Example Concept (3NF)
+If Department_ID determines City, and City determines Zip_Code, then Zip_Code should be moved into a separate table with City to eliminate transitive dependency.
+
+Boyce-Codd Normal Form (BCNF)
+A table is in BCNF if:
+
+1. It is in 3NF.
+2. For every functional dependency X → Y, X must be a super key.
+   This means every determinant must be a candidate key.
+   BCNF is a stricter version of 3NF and removes certain anomalies not handled by 3NF.
+
+Summary
+First Normal Form (1NF): No repeating values, no repeating groups, and a defined primary key.
+Second Normal Form (2NF): No partial dependency on part of a composite key.
+Third Normal Form (3NF): No transitive dependency between non-key attributes.
+BCNF: Every determinant must be a super key.

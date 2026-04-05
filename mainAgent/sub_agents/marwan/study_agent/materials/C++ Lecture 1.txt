@@ -1,0 +1,187 @@
+﻿Programming Essentials to C++
+ICT Program
+Dr. Mohamed Ramadan
+Lec. 1 - October 2025
+
+OUTLINE – Learning Outcomes
+
+After this lecture, the student should be able to:
+• Define concepts of Programming and problem-solving techniques.
+• Analyze the elements of the problem.
+• Understand algorithms.
+• Focus on writing the algorithmic steps using:
+  - Pseudocode
+  - Flowchart
+
+What is Programming?
+
+• Programming is the process of writing instructions for a computer to execute. It involves problem-solving, logic, and creativity.
+
+Why Learn Programming?
+
+• Programming is essential in various fields, from software development to data science, AI, and automation. It enhances logical thinking and problem-solving skills.
+
+Problem Solving
+
+Solving problems is the core of computer science. Programmers must first understand how a human solves a problem, then understand how to translate this "algorithm" into something a computer can do, and finally how to write the specific syntax required by a computer to get the job done. It is sometimes the case that a machine will solve a problem in a completely different way than a human.
+
+The Stages of Problem Solving Include:
+
+1. Analyzing the problem.
+2. Writing the algorithm steps:
+   - Writing pseudocode
+   - Drawing flowcharts
+3. Writing the program in a programming language.
+4. Translating the program into machine code.
+5. Executing, testing, and debugging the program.
+6. Documenting the software.
+
+Introduction
+
+Problem Elements Analysis
+
+Analyzing the problem elements involves identifying the data required to solve the problem and defining the format of the input. Next, the necessary mathematical and logical operations for processing this input are determined. Finally, the desired format of the output resulting from this processing is specified.
+
+This stage requires answering three main questions:
+
+Q1: What are the desired results or outputs of the program?
+
+Q2: What data is available, which represents the program's inputs?
+
+Q3: What method or set of processes will be used to obtain the desired results from the available data?
+
+Definition of an Algorithm:
+
+An algorithm is defined as a well-defined set of rules and procedures for solving a problem in a finite number of steps.
+• Step-by-step instructions to solve a problem.
+• An algorithm is an ordered set of unambiguous steps that describes a process.
+• An algorithm can be implemented in more than one programming language.
+
+Characteristics of a Good (Correct) Algorithm:
+
+1. Each step must be clearly and unambiguously defined.
+2. The steps must be described using precise language.
+3. The algorithm must terminate after a finite number of steps.
+4. The overall process must lead to the correct solution to the problem.
+
+Characteristics of an Algorithm:
+
+An algorithm is a step-by-step procedure to solve a problem. It has the following key characteristics:
+
+1. Well-Defined Inputs and Outputs
+   • An algorithm must have clear input values and produce a definite output.
+
+2. Definiteness (Unambiguity)
+   • Each step must be precise and unambiguous, with only one possible meaning.
+
+3. Finiteness
+   • The algorithm must terminate after a finite number of steps. It should not run indefinitely.
+
+4. Effectiveness
+   • Each step must be simple and executable within a reasonable amount of time using available resources.
+
+5. Correctness
+   • The algorithm should correctly solve the given problem and produce accurate results.
+
+6. Generality
+   • A good algorithm should be applicable to a variety of inputs, solving a range of problems of the same type.
+
+7. Step-by-Step Execution
+   • The algorithm follows a sequential or logical order of execution to achieve the desired result.
+
+Algorithms can be designed using flowcharts or pseudocode.
+
+• Flowchart: Graphically depicts the logical steps to carry out a task and shows how the steps relate to each other.
+• Pseudocode: Uses English-like phrases to outline the program.
+
+Pseudocode:
+
+• It is a method for representing the steps of a solution using simplified commands written in a language similar to programming languages.
+• It is considered a simplified version of a real computer program.
+• With pseudocode, the programmer focuses on the steps to solve the problem, rather than the syntax of a specific programming language.
+• The programmer can write the algorithm in any programming language without adhering to its specific rules.
+• Once the pseudocode is complete, it can easily be converted into actual programming code.
+
+Components of Pseudocode (Statement Structures):
+
+It consists of:
+• Keywords
+• Sections
+• Statements
+
+Rules and Guidelines for Writing Pseudocode:
+
+• Variable names should clearly indicate their content and role in solving the problem.
+• Instructions should be written in a simple, clear, and unambiguous manner.
+
+Advantages of Pseudocode:
+
+1. It is easy to understand.
+2. It does not require memorizing specific formats or symbols, as with flowcharts.
+3. It does not use any special syntax or rules.
+4. It is easy to convert into a program using any programming language.
+5. It is based on a few simple rules that are easy to understand and apply.
+6. This type of representation does not require as much space on paper as a flowchart.
+7. Symbolic representations have been replaced with English phrases.
+
+Disadvantages of Pseudocode:
+
+• It can become lengthy when dealing with complex problems.
+
+Statement Structures:
+
+• Sequential Statements (Executed one after another): They are executed in order, unless one of them disrupts the sequence.
+• Decision Statements (If-Else, Switch-Case): This is done using an if statement, which provides two alternative options, one of which will be executed.
+• Looping Statements (For, While, Do-While): It involves repeatedly executing a specific command or set of commands a certain number of times until a desired condition is met.
+
+Sequential Statements:
+
+The sequence structure is a case where the steps in an algorithm are constructed in such a way that no condition step is required.
+
+Example 1: Write a pseudocode program to read two numbers, add them together, and display the result.
+
+BEGIN
+    Use variables n1, n2, sum
+    1. Start
+    2. Input number1
+    3. Input number2
+    4. Compute the sum, sum = number1 + number2
+    5. Display "The sum is: ", sum
+    6. End
+END
+
+Pseudocode – The Decision Structure:
+
+• The decision (selection) structure is a case where in the algorithm, one has to make a choice of two alternatives depending on a given condition.
+• Selection structures are also called case selection structures when there are two or more alternatives to choose from.
+
+Example 2: Write a pseudocode program to read two numbers, divide them, and display the result.
+
+BEGIN
+    INPUT number1, number2
+    IF number2 ≠ 0 THEN
+        result = number1 / number2
+        OUTPUT "The result is: ", result
+    ELSE
+        OUTPUT "Error: Division by zero is not allowed."
+    ENDIF
+END
+
+Pseudocode – Repetition:
+
+• Any program instruction that repeats some statement or sequence of statements several times is called an iteration or a loop.
+• The commands used to create iterations or loops are all based on logical tests.
+• The repetition structure can be done with the while loop.
+• The While loop is used to repeat a statement or a set of statements as long as a condition is true.
+
+Example 3: Write the pseudocode to print "Welcome" in C++ five times.
+
+BEGIN
+    SET counter = 1
+    WHILE counter ≤ 5 DO
+        OUTPUT "Welcome"
+        counter = counter + 1
+    ENDWHILE
+END
+
+Thank you

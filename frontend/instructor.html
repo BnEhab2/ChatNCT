@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatNCT - Instructor Panel</title>
+    <meta name="description" content="ChatNCT Instructor Panel — Manage attendance sessions with QR codes.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;600&family=Poetsen+One&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        body { overflow: auto; }
+        .main-container {
+            width: 100%; max-width: 1200px; margin: 0 auto;
+            padding: 100px 20px 40px; position: relative; z-index: 10;
+            min-height: 100vh;
+        }
+        .page-title {
+            font-family: 'Poetsen One', cursive; font-size: clamp(28px,5vw,42px);
+            color: #e0d8fe; text-align: center; margin-bottom: 40px;
+            text-shadow: 0 0 30px rgba(124,102,227,0.5);
+        }
+        .instructor-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 30px; max-width: 1000px; margin: 0 auto;
+        }
+
+        /* Cards */
+        .panel-card {
+            background: var(--card-bg); border-radius: 25px;
+            border: 2px solid rgba(124,102,227,0.3);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            padding: 30px; animation: fadeInUp 0.6s ease;
+        }
+        .card-title {
+            color: #e0d8fe; font-family: 'Montserrat', sans-serif;
+            font-size: 20px; font-weight: 700; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .card-title i { color: #7c66e3; font-size: 22px; }
+
+        /* Course Select */
+        .form-select {
+            width: 100%; padding: 14px 20px; border-radius: 15px;
+            border: 2px solid rgba(124,102,227,0.4);
+            background: rgba(62,58,131,0.8); color: #fff;
+            font-family: 'Montserrat', sans-serif; font-size: 16px;
+            outline: none; margin-bottom: 20px; cursor: pointer;
+            transition: all 0.3s ease; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23b0a9ff' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 15px center;
+        }
+        .form-select:focus { border-color: #7c66e3; box-shadow: 0 0 15px rgba(124,102,227,0.3); }
+        .form-select option { background: #1a173a; color: #fff; }
+
+        /* Buttons */
+        .action-btn-lg {
+            width: 100%; padding: 14px 24px; border-radius: 20px;
+            border: 2px solid rgba(124,102,227,0.6);
+            background: linear-gradient(135deg, rgba(124,102,227,0.3), rgba(92,78,179,0.3));
+            color: #e0d8fe; font-family: 'Montserrat', sans-serif;
+            font-size: 16px; font-weight: 700; cursor: pointer;
+            transition: all 0.3s ease; display: flex; align-items: center;
+            justify-content: center; gap: 10px; margin-bottom: 10px;
+        }
+        .action-btn-lg:hover { background: linear-gradient(135deg, rgba(124,102,227,0.5), rgba(92,78,179,0.5)); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(124,102,227,0.4); }
+        .action-btn-lg:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .action-btn-lg.danger { border-color: rgba(239,68,68,0.6); }
+        .action-btn-lg.danger:hover { background: rgba(239,68,68,0.3); box-shadow: 0 8px 20px rgba(239,68,68,0.3); }
+
+        /* QR Display */
+        .qr-display-area {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; min-height: 300px;
+        }
+        #qrDisplay {
+            background: rgba(224,216,254,0.1); border-radius: 20px;
+            padding: 20px; display: flex; align-items: center; justify-content: center;
+            min-width: 300px; min-height: 300px;
+        }
+        #qrDisplay canvas { border-radius: 15px; }
+        .qr-placeholder-icon {
+            display: flex; flex-direction: column; align-items: center;
+            gap: 15px; color: rgba(176,169,255,0.5);
+        }
+        .qr-placeholder-icon i { font-size: 80px; }
+        .qr-placeholder-icon p { font-size: 16px; font-weight: 600; }
+
+        #sessionInfo { display: none; margin-top: 20px; text-align: center; }
+
+        /* Attendance Table */
+        .attendance-section { grid-column: 1 / -1; }
+        #attendanceTable { display: none; }
+        .table-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+        }
+        .attendance-count {
+            background: rgba(34,197,94,0.2); color: #22c55e;
+            padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 14px;
+        }
+        table {
+            width: 100%; border-collapse: collapse; border-radius: 15px; overflow: hidden;
+        }
+        th {
+            background: rgba(124,102,227,0.3); color: #e0d8fe;
+            padding: 14px 16px; text-align: left; font-size: 14px;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+        }
+        td {
+            padding: 12px 16px; color: #ddd8fd; font-size: 15px;
+            border-bottom: 1px solid rgba(124,102,227,0.15);
+        }
+        tr:hover td { background: rgba(124,102,227,0.1); }
+
+        @media (max-width: 768px) {
+            .instructor-grid { grid-template-columns: 1fr; }
+            .attendance-section { grid-column: 1; }
+            #qrDisplay { min-width: 250px; min-height: 250px; }
+        }
+        @media (max-width: 480px) {
+            .panel-card { padding: 20px; border-radius: 18px; }
+            .page-title { font-size: clamp(22px,5vw,32px); margin-bottom: 25px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><img src="img/Logo.png" alt="ChatNCT"></div>
+            <button class="sidebar-close" id="sidebarClose"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-item" onclick="navigateTo('dashboard')"><i class="fas fa-th-large"></i><span>Dashboard</span></div>
+            <div class="menu-item" onclick="navigateTo('chat')"><i class="fas fa-plus-square"></i><span>New Chat</span></div>
+            <div class="menu-item" onclick="navigateTo('attendance')"><i class="fas fa-clipboard-check"></i><span>Attendance</span></div>
+            <div class="menu-item active" onclick="navigateTo('instructor')"><i class="fas fa-chalkboard-teacher"></i><span>Instructor Panel</span></div>
+            <div class="menu-item" onclick="navigateTo('prompt')"><i class="fas fa-magic"></i><span>Prompt Generator</span></div>
+            <div class="menu-divider"></div>
+        </div>
+        <div class="sidebar-footer">
+            <div class="user-info-brief">
+                <div class="user-avatar" id="userAvatar">G</div>
+                <div class="user-name" id="userNameDisplay">Guest</div>
+            </div>
+            <a href="#" class="sidebar-login" onclick="logout(); return false;"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+        </div>
+    </div>
+
+    <nav class="navbar">
+        <button class="menu-toggle" id="menuToggle"><span></span><span></span><span></span></button>
+        <div class="header-logo"><img src="img/Logo.png" alt="ChatNCT"></div>
+    </nav>
+
+    <div class="animated-bg">
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="glow-orb"></div><div class="glow-orb"></div>
+    </div>
+
+    <div class="main-container">
+        <h1 class="page-title">👨‍🏫 Instructor Panel</h1>
+
+        <div class="instructor-grid">
+            <!-- Controls Card -->
+            <div class="panel-card">
+                <div class="card-title"><i class="fas fa-cog"></i> Session Controls</div>
+                <select class="form-select" id="courseSelect">
+                    <option value="">— Select Course —</option>
+                </select>
+                <button class="action-btn-lg" id="startSessionBtn">
+                    <i class="fas fa-play"></i> Start Session
+                </button>
+                <button class="action-btn-lg danger" id="closeSessionBtn" style="display:none;">
+                    <i class="fas fa-stop"></i> Close Session
+                </button>
+                <button class="action-btn-lg" id="downloadQrBtn" style="display:none;">
+                    <i class="fas fa-download"></i> Download QR
+                </button>
+                <div id="sessionInfo">
+                    <div id="sessionStatus"></div>
+                </div>
+            </div>
+
+            <!-- QR Display Card -->
+            <div class="panel-card">
+                <div class="card-title"><i class="fas fa-qrcode"></i> QR Code</div>
+                <div class="qr-display-area">
+                    <div id="qrDisplay">
+                        <div class="qr-placeholder-icon">
+                            <i class="fas fa-qrcode"></i>
+                            <p>QR will appear here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attendance Report -->
+            <div class="panel-card attendance-section" id="attendanceTable">
+                <div class="table-header">
+                    <div class="card-title" style="margin-bottom:0;"><i class="fas fa-users"></i> Attendance Report</div>
+                    <span class="attendance-count"><i class="fas fa-user-check"></i> <span id="attendanceCount">0</span> present</span>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Student ID</th>
+                            <th>Name</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script src="js/instructor.js"></script>
+</body>
+</html>

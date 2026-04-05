@@ -1,0 +1,96 @@
+PEARSON BTEC International Standards Verifier
+ICT Program
+
+Dr. Amany AbdElSamea Saeed
+10/28/2025 2:31 PM
+
+Lec. 5 Shell Scripts
+November 2024
+
+Outline
+
+- Shell types
+- Steps to write and execute a script
+- Comments in shell script
+- Shell scripts variables
+- Shell array
+- Shell Operators
+- Shell Conditional statements
+- Shell functions
+
+Intro to Shell Scripts
+
+- Shell is a UNIX interface between a user and an operating system service.
+- Accepts human-readable commands and executes them automatically.
+- OS components:
+  - Kernel
+  - Shell
+
+Components of Shell Program
+
+- Kernel: Nucleus of the computer, enables hardware-software communication.
+- Shell: Outermost part, interacts with user via terminal.
+
+Shell
+
+- Takes input as commands, processes it, gives output.
+- Accessed via terminal.
+- Terminal displays command prompt ($), executes input when Enter is pressed.
+
+Shell Scripts
+
+- A shell script is a text file with Unix commands.
+- Usually starts with #! and shell name (e.g., #!/bin/sh)
+- Any Unix command can go in a shell script.
+- Commands executed in order or via control statements.
+- #! line is critical.
+- Scripts written here use Bourne shell (sh).
+
+Why Shell Scripts?
+
+- Avoid repetition: automate repeated sequences of commands.
+- Automate difficult tasks: simplify complex commands/options.
+
+Steps to Write and Execute a Script
+
+1. Open terminal, navigate to desired directory.
+2. Create a file with .sh extension.
+3. Write script in editor.
+4. Make executable: chmod +x <fileName>
+5. Run: ./<fileName> (specify path if in different directory)
+
+Comments in Shell Script
+
+- Lines starting with # are comments.
+- Comments are ignored during execution.
+
+How to Determine Shell?
+
+- Command: `echo $SHELL` or equivalent.
+
+Shell Scripting She-bang
+
+- #! at top of script instructs which shell to use.
+- Grant executable permission.
+- Run script using ./<scriptName>
+
+Shell Scripting Variables
+
+- Variables store data (number, text, filename, device, etc.)
+- Only letters, numbers, and underscore (_) allowed in variable names.
+- Access variable value: prefix with $ (e.g., $var)
+
+Read-only Variables
+
+- Use `readonly` to mark variable as read-only.
+
+Reading Variables from Standard Input
+
+Example:
+```sh
+#!/bin/sh
+echo "What is your name?"
+read name
+echo "How do you do, $name?"
+read remark
+echo "I am $remark too!"

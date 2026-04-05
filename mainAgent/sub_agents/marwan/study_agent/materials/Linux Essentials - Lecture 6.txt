@@ -1,0 +1,198 @@
+
+Dr. Amany AbdElSamea Saeed
+11/16/2025 2:55 PM
+
+Lec. 6 Linux Files
+November 2025
+
+Outline
+
+- Types of files
+- Linux file commands
+- Cat, tac
+- Touch
+- Echo
+- Printf
+- File command
+- rm command
+- Head and Tail
+- More and Less
+
+Linux Files
+
+- In Linux, everything is a file; if not, it is a process.
+- Files include text, images, compiled programs, partitions, device drivers, and directories.
+- Case sensitive: demo.txt and Demo.txt are different files.
+
+Types of Files
+
+- Regular files (-): programs, executables, text files
+- Directory files (d): shown in blue, contain files list
+- Special files:
+  - Block file (b)
+  - Character device file (c)
+  - Named pipe file (p)
+  - Symbolic link file (l)
+  - Socket file (s)
+
+Linux File Commands
+
+Command | Description
+---|---
+file | Determines file type
+touch | Creates a file
+rm | Removes a file
+cp | Copies a file
+mv | Renames or moves a file
+rename | Renames a file
+
+Creating a File in Linux
+
+- Methods:
+  - cat command
+  - touch command
+  - redirect '>' symbol
+  - echo command
+  - printf command
+  - editors like vim, nano, vi
+
+Cat Command
+
+- Create files, display content, concatenate multiple files, show line numbers
+- CTRL + D to save and exit
+- View content of single or multiple files
+- Highlight end of lines with `-e`
+- Suppress repeated empty lines
+
+Linux tac Command
+
+- Reverse of `cat`
+- Prints last line first, then second last, etc.
+
+Touch Command
+
+- Creates an empty file or updates timestamp of existing file
+- File created with touch is empty
+
+Redirect (>) Symbol
+
+- `>` overwrites existing file
+- `>>` appends output
+- Example: `echo "text" > file.txt`
+
+Echo Command
+
+- Creates a file with specified content
+- Syntax: `echo "text" > file.txt`
+
+Printf Command
+
+- Creates file with specified content
+- Syntax: `printf "text" > file.txt`
+
+Text Editors
+
+- Vim: `vim filename`
+- Nano: `nano filename`, CTRL + X then y to save
+- Vi: `vi filename`
+
+File Command
+
+- Determines file type, ignores extension
+- Examples:
+  - `file -s` : for special files
+  - `file *` : lists all files
+  - `file [range]*` : lists files in range
+
+rm Command
+
+- Deletes files, directories, symbolic links
+- No recycle bin; deletion is permanent
+- Syntax: `rm filename`
+- Options:
+  - `rm *extension` : delete files with extension
+  - `rm -r` : recursively delete directory
+  - `rm -i` : interactive delete
+  - `rm -rf` : force delete directory, overrides prompts
+  - `-v` : verbose, prints actions
+  - `-d` : remove empty directory
+  - `--one-file-system` : delete files only on same file system
+
+cp Command
+
+- Copies files/directories
+- Syntax:
+  - Copy within same directory
+  - Copy to another directory: specify destination path
+- Options:
+  - `cp -r` : copy directories recursively
+  - `cp *.extension` : copy multiple files using wildcards
+  - `cp --backup` : backup existing destination files
+  - `cp -i` : confirm before overwriting
+  - `cp -p` : preserve file attributes
+  - `cp -u -v` : copy only if destination missing, verbose output
+
+Find Command
+
+- Find files in a directory by conditions (name, type, permission, ownership, date, size)
+- Syntax:
+  - Current directory: `.`
+  - Root directory: `/`
+- Examples:
+  - By name: `find . -name "*.txt"`
+  - By type: `-f` regular file, `-d` directory, `-l` symbolic link, `-c` character device, `-b` block device
+  - Find newer files: `-newer`
+  - Delete specific file: `-delete` (use carefully)
+
+Locate Command
+
+- Searches files by name using database (faster than find)
+- Update database: `updatedb`
+- Options:
+  - `-n` : limit number of results
+  - `-e` : show only physically available files
+  - `-S` : show database statistics
+- Case insensitive search: `-i`
+
+Which Command
+
+- Locate executable files or program paths
+- Syntax: `which command_name`
+- Supports multiple arguments
+
+Head Command
+
+- Displays starting lines of a file (default 10 lines)
+- Options:
+  - `head -n` : display specified number of lines
+  - `head -c` : display specified number of bytes
+- Multiple files supported
+
+Tail Command
+
+- Displays last lines of a file (default 10)
+- Monitor file changes in real-time
+- Options:
+  - Display multiple files
+  - Pipe output to other commands
+
+More Command
+
+- Displays file content one screen at a time
+- Scroll keys:
+  - Enter : scroll line
+  - Space : next page
+  - b : previous page
+  - / : search string
+- Cannot display binary files
+
+Less Command
+
+- Similar to `more` but auto-adjusts to terminal width/height
+- Supports navigation keys (like vim):
+  - `/` : forward search
+  - `?` : backward search
+  - `n` : next match
+  - `N` : previous match
+
+Thank You

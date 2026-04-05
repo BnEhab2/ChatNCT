@@ -1,0 +1,262 @@
+﻿Programming Essentials to C++
+ICT Prqogram
+Dr. Mohamed Ramadan
+Lec. 4 - October 2025
+
+OUTLINE – Learning Outcomes
+
+After this lecture, students will be able to:
+1. Define the C++ programming language.
+2. Explain the primary objectives and applications of C++.
+3. Identify and describe the fundamental features and characteristics of C++.
+4. Differentiate between the C and C++ programming languages.
+5. Enumerate and explain the various phases of the C++ compilation process.
+6. Describe the sequential steps involved in the compilation and linking of C++ programs.
+7. Distinguish between text editors and integrated development environments (IDEs) used in C++ programming, with appropriate examples.
+8. Apply the basic syntax rules to develop and implement a simple C++ program.
+
+What is C++ Language?
+
+C++ is an object-oriented programming language, known as a high-level programming language. It is a fast, very simple, easy, and cross-platform language.
+
+• C++ is a cross-platform language that can be used to create high-performance applications.
+• It was developed by Bjarne Stroustrup as an extension of the C language.
+• C++ gives programmers a high level of control over system resources and memory.
+
+Why Use C++?
+
+• C++ is one of the most popular programming languages in the world.
+• C++ can be found in current operating systems, graphical user interfaces, and embedded systems.
+• C++ is an object-oriented programming language that provides a clear structure to programs and allows for code reuse, reducing development costs.
+• C++ is portable and can be used to develop applications that can be adapted to multiple platforms.
+• C++ is closely related to C, C#, and Java, which makes it easier for programmers to switch between them.
+
+The Features of C++
+
+Object-Oriented Programming Language:
+C++ supports OOP concepts such as data abstraction, data encapsulation, inheritance, polymorphism, and data hiding. OOP helps in structuring and maintaining programs efficiently.
+
+Popular Language:
+Because C++ is widely used, support and learning resources are widely available.
+
+Compiler-Based Language:
+A compiler converts C++ into machine language that the system can directly understand. The resulting program is efficient and faster than interpreter-based programs.
+
+Memory Management:
+C++ supports dynamic memory allocation using pointers and keywords. Memory must be manually deallocated after use.
+
+High-Level Language:
+C++ uses vocabulary and commands similar to English, making it easier for humans to understand.
+
+Simple Language:
+C++ divides programs into logical modules and provides built-in data types and library functions.
+
+Pointers:
+A pointer is a variable that stores the address of another variable. C++ supports pointers to interact with memory locations.
+
+Broad Library:
+C++ provides a large standard library accessible through header files.
+
+Operator Overloading:
+C++ allows operators to have special meanings for user-defined data types.
+
+Case Sensitive:
+C++ treats uppercase and lowercase letters differently.
+
+Platform Dependent:
+A compiled program runs only on the operating system where it was compiled.
+
+Exception Handling:
+C++ supports exception handling to catch and manage errors during execution.
+
+Portable:
+Source code can run on different machines with little or no change, but compiled files are platform dependent.
+
+Differences Between C and C++
+
+• C++ was developed as an extension of C and both share similar syntax.
+• C++ supports object-oriented programming features such as Classes, Objects, Inheritance, Encapsulation, Polymorphism, and Abstraction.
+• C does not support object-oriented programming.
+
+Phases of the C++ Compilation Process
+
+1. Preprocessing
+Handles directives such as #include and #define.
+Output file: .i
+
+2. Lexical Analysis
+Breaks source code into tokens.
+No separate file produced.
+
+3. Syntax Analysis (Parsing)
+Checks grammatical structure.
+No separate file produced.
+
+4. Semantic Analysis
+Checks meaning such as variable declarations and type compatibility.
+No separate file produced.
+
+5. Intermediate Code Generation
+Generates intermediate representation.
+Output file: .ir
+
+6. Code Optimization
+Improves intermediate code for efficiency.
+
+7. Code Generation
+Translates optimized code into assembly language.
+Output file: .s
+
+8. Assembly
+Translates assembly into machine object code.
+Output file: .o
+
+9. Linking
+Combines object files with required libraries to produce executable file.
+Output file: .exe
+
+Compilation Flow:
+
+hello.cpp
+↓
+Preprocessing → hello.i
+↓
+Lexical Analysis
+↓
+Syntax Analysis
+↓
+Semantic Analysis
+↓
+Intermediate Code Generation → hello.ir
+↓
+Code Optimization
+↓
+Code Generation → hello.s
+↓
+Assembly → hello.o
+↓
+Linking → hello.exe
+
+Getting Started with C++
+
+To start with C++ you need:
+• A text editor (such as Notepad) to write code.
+• A compiler (such as GCC) to translate C++ code into machine language.
+
+Types of Errors in C++
+
+Compile-Time Error:
+Occurs during compilation due to syntax mistakes.
+
+Runtime Error:
+Occurs during execution, such as division by zero.
+
+Logical Error:
+Program runs but produces incorrect results.
+
+C++ Development Environment
+
+An Integrated Development Environment (IDE) is used to edit and compile code.
+
+Popular IDEs:
+• Dev C++
+• Visual Studio
+• Code Blocks
+• Eclipse
+
+Web-based IDEs can also be used but have limited functionality.
+
+First Program Example:
+
+#include <iostream>
+using namespace std;
+
+int main() {
+  cout << "Hello World!";
+  return 0;
+}
+
+Explanation:
+
+• #include <iostream> allows input and output operations.
+• using namespace std; allows use of standard library names without std:: prefix.
+• int main() is the main function.
+• cout << prints output to the screen.
+• return 0; ends the main function.
+• Every statement must end with a semicolon ;
+• C++ is case-sensitive.
+
+Alternative Without Namespace:
+
+#include <iostream>
+
+int main() {
+  std::cout << "Hello World!";
+  return 0;
+}
+
+C++ Statements
+
+A program consists of statements executed in order.
+
+Example:
+
+cout << "Hello World!";
+
+If the semicolon is missing, a compile-time error occurs.
+
+Printing Numbers Example:
+
+#include <iostream>
+using namespace std;
+
+int main() {
+  cout << 3;
+  return 0;
+}
+
+Main Questions for Review:
+
+1. What is C++ language?
+2. Why do we use C++?
+3. Discuss the main features of C++.
+4. Differentiate between C and C++.
+5. Mention the phases of the C++ compiler.
+6. Explain the compilation and linking process.
+7. Differentiate between a text editor and an IDE.
+8. Mention the basic syntax rules of C++.
+
+Sub-Questions:
+
+1. What is C++?
+2. Who developed C++ and in which year?
+3. What programming paradigms does C++ support?
+4. Why is C++ considered a middle-level language?
+5. Why do programmers use C++?
+6. What are real-world applications of C++?
+7. How does C++ provide low-level and high-level features?
+8. List five main features of C++.
+9. Explain Object-Oriented Programming in C++.
+10. What is platform dependency?
+11. What is portability?
+12. How does C++ support dynamic memory allocation?
+13. What is the main difference between C and C++?
+14. Which language supports OOP?
+15. Explain encapsulation and inheritance.
+16. Is C++ backward compatible with C?
+17. What are the main compilation phases?
+18. What happens during preprocessing?
+19. What is the purpose of compilation?
+20. What is the role of linking?
+21. Difference between text editor and IDE?
+22. Two examples of text editors.
+23. Two examples of IDEs.
+24. Why is IDE easier for beginners?
+25. Basic syntax structure of C++ program?
+26. Purpose of #include <iostream>?
+27. Role of int main()?
+28. Why use using namespace std;?
+29. Function of cout and << operator?
+30. What symbol ends a C++ statement?
+
+Thank you

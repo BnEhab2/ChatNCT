@@ -1,0 +1,99 @@
+Lecture 3
+ENTITY RELATIONSHIP DIAGRAM (ERD)
+
+LEARNING OBJECTIVES
+Define terms related to entity relationship modeling, including entity, entity instance, attribute, relationship, cardinality, and primary key.
+Describe the entity modeling process.
+Discuss how to draw an Entity Relationship Diagram.
+Describe how to recognize entities, attributes, relationships, and cardinalities.
+
+DATABASE MODEL
+A database can be modeled as a collection of entities and relationships among entities. Database systems are often modeled using an Entity Relationship (ER) Diagram as the blueprint from which the actual data is stored.
+
+ENTITY RELATIONSHIP DIAGRAM (ERD)
+The ER model allows us to sketch database designs. ERD is a graphical tool for modeling data. ERD is a graphical representation of the logical structure of a database. ERD is widely used in database design. ERD identifies the concepts (entities) that exist in a system and the relationships between those entities.
+
+PURPOSES OF ERD
+Better understanding of the information to be contained in the database. Documentation tool. To communicate the logical structure of the database to users.
+
+COMPONENTS OF AN ERD
+An ERD typically consists of four components: Entity, Relationship, Cardinality, Attribute.
+
+CLASSIFICATION OF RELATIONSHIP
+Optional Relationship: An Employee may or may not be assigned to a Department. A Patient may or may not be assigned to a Bed.
+Mandatory Relationship: Every Course must be taught by at least one Teacher. Every mother has at least one Child.
+
+BINARY RELATIONSHIP MAPPING CARDINALITY
+One-to-One (1:1): A Manager heads one Department and vice versa.
+One-to-Many (1:M) or Many-to-One (M:1): An Employee works in one Department. One Department has many Employees.
+Many-to-Many (M:N): A Teacher teaches many Students and a Student is taught by many Teachers.
+
+CARDINALITY CONSTRAINTS EXAMPLE
+Each school may enroll many students or may not enroll any students at all. Each student attends exactly one school. Each school enrolls zero to many students. Each student attends one and only one school.
+
+GENERAL STEPS TO CREATE AN ERD
+1- Identify the entities.
+2- Identify the entity attributes.
+3- Identify the primary keys.
+4- Identify relationships between entities.
+5- Identify the cardinality constraints.
+6- Draw the ERD.
+7- Check and validate the ERD.
+
+SIMPLE EXAMPLE
+A company has several departments. Each department has a supervisor and at least one employee. Employees must be assigned to at least one but possibly more departments. At least one employee is assigned to a project, but an employee may be on vacation and not assigned to any projects.
+
+IDENTIFY ENTITIES
+Company, Department, Supervisor, Employee, Project. A true entity should have more than one instance.
+
+FIND RELATIONSHIPS
+A Department is assigned an Employee. A Department is run by a Supervisor. An Employee belongs to a Department. An Employee works on a Project. A Supervisor runs a Department. A Project uses an Employee.
+
+FILL IN CARDINALITY
+Each Department has one Supervisor and each Supervisor has one Department. Each Employee belongs to one or more Departments and each Department has one or more Employees. Each Project must have one or more Employees and each Employee can have zero or more Projects.
+
+CARDINALITY VALUES
+One and only one (1..1). One or more (1..*). Zero or more (0..*). Zero or one (0..1).
+
+IDENTIFY ATTRIBUTES
+Examples include Department name, Project name, Supervisor name, Employee name, Supervisor number, Employee number, and Project number.
+
+MAP ATTRIBUTES
+Each attribute must belong to exactly one entity. Even if attributes like Name appear similar, they belong separately to each entity.
+
+WEAK ENTITY SET
+Some entities depend on another entity for identification and cannot be uniquely identified alone. They require combination with another entity.
+
+Example Hospital System: Strong Entity Patient (PatientID, Name, Age, Address). Weak Entity Treatment (TreatmentID, Description, StartDate, EndDate).
+Example School System: Strong Entity Course (CourseID, CourseName, Credits). Weak Entity Module (ModuleNumber, ModuleName).
+Example Book System: Strong Entity Book (BookID, Title, Author, Price). Weak Entity Chapter (ChapterNumber, ChapterTitle).
+
+Weak entity notation includes double rectangle for weak entity, double diamond for identifying relationship, and dashed underline for discriminator.
+
+Discriminator is used when an entity has multiple subtypes. For example, Person may have subtypes Employee and Customer. A discriminator attribute such as PersonType indicates whether the person is an Employee or Customer.
+
+EXAMPLE 1 – HOSPITAL DATABASE
+Entities: Patient, Doctor, Medical Test.
+Patient attributes: Name, Social Security Number, Insurance Details, Admission Date, Discharge Date.
+Doctor attributes: Name, Specialization, Social Security Number.
+Medical Test attributes: TestID, Name, Date, Result, Time.
+Relationships: Doctor–Patient association. Patient undergoes Medical Test. Doctor performs or oversees Medical Test.
+
+EXAMPLE 2 – CAR SALES COMPANY
+Entities: Car, Customer, Employee, Invoice.
+Car attributes: Serial Number, Model, Color, Manufacturing Year.
+Customer attributes: Name, Phone Number, Address, Location.
+Employee attributes: ID, Name, Address, Qualifications.
+Invoice is associated with one Customer and records purchase details.
+Relationships: Employee sells Car. Customer receives Invoice. Invoice belongs to Customer.
+
+ASSIGNMENT EXERCISE 1 – CAR ACCIDENT MANAGEMENT SYSTEM
+Entities: Person (DriverID, Name, Address), Car (LicenseNumber, Model, Year), Accident (ReportNumber, Location, Date).
+Relationships: Person owns Car. Car participates in Accident. Person is associated with Accident as driver. System tracks extent of damage for each car involved.
+
+ASSIGNMENT EXERCISE 2 – COMPANY DATABASE
+Entities: Employee, Department, Project, Dependent.
+Employee attributes: FirstName, MiddleInitial, LastName, SSN, Birthdate, Address, Salary, Gender.
+Department attributes: Name, Number, Location.
+Project attributes: Name, Number, Location.
+Employees are assigned to Departments with a StartDate. One Employee manages each Department. Employees may work on multiple Projects and the hours allocated are recorded. Departments oversee Projects. Employees may supervise other Employees. Employees may have Dependents with attributes Name, Gender, BirthDate, and Relationship.

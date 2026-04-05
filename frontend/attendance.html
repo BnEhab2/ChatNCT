@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatNCT - Student Attendance</title>
+    <meta name="description" content="ChatNCT Student Attendance — Scan QR code and verify face to record attendance.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;600&family=Poetsen+One&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        body { overflow: auto; }
+        .main-container {
+            width: 100%; max-width: 1200px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; min-height: 100vh;
+            padding: 100px 20px 20px; position: relative; z-index: 10; margin: 0 auto;
+        }
+        .qr-card {
+            background: var(--card-bg); width: min(520px, 92vw);
+            padding: clamp(35px,6vh,55px) clamp(30px,5vw,45px);
+            border-radius: clamp(20px,3vw,40px);
+            border: 2px solid rgba(124,102,227,0.3);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; align-items: center;
+            animation: fadeInUp 0.8s ease 0.3s both; margin: 0 auto;
+        }
+        .qr-title {
+            color: #e0d8fe; font-family: 'Montserrat', sans-serif;
+            font-size: clamp(28px,5vw,42px); margin-bottom: clamp(25px,4vh,35px);
+            text-align: center; font-weight: 600;
+        }
+        .qr-scanner {
+            width: min(300px, 70vw); height: min(300px, 70vw);
+            position: relative; margin: clamp(10px,2vh,20px) auto;
+            border-radius: 24px; overflow: hidden;
+            background: rgba(62,58,131,0.6); border: 2px dashed rgba(124,102,227,0.5);
+            box-shadow: 0 0 40px rgba(124,102,227,0.3);
+        }
+        #qrReader { width: 100%; height: 100%; }
+        #qrReader video { border-radius: 20px; }
+
+        .qr-placeholder {
+            width: 100%; height: 100%; display: flex; align-items: center;
+            justify-content: center; opacity: 0.9; position: absolute; top: 0; left: 0;
+        }
+        .qr-icon-img {
+            width: 120px; height: 120px; object-fit: contain;
+            filter: drop-shadow(0 0 15px rgba(184,169,255,0.6));
+            animation: qrPulse 2s infinite ease-in-out;
+        }
+        @keyframes qrPulse { 0%,100%{transform:scale(1);opacity:0.9;} 50%{transform:scale(1.05);opacity:1;} }
+
+        .qr-text {
+            color: #ddd8fd; font-family: 'Montserrat', sans-serif;
+            font-size: clamp(16px,2.5vw,20px); text-align: center;
+            margin-top: clamp(10px,2vh,20px); font-weight: 600;
+        }
+        .button-group { display: flex; flex-direction: column; gap: 15px; width: 100%; margin-top: clamp(15px,3vh,25px); }
+        .camera-btn {
+            width: 100%; padding: clamp(14px,2.5vh,18px) clamp(30px,4vw,40px);
+            border-radius: clamp(20px,3vw,30px);
+            border: 2px solid rgba(124,102,227,0.8);
+            background: linear-gradient(135deg, rgba(124,102,227,0.3) 0%, rgba(92,78,179,0.3) 100%);
+            color: #e0d8fe; font-family: 'Montserrat', sans-serif;
+            font-size: clamp(16px,2.5vw,18px); font-weight: 700;
+            cursor: pointer; transition: all 0.3s ease;
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            box-shadow: 0 5px 20px rgba(124,102,227,0.3);
+        }
+        .camera-btn:hover { background: linear-gradient(135deg, rgba(124,102,227,0.5), rgba(92,78,179,0.5)); transform: translateY(-3px); }
+        .camera-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .back-btn {
+            width: 100%; padding: clamp(12px,2vh,16px); border-radius: clamp(20px,3vw,30px);
+            border: 2px solid rgba(124,102,227,0.4); background: transparent;
+            color: #b0a9ff; font-family: 'Montserrat', sans-serif;
+            font-size: clamp(14px,2vw,16px); font-weight: 600;
+            cursor: pointer; transition: all 0.3s ease;
+        }
+        .back-btn:hover { background: rgba(124,102,227,0.15); border-color: #7c66e3; color: #ddd8fd; }
+
+        #resultCard { display: none; width: 100%; margin-top: 15px; }
+
+        /* Camera Modal */
+        .camera-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 10000;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .camera-modal.active { display: flex; }
+        .camera-container {
+            width: 90%; max-width: 600px; background: var(--card-bg);
+            border-radius: 20px; overflow: hidden;
+            border: 2px solid rgba(124,102,227,0.5);
+            box-shadow: 0 0 50px rgba(124,102,227,0.4);
+        }
+        .camera-header {
+            padding: 20px; background: rgba(124,102,227,0.2);
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(124,102,227,0.3);
+        }
+        .camera-header h3 { color: #e0d8fe; font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .close-camera {
+            background: rgba(124,102,227,0.3); border: none;
+            width: 36px; height: 36px; border-radius: 8px;
+            cursor: pointer; color: #b0a9ff; font-size: 18px; transition: all 0.3s ease;
+        }
+        .close-camera:hover { background: rgba(124,102,227,0.5); transform: rotate(90deg); }
+        .camera-view { width: 100%; height: 400px; background: #000; position: relative; display: flex; align-items: center; justify-content: center; }
+        #videoElement { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .camera-footer { padding: 20px; display: flex; justify-content: center; gap: 15px; }
+
+        @media (max-width: 480px) {
+            .qr-scanner { width: min(250px, 65vw); height: min(250px, 65vw); }
+            .qr-icon-img { width: 90px; height: 90px; }
+            .camera-view { height: 300px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><img src="img/Logo.png" alt="ChatNCT"></div>
+            <button class="sidebar-close" id="sidebarClose"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-item" onclick="navigateTo('dashboard')"><i class="fas fa-th-large"></i><span>Dashboard</span></div>
+            <div class="menu-item" onclick="navigateTo('chat')"><i class="fas fa-plus-square"></i><span>New Chat</span></div>
+            <div class="menu-item active" onclick="navigateTo('attendance')"><i class="fas fa-clipboard-check"></i><span>Attendance</span></div>
+            <div class="menu-item" onclick="navigateTo('instructor')"><i class="fas fa-chalkboard-teacher"></i><span>Instructor Panel</span></div>
+            <div class="menu-item" onclick="navigateTo('prompt')"><i class="fas fa-magic"></i><span>Prompt Generator</span></div>
+            <div class="menu-divider"></div>
+        </div>
+        <div class="sidebar-footer">
+            <div class="user-info-brief">
+                <div class="user-avatar" id="userAvatar">G</div>
+                <div class="user-name" id="userNameDisplay">Guest</div>
+            </div>
+            <a href="#" class="sidebar-login" onclick="logout(); return false;"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+        </div>
+    </div>
+
+    <nav class="navbar">
+        <button class="menu-toggle" id="menuToggle"><span></span><span></span><span></span></button>
+        <div class="header-logo"><img src="img/Logo.png" alt="ChatNCT"></div>
+    </nav>
+
+    <!-- Camera Modal (for selfie) -->
+    <div class="camera-modal" id="cameraModal">
+        <div class="camera-container">
+            <div class="camera-header">
+                <h3><i class="fas fa-camera"></i> Take Selfie</h3>
+                <button class="close-camera" id="closeCamera"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="camera-view">
+                <video id="videoElement" autoplay playsinline></video>
+            </div>
+            <div class="camera-footer">
+                <button class="camera-btn" id="captureBtn" style="width:auto; padding:12px 30px; display:none;">
+                    <i class="fas fa-camera"></i> Capture & Verify
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="animated-bg">
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="glow-orb"></div><div class="glow-orb"></div>
+    </div>
+
+    <div class="main-container">
+        <div class="qr-card">
+            <h1 class="qr-title">Scan QR Code</h1>
+            <div class="qr-scanner" id="qrScanner">
+                <div id="qrReader"></div>
+                <div class="qr-placeholder" id="qrPlaceholder">
+                    <img src="img/Grcoup.png" alt="QR Code" class="qr-icon-img">
+                </div>
+            </div>
+            <p class="qr-text" id="statusText">Point your camera at the QR code</p>
+            <div id="resultCard"></div>
+            <div class="button-group">
+                <button class="camera-btn" id="cameraBtn"><i class="fas fa-camera"></i> Open Camera</button>
+                <button class="back-btn" onclick="navigateTo('dashboard')">Back to Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script src="js/attendance.js"></script>
+</body>
+</html>

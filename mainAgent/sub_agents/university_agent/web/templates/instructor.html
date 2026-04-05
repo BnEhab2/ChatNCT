@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instructor — Attendance Dashboard</title>
+    <link rel="stylesheet" href="/static/css/instructor.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>📋 Attendance Dashboard</h1>
+        <p class="subtitle">Create a session — students scan the QR code to verify attendance</p>
+
+        <!-- Create Session -->
+        <div class="card" id="createCard">
+            <h2>🔓 Start Attendance Session</h2>
+            <label for="courseSelect">Course</label>
+            <select id="courseSelect">
+                <option value="">Loading courses...</option>
+            </select>
+
+            <div class="row">
+                <div>
+                    <label for="durationInput">Duration (minutes)</label>
+                    <input type="number" id="durationInput" value="15" min="5" max="120">
+                </div>
+                <div>
+                    <label for="instructorInput">Instructor ID</label>
+                    <input type="number" id="instructorInput" value="1">
+                </div>
+            </div>
+
+            <button class="btn btn-primary" id="startBtn" onclick="createSession()">
+                🚀 Start Session
+            </button>
+            <div id="createMsg"></div>
+        </div>
+
+        <!-- Active Session -->
+        <div class="card session-display" id="sessionCard">
+            <h2>✅ Session Active</h2>
+            <div class="session-code" id="sessionCode"></div>
+
+            <div class="qr-container">
+                <div id="qrCode"></div>
+            </div>
+
+            <div class="url-hint" id="studentUrl"></div>
+
+            <div class="session-info">
+                <div><span>Course:</span> <strong id="courseName"></strong></div>
+                <div><span>Expires:</span> <strong id="expiresAt"></strong></div>
+            </div>
+
+            <div class="timer" id="timer"></div>
+
+            <button class="btn btn-danger" onclick="closeSession()">⏹ Close Session</button>
+
+            <div class="attendance-list" id="attendanceList">
+                <h2 style="margin-top: 20px;">📝 Checked In</h2>
+                <div id="studentsList"></div>
+                <div class="counter">Total: <strong id="totalCount">0</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="/static/js/instructor.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,56 @@
+Lecture 2
+PROCESSES AND THREADS
+
+LEARNING OBJECTIVES
+Define what a process is and identify the resources it requires. Describe types of processes and their execution. Explain process management responsibilities of the operating system. Understand process states, program vs process, Process Control Block (PCB), and context switching. Describe process scheduling and different types of schedulers. Explain threads, multithreading, threading models, thread cancellation, and signal handling.
+
+WHAT IS A PROCESS?
+A process can be thought of as a program in execution. A process needs certain resources such as CPU time, memory, files, and I/O devices. These resources are allocated either when the process is created or while it is executing.
+
+TYPES OF PROCESSES
+A system consists of a collection of processes: operating system processes executing system code and user processes executing user code. These processes can execute concurrently, with the CPU multiplexed among them. By switching the CPU between processes, the OS can make the computer more productive. An OS executes a variety of programs: Batch system – jobs, Time-shared systems – user programs or tasks.
+
+PROCESS MANAGEMENT
+The OS is responsible for creating and deleting user and system processes, scheduling processes, and providing mechanisms for synchronization, communication, and deadlock handling.
+
+PROCESS IN MEMORY
+Multiple parts of the process: program code (text section), data section (global variables), stack (temporary data, function parameters, return addresses, local variables), heap (dynamically allocated memory during runtime), current activity including program counter and processor registers.
+
+PROGRAM VS PROCESS
+A program is a passive entity stored on disk (executable file); a process is active. A program becomes a process when loaded into memory. Execution can start via GUI clicks or command line entry. One program can be multiple processes if multiple users execute it simultaneously.
+
+PROCESS STATE
+As a process executes, it changes state: new (being created), running (instructions executed), waiting (waiting for an event), ready (waiting for CPU assignment), terminated (finished execution).
+
+PROCESS CONTROL BLOCK (PCB)
+Information associated with each process includes process state, CPU scheduling info (priorities, queue pointers), program counter, CPU registers, I/O status information (devices allocated, open files), accounting info (CPU used, elapsed time, limits), and memory management info (memory allocated).
+
+CPU SWITCH FROM PROCESS TO PROCESS – CONTEXT SWITCH
+When CPU switches to another process, the system saves the old process state and loads the new process state via context switch. Context represented in PCB. Context-switch time is overhead; depends on OS complexity and hardware support. Some hardware supports multiple register sets per CPU to load multiple contexts at once.
+
+PROCESS SCHEDULING
+Maximizes CPU use and time-sharing. Process scheduler selects which process executes next, maintains scheduling queues: Job queue (all processes), Ready queue (processes in main memory ready to execute), Device queues (processes waiting for I/O). Processes migrate among queues.
+
+SCHEDULERS
+Short-term scheduler (CPU scheduler): selects next process for CPU, invoked frequently, must be fast. Long-term scheduler (job scheduler): selects processes to bring into ready queue, invoked infrequently, controls degree of multiprogramming. Medium-term scheduler: reduces degree of multiprogramming by swapping processes in/out of memory. Processes can be I/O-bound (short CPU bursts) or CPU-bound (long CPU bursts).
+
+THREADS
+A thread is a basic unit of CPU utilization with a thread ID, program counter, register set, and stack. Threads share code section, data section, and OS resources of the process. Multithreading allows performing multiple tasks at once. Single-threaded processes have one thread; multithreaded processes have multiple threads. Thread creation is lighter than process creation.
+
+EXAMPLES
+Word processor: threads for displaying graphics, responding to keystrokes, spelling/grammar checking. Web server: multithreaded to service many clients concurrently.
+
+MULTITHREADED SERVER ARCHITECTURE – BENEFITS
+Responsiveness: execution continues if part of process blocked. Resource sharing: threads share process resources easily. Economy: cheaper than process creation, lower overhead than context switching. Scalability: process can utilize multiprocessor architectures.
+
+MULTITHREADING MODELS
+Many-to-One: many user threads map to single kernel thread; one blocking blocks all; limited parallelism. Examples: Solaris Green Threads, GNU Portable Threads. One-to-One: each user thread maps to kernel thread; more concurrency; limited by overhead. Examples: Windows, Linux, Solaris 9+. Many-to-Many: many user threads mapped to many kernel threads; OS creates sufficient kernel threads. Examples: Solaris <9, Windows with ThreadFiber.
+
+THREAD CANCELLATION
+Terminating a thread before it finishes. Target thread can be canceled asynchronously (immediate) or deferred (thread periodically checks for cancellation). Asynchronous cancellation may leave resources unreclaimed.
+
+SIGNAL HANDLING
+Signals in UNIX notify processes of events. Signal handler processes signals (default or user-defined). In single-threaded process, signal delivered to process. In multithreaded process, signals can be delivered to the specific thread, every thread, certain threads, or a designated thread.
+
+DIFFERENCE BETWEEN PROCESS AND THREAD
+Processes are independent execution units with separate memory spaces; threads are lightweight execution units within a process that share memory and resources.

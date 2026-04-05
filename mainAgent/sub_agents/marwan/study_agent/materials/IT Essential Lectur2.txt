@@ -1,0 +1,657 @@
+﻿IT Essentials  
+ICT Program  
+
+Dr. Ayat Taha  
+
+Lec.2 October 2024  
+
+
+Advanced Computer Hardware  
+
+IT Essentials  
+
+
+- Sections & Objectives  
+
+■ Boot the Computer  
+■ Configure BIOS and UEFI Settings  
+
+- Describe POST, BIOS, CMOS and UEFI.  
+- Configure the computer firmware.  
+
+■ Electrical Power  
+■ Explain electrical power  
+
+- Describe wattage and voltage.  
+- Explain power fluctuations and devices that protect against damage caused by fluctuations.  
+
+
+Chapter 3 - Sections & Objectives  
+
+■ Advanced Computer Functionality  
+■ Explain computer functionality  
+
+- Explain CPU architecture.  
+- Describe RAID.  
+- Describe common ports, cables, and connectors.  
+- Describe monitor characteristics.  
+
+■ Computer Upgrade  
+■ Select components to upgrade a computer to meet requirements  
+
+- Select appropriate components to upgrade a computer.  
+- Select components for specialized computers.  
+
+
+- Sections & Objectives  
+
+■ Protecting the Environment  
+■ Explain safe disposal methods to protect the environment  
+
+- Explain safe disposal methods.  
+
+
+Boot The Computer  
+
+
+POST  
+
+■ When a computer is booted, the basic input/output system (BIOS) performs a hardware check on all internal components of the computer.  
+• This check is called a power-on self-test (POST).  
+
+■ If a device is malfunctioning, an error or a beep code alerts the technician of the problem.  
+
+■ BIOS manufacturers use different codes to indicate different hardware problems.  
+• Motherboard manufacturers may use different beep codes.  
+• Always consult the motherboard documentation to get the beep codes for your computer.  
+
+■ To access the BIOS, press the specified key during POST.  
+
+■ Installation Tip: To determine if POST is working properly, remove all of the RAM modules from the computer and power it on. The computer should emit the beep code for a computer with no RAM installed.  
+
+
+BIOS and CMOS  
+
+■ All motherboards need a BIOS to operate.  
+■ BIOS is a ROM chip on the motherboard that contains a small program that controls the communication between the operating system and the hardware.  
+
+■ Along with the POST, BIOS also identifies:  
+• Which drives are available  
+• Which drives are bootable  
+• How the memory is configured and when it can be used  
+• How PCIe and PCI expansion slots are configured  
+• How SATA and USB ports are configured  
+• Motherboard power management features  
+
+
+BIOS and CMOS  
+
+■ The motherboard BIOS settings are saved in a Complementary Metal Oxide Semiconductor (CMOS) memory chip.  
+
+■ When a computer boots, the BIOS software reads the configured settings stored in CMOS to determine how to configure the hardware.  
+
+■ The BIOS settings are retained by CMOS using a battery.  
+
+■ If the battery fails, settings can be lost.  
+
+■ Installation Tip: If the computer’s time and date are incorrect, it could indicate that the CMOS battery is bad or is getting very low.  
+
+
+UEFI  
+
+■ Most computers today run Unified Extensible Firmware Interface (UEFI).  
+■ All new computers come with UEFI, which provides additional features and addresses security issues with legacy BIOS.  
+
+■ UEFI can run on 32-bit and 64-bit systems, supports larger boot drives, and includes additional features such as secure boot.  
+• Secure boot ensures your computer boots to your specified operating system.  
+• This helps prevent rootkits from taking over the system.  
+
+
+BIOS and UEFI Security  
+
+■ The legacy BIOS supports some security features to protect the BIOS setting, however UEFI adds additional security features.  
+
+■ Some common security features found in the BIOS/UEFI systems includes:  
+
+• Passwords - Passwords allow for different levels of access to the BIOS settings.  
+• Drive encryption - A hard drive can be encrypted to prevent data theft. It prevents data from being read from a hard drive even if the hard drive is moved to another computer.  
+• LoJack - This is a security feature that allows the owner to locate, lock, or delete all files from the device.  
+• Trusted Platform Module (TPM) - This is a chip designed to secure hardware by storing encryption keys, digital certificates, passwords, and data.  
+• Secure boot - Secure Boot is a UEFI security standard that ensures that a computer only boots an OS that is trusted by the motherboard manufacturer.  
+
+
+Update the Firmware  
+
+■ Motherboard manufacturers may publish updated BIOS or UEFI firmware versions to provide enhancements to system stability, compatibility, and performance.  
+
+■ Early computer BIOS information was contained in ROM chips and to upgrade the BIOS information, the ROM chip had to be physically replaced.  
+
+■ Modern BIOS chips are Electronically Erasable Programmable Read Only Memory (EEPROM) which can be upgraded by the user without opening the computer case.  
+• This is called flashing the BIOS.  
+
+■ To download a new BIOS, consult the manufacturer’s website and follow the recommended installation procedures.  
+
+
+Electrical Power  
+
+
+Procedures to Protect Equipment and Data  
+
+Electrostatic Discharge (ESD)  
+
+• Buildup of an electric charge resting on a surface  
+• 30 volts of static electricity can damage a computer component.  
+• ESD can cause damage to computer equipment if not discharged properly.  
+• ESD can build up on you as you walk on a carpeted floor.  
+• Low levels of humidity increase ESD.  
+• Use a grounded mat on the workbench and a correctly connected antistatic wrist strap.  
+
+
+Procedures to Protect Equipment and Data  
+
+Electromagnetic Interference (EMI)  
+
+• Intrusion of outside electromagnetic signals in a transmission media, such as copper cabling.  
+• Sources can be man-made, natural events, climate, or any source designed to generate electromagnetic energy.  
+• EMI distorts the signals, degrading computer communication.  
+• EMI can be generated by large motors, power lines, electrical storms, or any other source of electromagnetic energy.  
+
+If a computer monitor is placed next to a microwave oven, EMI from the microwave can cause visual disturbances on the screen, such as flickering or distortion. Similarly, if a Wi-Fi router is placed too close to power lines, the electrical fields can interfere with the router’s ability to transmit data efficiently, causing connectivity issues.  
+
+
+Procedures to Protect Equipment and Data  
+
+Radio Frequency Interference (RFI)  
+
+• Wireless networks are affected by RFI.  
+• RFI is caused by radio transmitters transmitting in the same frequency.  
+
+RFI can cause significant issues for wireless networks by degrading the quality of signals. To reduce RFI, steps such as changing Wi-Fi channels, using the 5 GHz band, relocating devices, and minimizing the number of devices using the same frequency can help improve network performance.  
+
+
+Wattage and Voltage  
+
+■ There are four basic units of electricity that a computer technician must know:  
+
+• Voltage (V) - Measured in Volts (V) - The measure of work required to move a charge.  
+• Current (I) - Measured in Amperes (A) - The measure of the amount of electrons moving through a circuit per second.  
+• Resistance (R) - Measured in Ohms - Refers to the opposition to the flow of current in a circuit.  
+• Power (P) - Measured in Watts (W) - The measure of the work required to move electrons through a circuit multiplied by the number of electrons going through the circuit per second.  
+
+■ A basic equation, known as Ohm's Law, expresses how voltage is equal to the current multiplied by the resistance: V = IR.  
+
+■ In an electrical system, power is equal to the voltage multiplied by the current: P = VI.  
+
+
+Power Supply Voltage Settings  
+
+■ On the back of some power supplies is a small switch called the voltage selector switch.  
+• This switch sets the input voltage to the power supply to either 110V / 115V or 220V / 230V.  
+• A power supply with this switch is called a dual voltage power supply.  
+• If a power supply does not have this switch, it automatically detects and sets the correct voltage.  
+
+■ The correct voltage setting is determined by the country where the power supply is used.  
+
+
+Power Fluctuation Types  
+
+■ When the voltage in a computer is not accurate or steady, computer components might not operate correctly.  
+
+The following types of AC power fluctuations can cause data loss or hardware failure:  
+
+• Blackout - Complete loss of AC power.  
+• Brownout - Reduced voltage level of AC power that lasts for a period of time.  
+• Noise - Interference from generators and lightning.  
+• Spike - Sudden increase in voltage that lasts for a short period and exceeds 100 percent of the normal voltage on a line.  
+• Power surge - Dramatic increase in voltage above the normal flow of electrical current.  
+
+
+Power Protection Devices  
+
+■ To help shield against power fluctuation problems, use devices to protect the data and computer equipment:  
+
+• Surge protector - Helps protect against damage from surges and spikes.  
+• Surge suppressor - Diverts extra electrical voltage that is on the line to the ground.  
+• Uninterruptible power supply (UPS) - Helps protect against potential electrical power problems and provides a consistent quality of power when brownouts and blackouts occur.  
+- Equipment runs on the battery all the time and AC keeps it charged.  
+
+• Standby power supply (SPS) - Helps protect against potential electrical power problems by providing a backup battery that is on standby during normal operation.  
+- This device is not as reliable as a UPS because of the time it takes to switch over to the battery.  
+
+Laser printers should not be plugged into a UPS or SPS.  
+
+
+Advanced Computer Functionality  
+
+
+CPU Architectures  
+
+■ A program is a sequence of stored instructions and a CPU executes these instructions by following a specific instruction set.  
+
+■ There are two distinct types of instruction sets that CPUs may use:  
+
+• Reduced Instruction Set Computer (RISC) - This architecture uses a relatively small set of instructions. RISC chips are designed to execute these instructions very rapidly.  
+
+• Complex Instruction Set Computer (CISC) - This architecture uses a broad set of instructions, resulting in fewer steps per operation.  
+
+■ While the CPU is executing one step of the program, the remaining instructions and the data are stored nearby in a special, high-speed memory, called cache.  
+
+
+Enhancing CPU Operation  
+
+■ Intel processors use Hyper-Threading to enhance the performance of some of their CPUs.  
+• With Hyper-Threading, multiple pieces of code (threads) are executed simultaneously in the CPU so a single CPU performs as though there are two CPUs.  
+
+■ AMD processors use HyperTransport to enhance CPU performance.  
+• HyperTransport is a high-speed connection between the CPU and the Northbridge chip.  
+
+■ The power of a CPU is measured by the speed and the amount of data that it can process.  
+• The speed of a CPU is rated in cycles per second, such as megahertz (MHz) or gigahertz (GHz).  
+• The amount of data that a CPU can process at one time depends on the size of the front side bus (FSB).  
+
+■ The Front Side Bus (FSB) connects the CPU to the main memory (RAM) and other components. A wider FSB allows more data to be transmitted simultaneously, increasing overall CPU performance.  
+
+
+Enhancing CPU Operation  
+
+■ Overclocking is a technique used to make a processor work at a faster speed than its original specification.  
+• Overclocking is not a recommended way to improve computer performance and can result in damage to the CPU.  
+
+■ CPU throttling is the opposite of overclocking.  
+• CPU throttling is a technique used when the processor runs at less than the rated speed to conserve power or produce less heat.  
+
+■ CPU virtualization is a hardware feature supported by AMD and Intel CPUs that enables a single processor to act as multiple processors.  
+• With CPU virtualization multiple operating systems can run in parallel on their own virtual machines as if they were running on completely independent computers.  
+
+
+Multicore Processors  
+
+■ Multicore processors have two or more processors on the same integrated circuit.  
+
+■ Integrating the processors on the same chip creates a very fast connection between them.  
+
+• Multicore processors execute instructions more quickly than single-core processors.  
+• RAM is shared between the processors because the cores reside on the same chip.  
+• Multicore processors conserve power and produce less heat than multiple single-core processors.  
+
+
+Multicore Processors  
+
+■ Another feature found in some CPUs is an integrated graphics processing unit (GPU).  
+
+■ The GPU is a chip that performs the rapid mathematical calculations required to render graphics.  
+
+■ A GPU can be integrated or dedicated.  
+
+• Integrated GPUs are embedded on the CPU and depend on system RAM.  
+• A dedicated GPU is a separate chip with its own video memory.  
+• Integrated GPUs are good for less complex tasks like watching videos and processing graphical documents but are not best suited for intense gaming applications.  
+
+
+CPU Cooling Mechanisms  
+
+Case Fan  
+
+• A case fan increases airflow in the computer case and allows more heat to be removed.  
+• Some cases have multiple fans bringing in cool air and pushing out hot air.  
+• Maintaining positive airflow reduces dust buildup and keeps temperatures optimal.  
+
+CPU Heat Sink  
+
+• A heat sink has a large surface area with metal fins to draw heat away from the CPU.  
+• Thermal compound is placed between the heat sink and the CPU to increase heat transfer efficiency.  
+• A CPU heat sink without a fan is known as passive cooling.  
+
+
+CPU Cooling Mechanisms  
+
+CPU Fan  
+
+• A fan is often installed on top of or within a heat sink to move heat away from the metal fins.  
+• A CPU heat sink with a fan is known as active cooling.  
+
+Graphics Card Cooling System  
+
+• Video adapter cards have a GPU that generates excessive heat.  
+
+Water Cooling System  
+
+• A metal plate is placed over the processor and coolant is pumped over it to collect heat.  
+• The coolant is pumped to a radiator to disperse heat and then recirculated.  
+
+
+Video and Graphic Ports  
+
+VGA  
+• An analog port and commonly the oldest graphics port still used on some PCs.  
+
+DVI  
+• Supports transmitting uncompressed digital video.  
+• Includes DVI-A (analog), DVI-D (digital), and DVI-I (integrated).  
+
+HDMI  
+• Developed for high-definition televisions.  
+• Carries video, digital audio, and control signals.  
+
+DisplayPort  
+• Designed to replace DVI and VGA.  
+• Supports high-bandwidth video and audio signals.  
+
+
+USB Cables and Connectors  
+
+■ USB standards include USB 1.0, USB 2.0, USB 3.0, and USB 3.2.  
+
+USB Type-A  
+• Rectangular connector found on most desktops and laptops.  
+
+Mini-USB  
+• Rectangular connector being replaced by micro-USB.  
+
+Micro-USB  
+• Common on smartphones and tablets.  
+• Has two angled corners.  
+
+
+USB Cables and Connectors  
+
+USB Type-B  
+• Square shape with beveled corners and a notch at the top.  
+• Used for printers or external hard drives.  
+
+USB Type-C  
+• Rectangular with rounded corners.  
+• Newest USB interface used for multiple devices.  
+
+Lightning  
+• Small proprietary 8-pin connector used by Apple mobile devices for power and data.  
+
+
+SATA Cables and Connectors  
+
+SATA Cable  
+• Connects motherboard to internal storage device.  
+• Requires separate SATA power cable.  
+• Keyed for correct installation.  
+
+eSATA Cable  
+• Connects external SATA drives.  
+
+eSATA Adapter  
+• Expansion card used to provide eSATA ports.  
+
+
+Twisted Pair Cables and Connectors  
+
+■ Used in wired Ethernet and older telephone networks.  
+
+Twisted Pairs  
+• Unshielded Twisted Pair (UTP) - Most common type.  
+• Shielded Twisted Pair (STP) - Includes foil or braiding for shielding.  
+
+RJ-45  
+• Connector used with Ethernet cables.  
+
+RJ-11  
+• Used in older telephone networks.  
+
+
+Coax Cables and Connectors  
+
+Coax Cable Construction  
+• Inner conductor surrounded by insulation and foil shield for EMI protection.  
+
+RG-6  
+• Used for high-bandwidth applications (Internet, Cable TV, Satellite TV).  
+
+RG-59  
+• Used for low-bandwidth applications (analog video and CCTV).  
+
+BNC  
+• Older connector for digital or analog audio/video.  
+
+
+SCSI and IDE Cables and Connectors  
+
+■ Small Computer Systems Interface (SCSI) connects peripheral and storage devices.  
+
+External SCSI Cable  
+• Used for older external devices.  
+
+Internal SCSI Cable  
+• 50-pin connector attached to ribbon cable.  
+
+IDE Cable  
+• Similar to SCSI cable.  
+• Typically has three 40-pin connectors.  
+
+
+Monitor Characteristics  
+
+■ Monitors vary by use, size, quality, clarity, and brightness.  
+
+Described by:  
+
+• Screen size - Diagonal measurement in inches.  
+• Resolution - Number of horizontal and vertical pixels (e.g., 1920 x 1080).  
+• Monitor resolution - Amount of information displayed.  
+• Native resolution - Best resolution for the monitor.  
+• Native mode - When video output matches native resolution.  
+• Connectivity - VGA, DVI, HDMI, DisplayPort.  
+
+
+Monitor Terms  
+
+■ Pixel - Tiny dot displaying red, green, and blue.  
+■ Dot pitch - Distance between pixels.  
+■ Brightness - Measured in cd/m2.  
+■ Contrast ratio - Difference between brightest white and darkest black.  
+■ Aspect ratio - Horizontal to vertical measurement.  
+■ Refresh rate - Measured in Hertz (Hz).  
+■ Response time - Time for pixel to change color or brightness.  
+■ Interlaced - Scans odd then even lines.  
+■ Non-Interlaced - Scans line by line from top to bottom.  
+
+
+Display Standards  
+
+■ CGA - 320 x 200  
+■ VGA - 640 x 480  
+■ SVGA - 800 x 600  
+■ HD - 1280 x 720 (720p)  
+■ FHD - 1920 x 1080 (1080p)  
+■ QHD - 2560 x 1440 (1440p)  
+■ UHD - 3840 x 2160 (4K)  
+
+
+Using Multiple Monitors  
+
+■ Adding monitors increases desktop area and productivity.  
+■ Many computers support multiple monitors.  
+
+To connect multiple monitors:  
+• Enable support in the computer.  
+• Gather appropriate display cables.  
+
+■ To connect multiple PCs to one monitor and keyboard/mouse, use a KVM switch.  
+
+
+Computer Configuration  
+
+
+Motherboard Upgrade  
+
+■ Reasons for upgrade:  
+• User requirements change  
+• New software requires new hardware  
+• Enhanced performance  
+
+■ May need to replace:  
+• CPU  
+• Heat sink and fan  
+• RAM  
+
+■ New motherboard must fit the case and match the power supply.  
+
+
+Steps to Upgrade a Motherboard  
+
+Step 1. Record current connections.  
+Step 2. Disconnect cables.  
+Step 3. Remove expansion cards.  
+Step 4. Record how motherboard is secured.  
+Step 5. Remove old motherboard.  
+Step 6. Identify connectors on new motherboard.  
+Step 7. Replace I/O shield.  
+Step 8. Insert and secure motherboard.  
+Step 9. Connect power and cables.  
+Step 10. Reinstall expansion cards.  
+
+
+CPU Upgrade  
+
+■ Upgrade CPU to increase processing speed.  
+■ May require new heat sink and fan assembly.  
+■ Must fit CPU socket and remove additional heat.  
+■ Apply thermal compound between CPU and heat sink.  
+
+
+Storage Device Upgrade  
+
+■ Reasons for additional drive:  
+• Increase storage  
+• Increase speed  
+• Install second OS  
+• Store swap file  
+• Provide fault tolerance  
+• Backup original drive  
+
+Installation Steps:  
+Step 1. Place drive in bay and secure.  
+Step 2. Connect data cable to motherboard.  
+Step 3. Attach power cable.  
+
+■ SSD improves performance, reliability, and energy efficiency.  
+
+
+Peripheral Upgrades  
+
+■ Upgrade peripherals if they fail or to improve productivity.  
+
+Reasons to upgrade keyboard/mouse:  
+• Ergonomic design  
+• Special tasks (second language)  
+• Accommodate users with disabilities  
+
+
+Power Supply Upgrade  
+
+■ Hardware upgrades may increase power needs.  
+■ May need to upgrade power supply.  
+■ Use an online power supply wattage calculator.  
+
+
+How I can choose My PC?  
+
+Step 1: Identify Your Purpose  
+
+Basic Tasks:  
+Web browsing, email, word processing.  
+Entry-level processor (Intel i3 or AMD Ryzen 3).  
+
+Gaming:  
+Intel i5 or AMD Ryzen 5, 16GB RAM, dedicated GPU.  
+
+Content Creation:  
+Intel i7/i9 or AMD Ryzen 7/9, 16GB+ RAM, dedicated GPU.  
+
+Business Use:  
+Intel i5 or AMD Ryzen 5, 8GB+ RAM, SSD.  
+
+Portable Use:  
+Laptop or 2-in-1. Focus on battery life and weight.  
+
+
+Step 2: Determine Your Budget  
+
+Entry-Level: $300 - $600  
+Mid-Range: $600 - $1,200  
+High-End: $1,200+  
+
+
+Step 3: Consider Specifications  
+
+Processor (CPU):  
+Modern Intel Core or AMD Ryzen.  
+
+Memory (RAM):  
+8GB minimum, 16GB recommended, 32GB+ for intensive tasks.  
+
+Storage:  
+HDD - Large capacity, slower.  
+SSD - Faster, 256GB or 512GB recommended.  
+Combination SSD + HDD recommended.  
+
+Graphics Card (GPU):  
+Integrated for basic tasks.  
+Dedicated for gaming and graphics work.  
+
+Display:  
+1080p standard, 1440p or 4K for advanced use.  
+
+Ports and Connectivity:  
+USB, HDMI, Ethernet, Wi-Fi, Bluetooth.  
+
+
+Step 4: Read Reviews and Comparisons  
+
+Check reliability, performance, warranty, and support.  
+
+
+Step 5: Make Your Purchase  
+
+Buy online or in-store.  
+Check promotions and discounts.  
+
+
+Step 6: Future-Proofing  
+
+Choose models with upgradeable RAM and storage.  
+
+
+Protecting the Environment  
+
+
+Safe Disposal Methods  
+
+■ Follow regulations for disposal of hazardous components.  
+■ Regulations vary by state and country.  
+
+Items include:  
+• Batteries  
+• Toner kits and cartridges  
+• Chemical solvents and aerosol cans  
+• Cell phones and tablets  
+• CRT monitors (due to residual high voltage)  
+
+
+Safety Data Sheets  
+
+■ Safety Data Sheet (SDS) summarizes hazardous material information.  
+■ Includes fire hazards, first aid, chemical reactivity, handling, storage, spill, and disposal procedures.  
+■ Consult manufacturer’s SDS for hazardous classification.  
+■ Explains safe disposal methods.  
+
+
+Summary  
+
+Advanced Computer Hardware  
+
+■ Configure BIOS and UEFI settings  
+■ Explain electrical power  
+■ Explain computer functionality  
+■ Describe monitor characteristics  
+■ Explain safe disposal methods to protect the environment  
+
+
+Thank you  
