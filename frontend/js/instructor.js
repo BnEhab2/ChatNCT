@@ -23,15 +23,19 @@ async function loadCourses() {
         if (Array.isArray(data)) {
             data.forEach(course => {
                 const option = document.createElement('option');
-                option.value = course.id || course.course_code;
-                option.textContent = `${course.course_code || course.id} — ${course.course_name || course.name}`;
+                option.value = course.course_id || course.id;
+                const cName = course.course_name || course.name;
+                const codePrint = course.course_code ? `${course.course_code} — ` : "";
+                option.textContent = `${codePrint}${cName}`;
                 courseSelect.appendChild(option);
             });
         } else if (data.courses) {
             data.courses.forEach(course => {
                 const option = document.createElement('option');
-                option.value = course.id || course.course_code;
-                option.textContent = `${course.course_code || course.id} — ${course.course_name || course.name}`;
+                option.value = course.course_id || course.id;
+                const cName = course.course_name || course.name;
+                const codePrint = course.course_code ? `${course.course_code} — ` : "";
+                option.textContent = `${codePrint}${cName}`;
                 courseSelect.appendChild(option);
             });
         }
@@ -81,7 +85,7 @@ startBtn.addEventListener('click', async () => {
 // ── Generate QR Code ───────────────────────────────────────
 function generateQRCode(code) {
     // Use the attendance URL as QR content
-    const qrContent = code;
+    const qrContent = `${window.location.origin}/attendance.html?code=${code}`;
 
     qrDisplay.innerHTML = '';
     new QRCode(qrDisplay, {

@@ -24,7 +24,7 @@ def create_attendance_session(course_code: str, duration_minutes: int = 15) -> d
     cur = conn.cursor()
 
     # Look up course
-    cur.execute("SELECT course_id, course_name FROM courses WHERE course_code = ?", (course_code,))
+    cur.execute("SELECT id AS course_id, name AS course_name FROM courses WHERE course_code = %s", (course_code,))
     course = cur.fetchone()
     if not course:
         conn.close()
@@ -36,12 +36,12 @@ def create_attendance_session(course_code: str, duration_minutes: int = 15) -> d
     expires = now + timedelta(minutes=duration_minutes)
 
     # Close any existing active sessions for this course
-    cur.execute("UPDATE attendance_sessions SET is_active = 0 WHERE course_id = ? AND is_active = 1",
+    cur.execute("UPDATE attendance_sessions SET is_active = 0 WHERE course_id = %s AND is_active = 1",
                 (course["course_id"],))
 
     cur.execute("""
         INSERT INTO attendance_sessions (session_code, course_id, instructor_id, expires_at)
-        VALUES (?, ?, 1, ?)
+        VALUES (%s, %s, NULL, %s)
     """, (code, course["course_id"], expires.isoformat()))
 
     conn.commit()
@@ -75,7 +75,7 @@ def close_attendance_session(session_code: str) -> dict:
     """
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("UPDATE attendance_sessions SET is_active = 0 WHERE session_code = ? AND is_active = 1",
+    cur.execute("UPDATE attendance_sessions SET is_active = 0 WHERE session_code = %s AND is_active = 1",
                 (session_code,))
     affected = cur.rowcount
     conn.commit()
@@ -99,7 +99,7 @@ def get_session_attendance(session_code: str) -> dict:
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM attendance_sessions WHERE session_code = ?", (session_code,))
+    cur.execute("SELECT * FROM attendance_sessions WHERE session_code = %s", (session_code,))
     session = cur.fetchone()
     if not session:
         conn.close()
@@ -111,8 +111,8 @@ def get_session_attendance(session_code: str) -> dict:
         SELECT a.student_id, s.name AS student_name, a.date, a.status, a.verified_by
         FROM attendance a
         JOIN students s ON a.student_id = s.id
-        WHERE a.session_id = ?
-        ORDER BY a.attendance_id
+        WHERE a.session_id = %s
+        ORDER BY a.created_at
     """, (session["session_id"],))
 
     records = [dict(r) for r in cur.fetchall()]

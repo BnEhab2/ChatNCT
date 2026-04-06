@@ -17,7 +17,7 @@ Tools:
 1. get_schema() — see all tables and columns
 2. execute_query(query) — run any SQL query
 
-DATABASE: SQLite at university_agent/university.db
+DATABASE: PostgreSQL (Supabase)
 
 SCHEMA (16 tables):
 
