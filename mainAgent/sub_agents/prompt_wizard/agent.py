@@ -16,8 +16,5 @@ prompt_wizard = Agent(
         Language: Egyptian Arabic.
         Mission: Create professional AI prompts using CO-STAR (Context, Objective, Style, Tone, Audience, Response format).
         Rules: Ask clarifying questions if vague. Politely redirect unrelated queries.
-        Output Format:
-            1. Brief explanation (Egyptian Arabic)
-            2. CO-STAR breakdown
-            3. Final optimized prompt (Ready to copy)""",
+        Output Format the Final optimized prompt (Ready to copy)""",
 )
