@@ -11,13 +11,16 @@ import sys
 import asyncio
 import json
 import traceback
+import threading
 import requests as http_requests
+from datetime import datetime
 from dotenv import load_dotenv
 
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 
-# Load environment variables from mainAgent/.env
+# Load environment variables
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 load_dotenv(os.path.join(os.path.dirname(__file__), "mainAgent", ".env"))
 
 # ── Google ADK imports ─────────────────────────────────────────────────
@@ -26,9 +29,20 @@ from google.adk.sessions import InMemorySessionService
 from google.genai import types
 from mainAgent.agent import root_agent
 
+# ── Database imports ───────────────────────────────────────────────────
+from mainAgent.sub_agents.university_agent.db.database import (
+    get_connection, release_connection, run_migrations
+)
+
 # ── Flask App ──────────────────────────────────────────────────────────
 app = Flask(__name__, static_folder="frontend", static_url_path="")
 CORS(app)
+
+# ── Run Migrations on Startup ─────────────────────────────────────────
+try:
+    run_migrations()
+except Exception as e:
+    print(f"⚠️  Migration error (non-fatal): {e}")
 
 # ── ADK Session Management ────────────────────────────────────────────
 APP_NAME = "chatnct"
@@ -44,18 +58,28 @@ user_sessions = {}
 
 ATTENDANCE_SERVER = os.getenv("ATTENDANCE_SERVER_URL", "https://localhost:5001")
 
+# ── Persistent Event Loop (Feature 9: Performance) ────────────────────
+_loop = asyncio.new_event_loop()
+_loop_thread = threading.Thread(target=_loop.run_forever, daemon=True)
+_loop_thread.start()
+
+
+def run_async(coro):
+    """Run an async coroutine on the persistent event loop."""
+    future = asyncio.run_coroutine_threadsafe(coro, _loop)
+    return future.result(timeout=120)
+
 
 # ── Helper: Run agent ──────────────────────────────────────────────────
 async def _run_agent(user_id: str, message: str) -> str:
     """Send a message to the root agent and collect the response."""
-    # Get or create session
     if user_id not in user_sessions:
         session = await session_service.create_session(
             app_name=APP_NAME,
             user_id=user_id,
         )
         user_sessions[user_id] = session.id
-    
+
     session_id = user_sessions[user_id]
 
     content = types.Content(
@@ -77,41 +101,191 @@ async def _run_agent(user_id: str, message: str) -> str:
     return "\n".join(response_parts) if response_parts else "عذراً، مفيش رد متاح دلوقتي."
 
 
-def run_async(coro):
-    """Run an async coroutine from sync context."""
-    import concurrent.futures
-    with concurrent.futures.ThreadPoolExecutor() as pool:
-        future = pool.submit(asyncio.run, coro)
-        return future.result()
-
-
 # ══════════════════════════════════════════════════════════════════════
 # API ENDPOINTS
 # ══════════════════════════════════════════════════════════════════════
 
-# ── Chat ───────────────────────────────────────────────────────────────
+# ── Chat (with Supabase persistence — Feature 1) ──────────────────────
 @app.route("/api/chat", methods=["POST"])
 def chat():
-    """Send a message to the root agent and return the response."""
+    """Send a message to the root agent and return the response. Saves to DB."""
     data = request.get_json()
     message = data.get("message", "").strip()
     user_id = data.get("user_id", "default_user")
+    chat_session_id = data.get("session_id", None)  # Supabase chat_sessions.id
 
     if not message:
-        return jsonify({"status": "error", "message": "Message is required."}), 400
+        return jsonify({"status": "error", "code": "MISSING_MESSAGE", "message": "Message is required."}), 400
 
     try:
+        # Create chat session if not provided
+        if not chat_session_id:
+            conn = get_connection()
+            try:
+                cur = conn.cursor()
+                title = message[:50] + ("..." if len(message) > 50 else "")
+                cur.execute(
+                    "INSERT INTO chat_sessions (student_id, title) VALUES (%s, %s) RETURNING id",
+                    (user_id, title)
+                )
+                chat_session_id = str(cur.fetchone()[0])
+                conn.commit()
+            finally:
+                release_connection(conn)
+
+        # Save user message
+        conn = get_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO chat_messages (session_id, role, content) VALUES (%s, 'user', %s)",
+                (chat_session_id, message)
+            )
+            conn.commit()
+        finally:
+            release_connection(conn)
+
+        # Get agent response
         response = run_async(_run_agent(user_id, message))
-        return jsonify({"status": "success", "response": response})
+
+        # Save bot response
+        conn = get_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO chat_messages (session_id, role, content) VALUES (%s, 'bot', %s)",
+                (chat_session_id, response)
+            )
+            conn.commit()
+        finally:
+            release_connection(conn)
+
+        return jsonify({
+            "status": "success",
+            "response": response,
+            "session_id": chat_session_id,
+        })
     except Exception as e:
         traceback.print_exc()
-        return jsonify({"status": "error", "message": f"Agent error: {str(e)}"}), 500
+        return jsonify({"status": "error", "code": "AGENT_ERROR", "message": f"Agent error: {str(e)}"}), 500
+
+
+# ── Feature 1: Chat Sessions CRUD ─────────────────────────────────────
+@app.route("/api/chat/sessions", methods=["GET"])
+def list_chat_sessions():
+    """List chat sessions for a user with pagination."""
+    user_id = request.args.get("user_id", "default_user")
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 20))
+    offset = (page - 1) * per_page
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        # Get total count
+        cur.execute("SELECT COUNT(*) FROM chat_sessions WHERE student_id = %s", (user_id,))
+        total = cur.fetchone()[0]
+
+        # Get sessions
+        cur.execute("""
+            SELECT id, title, created_at FROM chat_sessions
+            WHERE student_id = %s ORDER BY created_at DESC
+            LIMIT %s OFFSET %s
+        """, (user_id, per_page, offset))
+        sessions = []
+        for row in cur.fetchall():
+            r = dict(row)
+            r["id"] = str(r["id"])
+            r["created_at"] = str(r["created_at"])
+            sessions.append(r)
+
+        return jsonify({
+            "status": "success",
+            "sessions": sessions,
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+        })
+    finally:
+        release_connection(conn)
+
+
+@app.route("/api/chat/sessions/<session_id>/messages", methods=["GET"])
+def get_chat_messages(session_id):
+    """Get messages for a chat session with pagination."""
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 50))
+    offset = (page - 1) * per_page
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM chat_messages WHERE session_id = %s", (session_id,))
+        total = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT id, role, content, created_at FROM chat_messages
+            WHERE session_id = %s ORDER BY created_at ASC
+            LIMIT %s OFFSET %s
+        """, (session_id, per_page, offset))
+        messages = []
+        for row in cur.fetchall():
+            r = dict(row)
+            r["id"] = str(r["id"])
+            r["created_at"] = str(r["created_at"])
+            messages.append(r)
+
+        return jsonify({
+            "status": "success",
+            "messages": messages,
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+        })
+    finally:
+        release_connection(conn)
+
+
+@app.route("/api/chat/sessions/<session_id>", methods=["DELETE"])
+def delete_chat_session(session_id):
+    """Delete a chat session and all its messages."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM chat_sessions WHERE id = %s", (session_id,))
+        affected = cur.rowcount
+        conn.commit()
+        if affected == 0:
+            return jsonify({"status": "error", "code": "SESSION_NOT_FOUND", "message": "Session not found."}), 404
+        return jsonify({"status": "success", "message": "Session deleted."})
+    finally:
+        release_connection(conn)
+
+
+@app.route("/api/chat/sessions/<session_id>/rename", methods=["PUT"])
+def rename_chat_session(session_id):
+    """Rename a chat session."""
+    data = request.get_json()
+    title = data.get("title", "").strip()
+    if not title:
+        return jsonify({"status": "error", "code": "MISSING_TITLE", "message": "Title is required."}), 400
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("UPDATE chat_sessions SET title = %s WHERE id = %s", (title, session_id))
+        affected = cur.rowcount
+        conn.commit()
+        if affected == 0:
+            return jsonify({"status": "error", "code": "SESSION_NOT_FOUND", "message": "Session not found."}), 404
+        return jsonify({"status": "success", "message": "Session renamed."})
+    finally:
+        release_connection(conn)
 
 
 # ── Prompt Generation ─────────────────────────────────────────────────
 @app.route("/api/prompt/generate", methods=["POST"])
 def generate_prompt():
-    """Send an idea to the prompt_wizard agent and return the generated prompt."""
     data = request.get_json()
     idea = data.get("idea", "").strip()
     user_id = data.get("user_id", "prompt_user")
@@ -128,10 +302,9 @@ def generate_prompt():
         return jsonify({"status": "error", "message": f"Agent error: {str(e)}"}), 500
 
 
-# ── Code Generation (Vibe Coder) ───────────────────────────────────────
+# ── Code Generation (Vibe Coder) ──────────────────────────────────────
 @app.route("/api/code/generate", methods=["POST"])
 def generate_code():
-    """Send a code request to the vibe_coder agent via root agent."""
     data = request.get_json()
     prompt = data.get("prompt", "").strip()
     user_id = data.get("user_id", "code_user")
@@ -148,10 +321,9 @@ def generate_code():
         return jsonify({"status": "error", "message": f"Agent error: {str(e)}"}), 500
 
 
-# ── Auth (Supabase Auth) ───────────────────────────────────────────────
+# ── Auth (Supabase Auth) ──────────────────────────────────────────────
 @app.route("/api/auth/login", methods=["POST"])
 def login():
-    """Verify credentials via Supabase Auth."""
     data = request.get_json()
     username = data.get("username", "").strip()
     password = data.get("password", "")
@@ -162,7 +334,6 @@ def login():
     supabase_url = os.getenv("SUPABASE_URL")
     supabase_key = os.getenv("SUPABASE_ANON_KEY")
 
-    # Build email: if user types student code or name, append @nct.edu
     email = username if "@" in username else f"{username}@nct.edu"
 
     try:
@@ -182,9 +353,7 @@ def login():
             display_name = user_meta.get("name", username)
             role = user_meta.get("role", "student")
 
-            # Try to get display name from students table
             try:
-                from mainAgent.sub_agents.university_agent.db.database import get_connection
                 conn = get_connection()
                 cur = conn.cursor()
                 student_code = user_meta.get("student_code", username)
@@ -192,7 +361,7 @@ def login():
                 row = cur.fetchone()
                 if row:
                     display_name = row[0]
-                conn.close()
+                release_connection(conn)
             except Exception:
                 pass
 
@@ -212,14 +381,12 @@ def login():
         return jsonify({"status": "error", "message": f"Auth error: {str(e)}"}), 500
 
 
-
 # ══════════════════════════════════════════════════════════════════════
 # ATTENDANCE SERVER PROXY
 # ══════════════════════════════════════════════════════════════════════
 
 @app.route("/api/courses", methods=["GET"])
 def proxy_courses():
-    """Proxy: list courses from attendance server."""
     try:
         r = http_requests.get(f"{ATTENDANCE_SERVER}/api/courses", verify=False, timeout=5)
         return jsonify(r.json()), r.status_code
@@ -229,13 +396,11 @@ def proxy_courses():
 
 @app.route("/api/session/create", methods=["POST"])
 def proxy_create_session():
-    """Proxy: create attendance session."""
     try:
         r = http_requests.post(
             f"{ATTENDANCE_SERVER}/api/session/create",
             json=request.get_json(),
-            verify=False,
-            timeout=5,
+            verify=False, timeout=5,
         )
         return jsonify(r.json()), r.status_code
     except Exception as e:
@@ -244,7 +409,6 @@ def proxy_create_session():
 
 @app.route("/api/session/<code>", methods=["GET"])
 def proxy_check_session(code):
-    """Proxy: check session status."""
     try:
         r = http_requests.get(f"{ATTENDANCE_SERVER}/api/session/{code}", verify=False, timeout=5)
         return jsonify(r.json()), r.status_code
@@ -252,16 +416,34 @@ def proxy_check_session(code):
         return jsonify({"status": "error", "message": f"Attendance server unreachable: {e}"}), 502
 
 
+@app.route("/api/session/<code>/qr-token", methods=["GET"])
+def proxy_qr_token(code):
+    """Proxy: get rotating QR token."""
+    try:
+        r = http_requests.get(f"{ATTENDANCE_SERVER}/api/session/{code}/qr-token", verify=False, timeout=5)
+        return jsonify(r.json()), r.status_code
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Attendance server unreachable: {e}"}), 502
+
+
 @app.route("/api/attendance/verify", methods=["POST"])
 def proxy_verify_attendance():
-    """Proxy: verify face and record attendance."""
     try:
         r = http_requests.post(
             f"{ATTENDANCE_SERVER}/api/attendance/verify",
             json=request.get_json(),
-            verify=False,
-            timeout=15,
+            verify=False, timeout=30,
         )
+        return jsonify(r.json()), r.status_code
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Attendance server unreachable: {e}"}), 502
+
+
+@app.route("/api/attendance/challenges", methods=["GET"])
+def proxy_challenges():
+    """Proxy: get liveness challenges."""
+    try:
+        r = http_requests.get(f"{ATTENDANCE_SERVER}/api/attendance/challenges", verify=False, timeout=5)
         return jsonify(r.json()), r.status_code
     except Exception as e:
         return jsonify({"status": "error", "message": f"Attendance server unreachable: {e}"}), 502
@@ -269,7 +451,6 @@ def proxy_verify_attendance():
 
 @app.route("/api/session/<code>/report", methods=["GET"])
 def proxy_session_report(code):
-    """Proxy: get attendance report."""
     try:
         r = http_requests.get(f"{ATTENDANCE_SERVER}/api/session/{code}/report", verify=False, timeout=5)
         return jsonify(r.json()), r.status_code
@@ -279,7 +460,6 @@ def proxy_session_report(code):
 
 @app.route("/api/session/<code>/close", methods=["POST"])
 def proxy_close_session(code):
-    """Proxy: close attendance session."""
     try:
         r = http_requests.post(f"{ATTENDANCE_SERVER}/api/session/{code}/close", verify=False, timeout=5)
         return jsonify(r.json()), r.status_code
@@ -308,7 +488,7 @@ def serve_static(path):
 if __name__ == "__main__":
     import ssl
     import socket
-    
+
     def get_lan_ip():
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -318,7 +498,7 @@ if __name__ == "__main__":
             return ip
         except Exception:
             return "127.0.0.1"
-            
+
     try:
         from mainAgent.sub_agents.university_agent.web.generate_cert import generate_self_signed_cert
         cert_dir = os.path.dirname(__file__)

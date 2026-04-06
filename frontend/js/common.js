@@ -55,6 +55,10 @@ function isAdmin() {
     return localStorage.getItem('chatnct_is_admin') === 'true';
 }
 
+function getRole() {
+    return (localStorage.getItem('chatnct_role') || 'student').toLowerCase();
+}
+
 function checkAuth() {
     const username = localStorage.getItem('chatnct_username');
     if (!username) {
@@ -67,6 +71,7 @@ function checkAuth() {
 function logout() {
     localStorage.removeItem('chatnct_username');
     localStorage.removeItem('chatnct_is_admin');
+    localStorage.removeItem('chatnct_role');
     localStorage.removeItem('chatnct_skip_dashboard');
     window.location.href = 'index.html';
 }
@@ -111,7 +116,27 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+// ── Role-Based Navigation ─────────────────────────────────
+function initRoleBasedNav() {
+    const role = getRole();
+    // Hide sidebar items based on data-role attribute
+    document.querySelectorAll('[data-role]').forEach(el => {
+        const allowedRoles = el.dataset.role.split(',').map(r => r.trim());
+        if (!allowedRoles.includes(role) && !allowedRoles.includes('all')) {
+            el.style.display = 'none';
+        }
+    });
+    // Hide dashboard quick-action cards based on data-card-role
+    document.querySelectorAll('[data-card-role]').forEach(el => {
+        const allowedRoles = el.dataset.cardRole.split(',').map(r => r.trim());
+        if (!allowedRoles.includes(role) && !allowedRoles.includes('all')) {
+            el.style.display = 'none';
+        }
+    });
+}
+
 // ── Init ───────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     initSidebarUser();
+    initRoleBasedNav();
 });

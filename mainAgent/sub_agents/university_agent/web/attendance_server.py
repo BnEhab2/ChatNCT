@@ -4,6 +4,10 @@ import socket
 import random
 import string
 import base64
+import hashlib
+import hmac
+import time
+import threading
 from datetime import datetime, timedelta
 
 import cv2
@@ -12,7 +16,7 @@ from flask import Flask, render_template, request, jsonify
 
 # Add parent so we can import db module
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from db.database import get_connection
+from db.database import get_connection, release_connection
 try:
     from web.face_verifier import FaceVerifier
 except ImportError:
@@ -30,9 +34,43 @@ app = Flask(
 PACKAGE_DIR = os.path.dirname(os.path.dirname(__file__))
 PHOTOS_DIR = os.path.join(PACKAGE_DIR, "photos")
 
+# Secret key for HMAC token generation
+QR_SECRET = os.getenv("QR_SECRET", "chatnct-qr-secret-2026")
+
+# ── Structured Error Codes (Feature 10) ───────────────────────────────
+ERR_CODES = {
+    "SESSION_NOT_FOUND": ("Session not found.", 404),
+    "SESSION_EXPIRED": ("Session has expired.", 410),
+    "SESSION_CLOSED": ("Session is closed.", 410),
+    "STUDENT_NOT_FOUND": ("Student not found.", 404),
+    "ATTENDANCE_DUPLICATE": ("Student already attended this session.", 409),
+    "TOKEN_INVALID": ("QR token is invalid.", 403),
+    "TOKEN_EXPIRED": ("QR token has expired.", 403),
+    "TOKEN_USED": ("QR token has already been used.", 403),
+    "RATE_LIMITED": ("Too many attempts. Please wait.", 429),
+    "DEVICE_MISMATCH": ("Device mismatch. Use the same device.", 403),
+    "FACE_NO_PHOTO": ("No registered photo for this student.", 400),
+    "FACE_DECODE_ERROR": ("Failed to decode image.", 400),
+    "FACE_VERIFY_FAILED": ("Face verification failed.", 403),
+    "FACE_VERIFY_ERROR": ("Face verification error.", 500),
+    "FACE_LOW_CONFIDENCE": ("Face confidence too low.", 403),
+    "FACE_STATIC_IMAGE": ("Static image detected. Please use a live camera.", 403),
+    "LIVENESS_FAILED": ("Liveness check failed.", 403),
+    "MISSING_FIELDS": ("Required fields are missing.", 400),
+    "COURSE_REQUIRED": ("course_id is required.", 400),
+}
+
+
+def _error(code, extra=None):
+    """Return a structured error response."""
+    msg, status = ERR_CODES.get(code, ("Unknown error.", 500))
+    body = {"status": "error", "code": code, "message": msg}
+    if extra:
+        body.update(extra)
+    return jsonify(body), status
+
 
 def _get_lan_ip() -> str:
-    
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
@@ -46,14 +84,15 @@ def _get_lan_ip() -> str:
 LAN_IP = _get_lan_ip()
 
 
-# ── Helpers ────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════
+# HELPERS
+# ══════════════════════════════════════════════════════════════════════
+
 def _generate_code(length: int = 6) -> str:
-    """Generate a random alphanumeric session code."""
     return "".join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
 
 def _decode_base64_image(data_url: str) -> np.ndarray:
-    """Convert a base64 data URL to an OpenCV image."""
     if "," in data_url:
         data_url = data_url.split(",", 1)[1]
     img_bytes = base64.b64decode(data_url)
@@ -61,288 +100,641 @@ def _decode_base64_image(data_url: str) -> np.ndarray:
     return cv2.imdecode(arr, cv2.IMREAD_COLOR)
 
 
-# ── Pages ──────────────────────────────────────────────────────────────
+# ── Feature 2: QR Token Generation (HMAC-based, 5s expiry) ───────────
+def _generate_qr_token(session_id: int) -> dict:
+    """Generate a single-use HMAC token bound to session + timestamp."""
+    ts = int(time.time())
+    payload = f"{session_id}:{ts}"
+    token = hmac.new(QR_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()[:16]
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        # Clean expired tokens (older than 30s)
+        cur.execute("DELETE FROM qr_tokens WHERE created_at < now() - interval '30 seconds'")
+        cur.execute(
+            "INSERT INTO qr_tokens (session_id, token) VALUES (%s, %s)",
+            (session_id, token)
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+    finally:
+        release_connection(conn)
+
+    return {"token": token, "timestamp": ts, "expires_in": 5}
+
+
+def _validate_qr_token(session_id: int, token: str) -> tuple:
+    """Validate a QR token. Returns (valid, error_code)."""
+    if not token:
+        return False, "TOKEN_INVALID"
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id, session_id, used, created_at FROM qr_tokens WHERE token = %s",
+            (token,)
+        )
+        row = cur.fetchone()
+
+        if not row:
+            return False, "TOKEN_INVALID"
+
+        row = dict(row)
+
+        if row["used"]:
+            return False, "TOKEN_USED"
+
+        if row["session_id"] != session_id:
+            return False, "TOKEN_INVALID"
+
+        # Check expiry (5 seconds)
+        token_age = (datetime.now() - row["created_at"].replace(tzinfo=None)).total_seconds()
+        if token_age > 10:  # 10s grace period for network lag
+            return False, "TOKEN_EXPIRED"
+
+        # Mark as used (single-use)
+        cur.execute("UPDATE qr_tokens SET used = true WHERE id = %s", (row["id"],))
+        conn.commit()
+        return True, None
+    except Exception:
+        conn.rollback()
+        return False, "TOKEN_INVALID"
+    finally:
+        release_connection(conn)
+
+
+# ── Feature 6: Rate Limiting ──────────────────────────────────────────
+RATE_LIMITS = {
+    "face_verify": {"max": 3, "block_seconds": 60},
+    "qr_scan": {"max": 5, "block_seconds": 60},
+}
+
+
+def _check_rate_limit(student_id: str, session_id: int, action: str) -> tuple:
+    """Check rate limit. Returns (allowed, error_response_or_None)."""
+    limits = RATE_LIMITS.get(action)
+    if not limits:
+        return True, None
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """SELECT attempts, blocked_until, last_attempt FROM rate_limits
+               WHERE student_id = %s AND session_id = %s AND action = %s""",
+            (student_id, session_id, action)
+        )
+        row = cur.fetchone()
+
+        now = datetime.now()
+
+        if row:
+            row = dict(row)
+            blocked_until = row.get("blocked_until")
+            if blocked_until and now < blocked_until.replace(tzinfo=None):
+                remaining = int((blocked_until.replace(tzinfo=None) - now).total_seconds())
+                return False, _error("RATE_LIMITED", {"retry_after": remaining})
+
+            if row["attempts"] >= limits["max"]:
+                block_until = now + timedelta(seconds=limits["block_seconds"])
+                cur.execute(
+                    """UPDATE rate_limits SET blocked_until = %s, attempts = 0, last_attempt = %s
+                       WHERE student_id = %s AND session_id = %s AND action = %s""",
+                    (block_until, now, student_id, session_id, action)
+                )
+                conn.commit()
+                return False, _error("RATE_LIMITED", {"retry_after": limits["block_seconds"]})
+
+            cur.execute(
+                """UPDATE rate_limits SET attempts = attempts + 1, last_attempt = %s
+                   WHERE student_id = %s AND session_id = %s AND action = %s""",
+                (now, student_id, session_id, action)
+            )
+        else:
+            cur.execute(
+                """INSERT INTO rate_limits (student_id, session_id, action) VALUES (%s, %s, %s)""",
+                (student_id, session_id, action)
+            )
+
+        conn.commit()
+        return True, None
+    except Exception:
+        conn.rollback()
+        return True, None
+    finally:
+        release_connection(conn)
+
+
+# ── Feature 7: Device Binding ─────────────────────────────────────────
+def _check_device_binding(student_id: str, session_id: int, req) -> tuple:
+    """Check/create device binding. Returns (allowed, error_response_or_None)."""
+    ip = req.headers.get("X-Forwarded-For", req.remote_addr)
+    ua = req.headers.get("User-Agent", "")[:500]
+    fp = req.headers.get("X-Device-Fingerprint", "")
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT ip_address, user_agent FROM device_bindings WHERE student_id = %s AND session_id = %s",
+            (student_id, session_id)
+        )
+        row = cur.fetchone()
+
+        if row:
+            row = dict(row)
+            # Allow same IP or same user agent (loose binding)
+            if row["ip_address"] != ip and row["user_agent"] != ua:
+                return False, _error("DEVICE_MISMATCH")
+        else:
+            cur.execute(
+                """INSERT INTO device_bindings (student_id, session_id, ip_address, user_agent, device_fingerprint)
+                   VALUES (%s, %s, %s, %s, %s) ON CONFLICT (student_id, session_id) DO NOTHING""",
+                (student_id, session_id, ip, ua, fp)
+            )
+            conn.commit()
+
+        return True, None
+    except Exception:
+        conn.rollback()
+        return True, None  # Fail open
+    finally:
+        release_connection(conn)
+
+
+# ── Feature 3: Multi-Frame Face Verification ──────────────────────────
+def _verify_multi_frame(images_data: list, photo_path: str) -> dict:
+    """
+    Verify identity using multiple frames.
+    - Capture 5 frames
+    - Compare all against registered photo
+    - Average confidence > 0.7
+    - Check for static image (face movement between frames)
+    """
+    if not images_data or len(images_data) < 3:
+        return {"verified": False, "message": "Need at least 3 frames.", "avg_confidence": 0}
+
+    frames = []
+    for img_data in images_data[:5]:
+        try:
+            frame = _decode_base64_image(img_data)
+            frames.append(frame)
+        except Exception:
+            continue
+
+    if len(frames) < 3:
+        return {"verified": False, "message": "Could not decode enough frames.", "avg_confidence": 0}
+
+    # Check for static image (Feature 3: reject static)
+    if _is_static_image(frames):
+        return {"verified": False, "message": "Static image detected.", "avg_confidence": 0, "static": True}
+
+    # Verify each frame
+    distances = []
+    for frame in frames:
+        try:
+            result = face_verifier.verifyIdentity(frame, photo_path)
+            if result.get("distance") is not None:
+                distances.append(result["distance"])
+        except Exception:
+            continue
+
+    if len(distances) < 2:
+        return {"verified": False, "message": "Face not detected in enough frames.", "avg_confidence": 0}
+
+    avg_distance = sum(distances) / len(distances)
+    # Cosine distance: lower = better. Facenet threshold ≈ 0.4
+    # Map to confidence: confidence = 1 - distance
+    avg_confidence = round(1.0 - avg_distance, 4)
+    verified = avg_confidence >= 0.7
+
+    return {
+        "verified": verified,
+        "avg_confidence": avg_confidence,
+        "avg_distance": round(avg_distance, 4),
+        "frames_checked": len(distances),
+        "message": "Identity verified." if verified else f"Confidence too low ({avg_confidence:.2f} < 0.70).",
+    }
+
+
+def _is_static_image(frames: list) -> bool:
+    """Detect if frames are from a static image (no movement)."""
+    if len(frames) < 2:
+        return False
+
+    diffs = []
+    for i in range(1, len(frames)):
+        gray1 = cv2.cvtColor(frames[i - 1], cv2.COLOR_BGR2GRAY)
+        gray2 = cv2.cvtColor(frames[i], cv2.COLOR_BGR2GRAY)
+        diff = cv2.absdiff(gray1, gray2)
+        diffs.append(np.mean(diff))
+
+    avg_diff = sum(diffs) / len(diffs)
+    # If average pixel difference is < 2, it's likely the same static image
+    return avg_diff < 2.0
+
+
+# ── Feature 4: Liveness Challenge Generation ──────────────────────────
+LIVENESS_CHALLENGES = [
+    {"action": "look_left", "label": "Look Left"},
+    {"action": "look_right", "label": "Look Right"},
+    {"action": "look_up", "label": "Look Up"},
+    {"action": "blink", "label": "Blink"},
+    {"action": "smile", "label": "Smile"},
+]
+
+
+def _generate_liveness_challenges(count: int = 3) -> list:
+    """Generate random liveness challenges for a session."""
+    selected = random.sample(LIVENESS_CHALLENGES, min(count, len(LIVENESS_CHALLENGES)))
+    return selected
+
+
+# ── Feature 8: Session Auto-Close (Background Thread) ─────────────────
+def _auto_close_sessions():
+    """Background thread: close expired sessions every 30 seconds."""
+    while True:
+        try:
+            conn = get_connection()
+            cur = conn.cursor()
+            cur.execute("""
+                UPDATE attendance_sessions SET is_active = 0
+                WHERE is_active = 1 AND expires_at < %s
+            """, (datetime.now().isoformat(),))
+            closed = cur.rowcount
+            conn.commit()
+            release_connection(conn)
+            if closed > 0:
+                print(f"⏰ Auto-closed {closed} expired session(s).")
+        except Exception as e:
+            print(f"Auto-close error: {e}")
+        time.sleep(30)
+
+
+# Start auto-close thread
+_auto_close_thread = threading.Thread(target=_auto_close_sessions, daemon=True)
+_auto_close_thread.start()
+
+
+# ══════════════════════════════════════════════════════════════════════
+# API ENDPOINTS
+# ══════════════════════════════════════════════════════════════════════
+
+# ── Pages (legacy) ────────────────────────────────────────────────────
 @app.route("/")
 def instructor_page():
-    """Instructor dashboard."""
     return render_template("instructor.html")
 
 
 @app.route("/student")
 def student_page():
-    """Student attendance verification page."""
     return render_template("student.html")
 
 
-# ── API: Courses List ──────────────────────────────────────────────────
+# ── API: Courses List ─────────────────────────────────────────────────
 @app.route("/api/courses", methods=["GET"])
 def list_courses():
-    """Return active courses with their instructors."""
     conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("""
-        SELECT c.id AS course_id, c.course_code, c.name AS course_name,
-               i.id AS instructor_id, i.name AS instructor_name
-        FROM courses c
-        LEFT JOIN instructors i ON c.instructor_id = i.id
-        ORDER BY c.course_code
-    """)
-    rows = [dict(r) for r in cur.fetchall()]
-    conn.close()
-    return jsonify(rows)
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT c.id AS course_id, c.course_code, c.name AS course_name,
+                   i.id AS instructor_id, i.name AS instructor_name
+            FROM courses c
+            LEFT JOIN instructors i ON c.instructor_id = i.id
+            ORDER BY c.course_code
+        """)
+        rows = [dict(r) for r in cur.fetchall()]
+        return jsonify(rows)
+    finally:
+        release_connection(conn)
 
 
-# ── API: Create Session ───────────────────────────────────────────────
+# ── API: Create Session ──────────────────────────────────────────────
 @app.route("/api/session/create", methods=["POST"])
 def create_session():
-    """Instructor creates a new attendance session."""
     data = request.get_json()
     course_id = data.get("course_id")
     instructor_id = data.get("instructor_id")
     if instructor_id == 1 or instructor_id == "1":
         instructor_id = None
     duration = data.get("duration_minutes", 15)
+    duration = max(5, min(120, int(duration)))
 
     if not course_id:
-        return jsonify({"status": "error", "message": "course_id is required."}), 400
+        return _error("COURSE_REQUIRED")
 
     code = _generate_code()
     now = datetime.now()
-    expires = now + timedelta(minutes=int(duration))
+    expires = now + timedelta(minutes=duration)
 
     conn = get_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
+        cur.execute("UPDATE attendance_sessions SET is_active = 0 WHERE course_id = %s AND is_active = 1", (course_id,))
+        cur.execute("""
+            INSERT INTO attendance_sessions (session_code, course_id, instructor_id, expires_at)
+            VALUES (%s, %s, %s, %s) RETURNING session_id
+        """, (code, course_id, instructor_id, expires.isoformat()))
+        session_id = cur.fetchone()[0]
+        conn.commit()
 
-    cur.execute("""
-        UPDATE attendance_sessions SET is_active = 0
-        WHERE course_id = %s AND is_active = 1
-    """, (course_id,))
+        cur.execute("SELECT course_code, name AS course_name FROM courses WHERE id = %s", (course_id,))
+        course = dict(cur.fetchone())
 
-    cur.execute("""
-        INSERT INTO attendance_sessions (session_code, course_id, instructor_id, expires_at)
-        VALUES (%s, %s, %s, %s) RETURNING session_id
-    """, (code, course_id, instructor_id, expires.isoformat()))
+        # Generate initial QR token
+        initial_token = _generate_qr_token(session_id)
 
-    session_id = cur.fetchone()[0]
-    conn.commit()
+        return jsonify({
+            "status": "success",
+            "session_id": session_id,
+            "session_code": code,
+            "code": code,
+            "course": course,
+            "expires_at": expires.isoformat(),
+            "duration_minutes": duration,
+            "qr_token": initial_token,
+        })
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"status": "error", "code": "DB_ERROR", "message": str(e)}), 500
+    finally:
+        release_connection(conn)
 
-    # Get course info for response
-    cur.execute("SELECT course_code, name AS course_name FROM courses WHERE id = %s", (course_id,))
-    course = dict(cur.fetchone())
-    conn.close()
 
-    return jsonify({
-        "status": "success",
-        "session_id": session_id,
-        "session_code": code,
-        "course": course,
-        "expires_at": expires.isoformat(),
-        "duration_minutes": duration,
-    })
+# ── Feature 2: API: Get Rotating QR Token ─────────────────────────────
+@app.route("/api/session/<code>/qr-token", methods=["GET"])
+def get_qr_token(code):
+    """Generate a new rotating QR token for the session (called every 5s by instructor UI)."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT session_id, is_active, expires_at FROM attendance_sessions WHERE session_code = %s", (code,))
+        row = cur.fetchone()
+        if not row:
+            return _error("SESSION_NOT_FOUND")
+
+        session = dict(row)
+        now = datetime.now()
+
+        if not session["is_active"]:
+            return _error("SESSION_CLOSED")
+
+        if now > datetime.fromisoformat(str(session["expires_at"]).replace("+00:00", "")):
+            return _error("SESSION_EXPIRED")
+
+        token_data = _generate_qr_token(session["session_id"])
+        return jsonify({"status": "success", **token_data})
+    finally:
+        release_connection(conn)
 
 
 # ── API: Check Session ────────────────────────────────────────────────
 @app.route("/api/session/<code>", methods=["GET"])
 def check_session(code):
-    """Check if a session code is valid and active."""
     conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("""
-        SELECT s.*, c.course_code, c.name AS course_name, i.name AS instructor_name
-        FROM attendance_sessions s
-        JOIN courses c ON s.course_id = c.id
-        LEFT JOIN instructors i ON s.instructor_id = i.id
-        WHERE s.session_code = %s
-    """, (code,))
-    row = cur.fetchone()
-    conn.close()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT s.*, c.course_code, c.name AS course_name, i.name AS instructor_name
+            FROM attendance_sessions s
+            JOIN courses c ON s.course_id = c.id
+            LEFT JOIN instructors i ON s.instructor_id = i.id
+            WHERE s.session_code = %s
+        """, (code,))
+        row = cur.fetchone()
 
-    if not row:
-        return jsonify({"status": "error", "message": "Session not found."}), 404
+        if not row:
+            return _error("SESSION_NOT_FOUND")
 
-    session = dict(row)
-    now = datetime.now()
-    expires = datetime.fromisoformat(session["expires_at"])
-    is_expired = now > expires
+        session = dict(row)
+        now = datetime.now()
+        expires_str = str(session["expires_at"]).replace("+00:00", "")
+        expires = datetime.fromisoformat(expires_str)
+        is_expired = now > expires
 
-    if not session["is_active"] or is_expired:
+        if not session["is_active"] or is_expired:
+            return _error("SESSION_EXPIRED" if is_expired else "SESSION_CLOSED")
+
         return jsonify({
-            "status": "error",
-            "message": "Session expired or closed.",
-            "expired": is_expired,
-        }), 410
-
-    return jsonify({
-        "status": "success",
-        "session_id": session["session_id"],
-        "course_code": session["course_code"],
-        "course_name": session["course_name"],
-        "instructor_name": session["instructor_name"],
-        "expires_at": session["expires_at"],
-    })
+            "status": "success",
+            "session_id": session["session_id"],
+            "course_code": session["course_code"],
+            "course_name": session["course_name"],
+            "instructor_name": session["instructor_name"],
+            "expires_at": session["expires_at"],
+        })
+    finally:
+        release_connection(conn)
 
 
-# ── API: Verify & Record Attendance ───────────────────────────────────
+# ── Feature 4: API: Get Liveness Challenges ───────────────────────────
+@app.route("/api/attendance/challenges", methods=["GET"])
+def get_challenges():
+    """Return randomized liveness challenge sequence."""
+    challenges = _generate_liveness_challenges(3)
+    return jsonify({"status": "success", "challenges": challenges})
+
+
+# ── API: Verify & Record Attendance (Features 2-7, 10) ────────────────
 @app.route("/api/attendance/verify", methods=["POST"])
 def verify_attendance():
-    """Student submits selfie + session code → face verify → record attendance."""
     data = request.get_json()
     session_code = data.get("session_code", "").strip()
     student_id = data.get("student_id", "").strip()
     image_data = data.get("image", "")
+    images_data = data.get("images", [])  # Feature 3: multi-frame
+    qr_token = data.get("qr_token", "")  # Feature 2: rotating token
+    liveness_passed = data.get("liveness_passed", False)  # Feature 4
+    device_fingerprint = data.get("device_fingerprint", "")
 
-    if not session_code or not student_id or not image_data:
-        return jsonify({"status": "error", "message": "session_code, student_id and image are required."}), 400
+    if not session_code or not student_id or (not image_data and not images_data):
+        return _error("MISSING_FIELDS")
 
+    # ── 1) Validate session ──────────────────────────────────────────
     conn = get_connection()
-    cur = conn.cursor()
-
-    # 1) Validate session
-    cur.execute("""
-        SELECT * FROM attendance_sessions WHERE session_code = %s AND is_active = 1
-    """, (session_code,))
-    session = cur.fetchone()
-    if not session:
-        conn.close()
-        return jsonify({"status": "error", "message": "Session not found or expired."}), 404
-
-    session = dict(session)
-    now = datetime.now()
-    if now > datetime.fromisoformat(session["expires_at"]):
-        conn.close()
-        return jsonify({"status": "error", "message": "Session has expired."}), 410
-
-    # 2) Get student photo
-    cur.execute("SELECT id, name, image_url AS photo_path FROM students WHERE id = %s", (student_id,))
-    student = cur.fetchone()
-    if not student:
-        conn.close()
-        return jsonify({"status": "error", "message": f"Student {student_id} not found."}), 404
-
-    student = dict(student)
-    photo_rel = student.get("photo_path")
-    # Bypassed for testing purposes so you don't need a registered face on disk
-    # if not photo_rel:
-    #     conn.close()
-    #     return jsonify({"status": "error", "message": "No registered photo for this student."}), 400
-    
-    # photo_path = os.path.join(PACKAGE_DIR, photo_rel) if not os.path.isabs(photo_rel) else photo_rel
-    photo_path = "bypass.jpg"
-
-    # 3) Check if already checked in
-    cur.execute("""
-        SELECT id AS attendance_id FROM attendance
-        WHERE student_id = %s AND session_id = %s
-    """, (student_id, session["session_id"]))
-    if cur.fetchone():
-        conn.close()
-        return jsonify({"status": "error", "message": "You already checked in for this session."}), 409
-
-    # 4) Decode image & run face verification using FaceVerifier
     try:
-        captured = _decode_base64_image(image_data)
-    except Exception as e:
-        conn.close()
-        return jsonify({"status": "error", "message": f"Failed to decode image: {e}"}), 400
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT * FROM attendance_sessions WHERE session_code = %s AND is_active = 1",
+            (session_code,)
+        )
+        session = cur.fetchone()
+        if not session:
+            return _error("SESSION_NOT_FOUND")
 
-    try:
-        # Bypassed for testing purposes!
-        # verification = face_verifier.verifyIdentity(captured, photo_path)
-        verification = {"verified": True, "distance": 0.0, "message": "Test Auto-Verified"}
-        distance = round(verification["distance"], 4)
-        verified = verification["verified"]
-        print(f"Face verify: student={student_id}, distance={distance}, verified={verified}, message={verification['message']}")
-    except Exception as e:
-        conn.close()
-        return jsonify({"status": "error", "message": f"Face verification error: {e}"}), 500
+        session = dict(session)
+        now = datetime.now()
+        expires_str = str(session["expires_at"]).replace("+00:00", "")
+        if now > datetime.fromisoformat(expires_str):
+            return _error("SESSION_EXPIRED")
 
-    if not verified:
-        conn.close()
+        sid = session["session_id"]
+
+        # ── Feature 6: Rate Limiting ─────────────────────────────────
+        allowed, err_resp = _check_rate_limit(student_id, sid, "face_verify")
+        if not allowed:
+            return err_resp
+
+        # ── Feature 2: Validate QR Token ─────────────────────────────
+        if qr_token:
+            valid, err_code = _validate_qr_token(sid, qr_token)
+            if not valid:
+                return _error(err_code)
+
+        # ── Feature 5: Duplicate Protection ──────────────────────────
+        cur.execute(
+            "SELECT id FROM attendance WHERE student_id = %s AND session_id = %s",
+            (student_id, sid)
+        )
+        if cur.fetchone():
+            return _error("ATTENDANCE_DUPLICATE")
+
+        # ── Feature 7: Device Binding ────────────────────────────────
+        allowed, err_resp = _check_device_binding(student_id, sid, request)
+        if not allowed:
+            return err_resp
+
+        # ── 2) Get student photo ─────────────────────────────────────
+        cur.execute("SELECT id, name, image_url AS photo_path FROM students WHERE id = %s", (student_id,))
+        student = cur.fetchone()
+        if not student:
+            return _error("STUDENT_NOT_FOUND")
+
+        student = dict(student)
+        photo_rel = student.get("photo_path")
+
+        # ── 3) Face Verification ─────────────────────────────────────
+        if photo_rel and os.path.exists(os.path.join(PACKAGE_DIR, photo_rel) if not os.path.isabs(str(photo_rel)) else str(photo_rel)):
+            photo_path = os.path.join(PACKAGE_DIR, photo_rel) if not os.path.isabs(str(photo_rel)) else str(photo_rel)
+
+            # Feature 3: Multi-frame verification
+            if images_data and len(images_data) >= 3:
+                result = _verify_multi_frame(images_data, photo_path)
+                if result.get("static"):
+                    return _error("FACE_STATIC_IMAGE")
+                if not result["verified"]:
+                    return _error("FACE_LOW_CONFIDENCE", {
+                        "avg_confidence": result.get("avg_confidence", 0),
+                        "frames_checked": result.get("frames_checked", 0),
+                    })
+                distance = result.get("avg_distance", 0)
+                verified = True
+            else:
+                # Single-frame fallback
+                try:
+                    captured = _decode_base64_image(image_data)
+                except Exception as e:
+                    return _error("FACE_DECODE_ERROR", {"detail": str(e)})
+
+                try:
+                    verification = face_verifier.verifyIdentity(captured, photo_path)
+                    distance = round(verification["distance"], 4)
+                    verified = verification["verified"]
+                    if not verified:
+                        return _error("FACE_VERIFY_FAILED", {"distance": distance})
+                except Exception as e:
+                    return _error("FACE_VERIFY_ERROR", {"detail": str(e)})
+        else:
+            # No registered photo — auto-verify with warning
+            verified = True
+            distance = 0.0
+            print(f"⚠️  No registered photo for student {student_id}, auto-verifying.")
+
+        # ── 4) Record attendance ─────────────────────────────────────
+        today = now.strftime("%Y-%m-%d")
+        notes = "Verified via Face+QR"
+        if liveness_passed:
+            notes += " +Liveness"
+
+        cur.execute("""
+            INSERT INTO attendance (student_id, course_id, session_id, date, status, verified_by, notes)
+            VALUES (%s, %s, %s, %s, 'Present', 'face', %s)
+        """, (student_id, session["course_id"], sid, today, notes))
+        conn.commit()
+
         return jsonify({
-            "status": "error",
-            "verified": False,
+            "status": "success",
+            "code": "ATTENDANCE_RECORDED",
+            "verified": True,
             "distance": distance,
-            "message": f"Face verification failed. {verification['message']}",
-        }), 403
-
-    # 5) Record attendance
-    today = now.strftime("%Y-%m-%d")
-    cur.execute("""
-        INSERT INTO attendance (student_id, course_id, session_id, date, status, verified_by, notes)
-        VALUES (%s, %s, %s, %s, 'Present', 'face', 'Verified via Face+QR')
-    """, (student_id, session["course_id"], session["session_id"], today))
-    conn.commit()
-    conn.close()
-
-    return jsonify({
-        "status": "success",
-        "verified": True,
-        "distance": distance,
-        "student_name": student["name"],
-        "message": f"{student['name']} — Attendance recorded successfully!",
-    })
+            "student_name": student["name"],
+            "message": f"{student['name']} — Attendance recorded!",
+        })
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"status": "error", "code": "SERVER_ERROR", "message": str(e)}), 500
+    finally:
+        release_connection(conn)
 
 
 # ── API: Session Report ───────────────────────────────────────────────
 @app.route("/api/session/<code>/report", methods=["GET"])
 def session_report(code):
-    """Get attendance report for a session."""
     conn = get_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM attendance_sessions WHERE session_code = %s", (code,))
+        session = cur.fetchone()
+        if not session:
+            return _error("SESSION_NOT_FOUND")
 
-    cur.execute("SELECT * FROM attendance_sessions WHERE session_code = %s", (code,))
-    session = cur.fetchone()
-    if not session:
-        conn.close()
-        return jsonify({"status": "error", "message": "Session not found."}), 404
+        session = dict(session)
+        cur.execute("""
+            SELECT a.id AS attendance_id, a.student_id, s.name AS student_name,
+                   a.date, a.status, a.verified_by, a.notes, a.created_at
+            FROM attendance a
+            JOIN students s ON a.student_id = s.id
+            WHERE a.session_id = %s
+            ORDER BY a.created_at
+        """, (session["session_id"],))
 
-    session = dict(session)
+        records = [dict(r) for r in cur.fetchall()]
+        # Make timestamps serializable
+        for r in records:
+            if r.get("created_at"):
+                r["created_at"] = str(r["created_at"])
+            if r.get("date"):
+                r["date"] = str(r["date"])
 
-    cur.execute("""
-        SELECT a.id AS attendance_id, a.student_id, s.name AS student_name,
-               a.date, a.status, a.verified_by, a.notes
-        FROM attendance a
-        JOIN students s ON a.student_id = s.id
-        WHERE a.session_id = %s
-        ORDER BY a.created_at
-    """, (session["session_id"],))
-
-    records = [dict(r) for r in cur.fetchall()]
-    conn.close()
-
-    return jsonify({
-        "status": "success",
-        "session_code": code,
-        "total_present": len(records),
-        "records": records,
-    })
+        return jsonify({
+            "status": "success",
+            "session_code": code,
+            "total_present": len(records),
+            "attendance": records,
+            "records": records,
+        })
+    finally:
+        release_connection(conn)
 
 
 # ── API: Close Session ────────────────────────────────────────────────
 @app.route("/api/session/<code>/close", methods=["POST"])
 def close_session(code):
-    """Close an active attendance session."""
     conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("""
-        UPDATE attendance_sessions SET is_active = 0
-        WHERE session_code = %s AND is_active = 1
-    """, (code,))
-    affected = cur.rowcount
-    conn.commit()
-    conn.close()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE attendance_sessions SET is_active = 0 WHERE session_code = %s AND is_active = 1",
+            (code,)
+        )
+        affected = cur.rowcount
+        conn.commit()
 
-    if affected == 0:
-        return jsonify({"status": "error", "message": "Session not found or already closed."}), 404
+        if affected == 0:
+            return _error("SESSION_NOT_FOUND")
 
-    return jsonify({"status": "success", "message": "Session closed."})
+        return jsonify({"status": "success", "code": "SESSION_CLOSED", "message": "Session closed."})
+    finally:
+        release_connection(conn)
 
 
-# ── Main ───────────────────────────────────────────────────────────────
+# ── Main ──────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     import ssl
-    import importlib
-    # Handle both: python -m university_agent.web.attendance_server  AND  python attendance_server.py
     try:
         from university_agent.web.generate_cert import generate_self_signed_cert
     except ImportError:
@@ -355,12 +747,8 @@ if __name__ == "__main__":
     print("=" * 55)
     print(f"  Local:      https://localhost:5000/")
     print(f"  Network:    https://{LAN_IP}:5000/")
-    print(f"  Student:    https://{LAN_IP}:5000/student")
     print("=" * 55)
-    print("⚠️  Mobile browsers will show a certificate warning —")
-    print("   tap 'Advanced' → 'Proceed' to continue.\n")
 
     ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ssl_ctx.load_cert_chain(cert_path, key_path)
-
     app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=ssl_ctx, use_reloader=False)

@@ -1,9 +1,15 @@
 // ══════════════════════════════════════════════════════════════
-// ChatNCT — Student Attendance (QR Scanner + Face Verify)
+// ChatNCT — Student Attendance (QR Scanner + Multi-Frame Face + Liveness)
+// Features: 2 (QR Token), 3 (Multi-Frame), 4 (Liveness), 7 (Device FP)
 // ══════════════════════════════════════════════════════════════
+
+if (getRole() === 'instructor' || getRole() === 'admin') {
+    window.location.href = 'instructor.html';
+}
 
 let html5QrCode = null;
 let currentStream = null;
+let currentQrToken = null;  // Feature 2: rotating token
 
 const qrScanner = document.getElementById('qrScanner');
 const qrPlaceholder = document.getElementById('qrPlaceholder');
@@ -11,9 +17,24 @@ const statusText = document.getElementById('statusText');
 const cameraBtn = document.getElementById('cameraBtn');
 const resultCard = document.getElementById('resultCard');
 
-// ── Start QR Scanner ───────────────────────────────────────
+// ── Feature 7: Device Fingerprint ─────────────────────────
+function getDeviceFingerprint() {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.textBaseline = 'top';
+    ctx.font = '14px Arial';
+    ctx.fillText('fp', 2, 2);
+    const fp = canvas.toDataURL().slice(-50) + navigator.language + screen.width + screen.height;
+    let hash = 0;
+    for (let i = 0; i < fp.length; i++) {
+        hash = ((hash << 5) - hash) + fp.charCodeAt(i);
+        hash |= 0;
+    }
+    return Math.abs(hash).toString(36);
+}
+
+// ── Start QR Scanner ──────────────────────────────────────
 async function startQrScanner() {
-    // Hide placeholder, show scanner
     if (qrPlaceholder) qrPlaceholder.style.display = 'none';
     cameraBtn.textContent = 'Scanning...';
     cameraBtn.disabled = true;
@@ -41,21 +62,25 @@ function onQrCodeError(errorMessage) {
 }
 
 async function onQrCodeSuccess(decodedText) {
-    // Stop scanner
     if (html5QrCode) {
         await html5QrCode.stop();
         html5QrCode = null;
     }
 
     statusText.textContent = 'QR Code found! Verifying session...';
-    // Extract session code from URL if QR contains a full link
+
+    // Extract session code + token from URL (Feature 2)
     let sessionCode = decodedText.trim();
+    currentQrToken = null;
+
     try {
         const url = new URL(sessionCode);
         const codeParam = url.searchParams.get('code');
+        const tokenParam = url.searchParams.get('token');
         if (codeParam) sessionCode = codeParam;
+        if (tokenParam) currentQrToken = tokenParam;
     } catch (_) {
-        // Not a URL, use as-is (raw session code)
+        // Not a URL, use as-is
     }
 
     // Verify session
@@ -67,7 +92,7 @@ async function onQrCodeSuccess(decodedText) {
             statusText.textContent = `Session: ${data.course_name || sessionCode} — Enter your Student ID`;
             showStudentIdForm(sessionCode, data.course_name || 'Unknown');
         } else {
-            showResult('error', 'Session expired or invalid.');
+            showResult('error', data.message || 'Session expired or invalid.');
             resetScanner();
         }
     } catch (err) {
@@ -77,7 +102,7 @@ async function onQrCodeSuccess(decodedText) {
     }
 }
 
-// ── Student ID Form ────────────────────────────────────────
+// ── Student ID Form ───────────────────────────────────────
 function showStudentIdForm(sessionCode, courseName) {
     const formHtml = `
         <div class="id-form" id="idForm">
@@ -98,7 +123,7 @@ function showStudentIdForm(sessionCode, courseName) {
     }
 }
 
-// ── Face Verification ──────────────────────────────────────
+// ── Feature 3+4: Multi-Frame Capture + Liveness ───────────
 async function startFaceVerify(sessionCode) {
     const studentId = document.getElementById('studentIdInput')?.value.trim();
     if (!studentId) {
@@ -106,7 +131,7 @@ async function startFaceVerify(sessionCode) {
         return;
     }
 
-    statusText.textContent = 'Opening camera for selfie...';
+    statusText.textContent = 'Opening camera for liveness check...';
 
     const cameraModal = document.getElementById('cameraModal');
     const videoElement = document.getElementById('videoElement');
@@ -118,10 +143,62 @@ async function startFaceVerify(sessionCode) {
         });
         videoElement.srcObject = currentStream;
 
-        // Add capture button
+        // Feature 4: Run liveness challenges first, then multi-frame capture
         const captureBtn = document.getElementById('captureBtn');
-        captureBtn.onclick = () => captureAndVerify(sessionCode, studentId);
+        captureBtn.textContent = '📸 Starting liveness check...';
+        captureBtn.disabled = true;
         captureBtn.style.display = 'flex';
+
+        // Wait for video to be ready
+        await new Promise(resolve => {
+            videoElement.onloadedmetadata = resolve;
+            setTimeout(resolve, 1000);
+        });
+
+        // Run liveness detection
+        statusText.textContent = 'Performing liveness check...';
+        const livenessResult = await runLivenessCheck(videoElement);
+
+        if (!livenessResult.passed) {
+            stopCamera();
+            showResult('error', `❌ Liveness check failed: ${livenessResult.reason}`);
+            return;
+        }
+
+        statusText.textContent = 'Liveness passed! Capturing frames...';
+
+        // Feature 3: Capture multiple frames
+        const frames = await captureMultipleFrames(videoElement, 5);
+
+        stopCamera();
+        statusText.textContent = 'Verifying face...';
+
+        // Submit verification
+        try {
+            const response = await fetch('/api/attendance/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    session_code: sessionCode,
+                    student_id: studentId,
+                    images: frames,
+                    image: frames[0],  // Fallback single image
+                    qr_token: currentQrToken || '',
+                    liveness_passed: livenessResult.passed,
+                    device_fingerprint: getDeviceFingerprint(),
+                })
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                showResult('success', `✅ Attendance recorded!\nStudent: ${data.student_name || studentId}`);
+            } else {
+                showResult('error', `❌ ${data.message || 'Verification failed'}\n${data.code || ''}`);
+            }
+        } catch (err) {
+            console.error('Verify error:', err);
+            showResult('error', 'Server connection error');
+        }
     } catch (err) {
         console.error('Camera error:', err);
         showNotification('Unable to access camera', 'error');
@@ -129,42 +206,123 @@ async function startFaceVerify(sessionCode) {
     }
 }
 
-async function captureAndVerify(sessionCode, studentId) {
-    const videoElement = document.getElementById('videoElement');
+// ── Feature 3: Capture Multiple Frames ────────────────────
+async function captureMultipleFrames(videoElement, count = 5) {
+    const frames = [];
+    for (let i = 0; i < count; i++) {
+        const canvas = document.createElement('canvas');
+        canvas.width = videoElement.videoWidth;
+        canvas.height = videoElement.videoHeight;
+        canvas.getContext('2d').drawImage(videoElement, 0, 0);
+        frames.push(canvas.toDataURL('image/jpeg', 0.7));
+        // Wait 300ms between frames to get movement
+        if (i < count - 1) {
+            await new Promise(r => setTimeout(r, 300));
+        }
+    }
+    return frames;
+}
+
+// ── Feature 4: Client-Side Liveness Detection ─────────────
+async function runLivenessCheck(videoElement) {
+    // Fetch random challenges from backend
+    let challenges;
+    try {
+        const res = await fetch('/api/attendance/challenges');
+        const data = await res.json();
+        challenges = data.challenges || [];
+    } catch (e) {
+        // Fallback challenges
+        challenges = [
+            { action: 'blink', label: 'Blink your eyes' },
+            { action: 'smile', label: 'Smile' },
+        ];
+    }
+
+    if (challenges.length === 0) {
+        return { passed: true, reason: 'No challenges required' };
+    }
+
+    // Simple liveness: check for significant frame changes during each challenge
+    for (const challenge of challenges) {
+        statusText.textContent = `Liveness: ${challenge.label}`;
+
+        // Show challenge instruction on the video overlay
+        _showChallengeOverlay(challenge.label);
+
+        // Wait for user to perform action (3 seconds)
+        const moved = await _detectMovementDuring(videoElement, 3000);
+
+        if (!moved) {
+            _hideChallengeOverlay();
+            return { passed: false, reason: `Failed: ${challenge.label} — no movement detected` };
+        }
+    }
+
+    _hideChallengeOverlay();
+    return { passed: true, reason: 'All challenges passed' };
+}
+
+function _showChallengeOverlay(text) {
+    let overlay = document.getElementById('livenessOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'livenessOverlay';
+        overlay.style.cssText = `
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8); color: #fff; padding: 20px 40px;
+            border-radius: 15px; font-size: 24px; font-weight: bold; z-index: 10002;
+            font-family: 'Montserrat', sans-serif; text-align: center;
+            border: 2px solid rgba(124,102,227,0.6);
+        `;
+        document.body.appendChild(overlay);
+    }
+    overlay.textContent = `🔍 ${text}`;
+    overlay.style.display = 'block';
+}
+
+function _hideChallengeOverlay() {
+    const overlay = document.getElementById('livenessOverlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+async function _detectMovementDuring(videoElement, durationMs) {
     const canvas = document.createElement('canvas');
     canvas.width = videoElement.videoWidth;
     canvas.height = videoElement.videoHeight;
-    canvas.getContext('2d').drawImage(videoElement, 0, 0);
+    const ctx = canvas.getContext('2d');
 
-    const imageData = canvas.toDataURL('image/jpeg', 0.8);
+    // Capture initial frame
+    ctx.drawImage(videoElement, 0, 0);
+    const initialData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
 
-    // Stop camera
-    stopCamera();
-    statusText.textContent = 'Verifying face...';
+    const startTime = Date.now();
+    let maxDiff = 0;
 
-    try {
-        const response = await fetch('/api/attendance/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                session_code: sessionCode,
-                student_id: studentId,
-                image: imageData
-            })
-        });
-        const data = await response.json();
+    while (Date.now() - startTime < durationMs) {
+        await new Promise(r => setTimeout(r, 200));
+        ctx.drawImage(videoElement, 0, 0);
+        const currentData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
 
-        if (data.status === 'success') {
-            showResult('success', `✅ Attendance recorded!\nStudent: ${data.student_name || studentId}`);
-        } else {
-            showResult('error', `❌ ${data.message || 'Verification failed'}`);
+        // Calculate pixel difference
+        let totalDiff = 0;
+        const sampleStep = 40;  // Sample every 40 pixels for performance
+        let samples = 0;
+        for (let i = 0; i < currentData.length; i += sampleStep * 4) {
+            totalDiff += Math.abs(currentData[i] - initialData[i]);
+            samples++;
         }
-    } catch (err) {
-        console.error('Verify error:', err);
-        showResult('error', 'Server connection error');
+        const avgDiff = totalDiff / samples;
+        if (avgDiff > maxDiff) maxDiff = avgDiff;
+
+        // Early success if movement detected
+        if (maxDiff > 8) return true;
     }
+
+    return maxDiff > 5;
 }
 
+// ── Stop Camera ───────────────────────────────────────────
 function stopCamera() {
     if (currentStream) {
         currentStream.getTracks().forEach(track => track.stop());
@@ -174,9 +332,10 @@ function stopCamera() {
     const videoElement = document.getElementById('videoElement');
     if (cameraModal) cameraModal.classList.remove('active');
     if (videoElement) videoElement.srcObject = null;
+    _hideChallengeOverlay();
 }
 
-// ── Result Display ─────────────────────────────────────────
+// ── Result Display ────────────────────────────────────────
 function showResult(type, message) {
     const icon = type === 'success' ? '✅' : '❌';
     const color = type === 'success' ? '#22c55e' : '#ef4444';
@@ -201,13 +360,13 @@ function resetScanner() {
     statusText.textContent = 'Point your camera at the QR code';
     cameraBtn.textContent = 'Open Camera';
     cameraBtn.disabled = false;
+    currentQrToken = null;
 
-    // Clear QR reader div
     const qrReader = document.getElementById('qrReader');
     if (qrReader) qrReader.innerHTML = '';
 }
 
-// ── Init ───────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────
 cameraBtn.addEventListener('click', startQrScanner);
 document.getElementById('closeCamera')?.addEventListener('click', stopCamera);
 
@@ -218,8 +377,9 @@ document.getElementById('cameraModal')?.addEventListener('click', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
+    const token = params.get('token');
     if (code) {
-        // Skip scanning if code provided in URL
+        if (token) currentQrToken = token;
         onQrCodeSuccess(code);
     }
 });
