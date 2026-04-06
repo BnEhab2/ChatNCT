@@ -52,7 +52,7 @@ _MIGRATIONS = """
 -- Chat sessions
 CREATE TABLE IF NOT EXISTS chat_sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    student_id TEXT NOT NULL,
+    student_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
     title TEXT NOT NULL DEFAULT 'New Chat',
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

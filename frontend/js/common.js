@@ -51,6 +51,14 @@ function getUsername() {
     return localStorage.getItem('chatnct_username') || 'Guest';
 }
 
+function getAccessToken() {
+    return localStorage.getItem('chatnct_access_token') || '';
+}
+
+function getUserId() {
+    return localStorage.getItem('chatnct_user_id') || getUsername();
+}
+
 function isAdmin() {
     return localStorage.getItem('chatnct_is_admin') === 'true';
 }
@@ -59,10 +67,22 @@ function getRole() {
     return (localStorage.getItem('chatnct_role') || 'student').toLowerCase();
 }
 
+/**
+ * Returns headers object with Supabase auth token for API calls.
+ */
+function getAuthHeaders() {
+    const headers = { 'Content-Type': 'application/json' };
+    const token = getAccessToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return headers;
+}
+
 function checkAuth() {
     const username = localStorage.getItem('chatnct_username');
-    if (!username) {
-        window.location.href = 'index.html';
+    const token = localStorage.getItem('chatnct_access_token');
+    if (!username || !token) {
+        // Clear stale data and redirect
+        logout();
         return false;
     }
     return true;
@@ -73,6 +93,9 @@ function logout() {
     localStorage.removeItem('chatnct_is_admin');
     localStorage.removeItem('chatnct_role');
     localStorage.removeItem('chatnct_skip_dashboard');
+    localStorage.removeItem('chatnct_access_token');
+    localStorage.removeItem('chatnct_refresh_token');
+    localStorage.removeItem('chatnct_user_id');
     window.location.href = 'index.html';
 }
 

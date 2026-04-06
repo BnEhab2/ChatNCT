@@ -102,9 +102,13 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         const data = await response.json();
 
         if (data.status === 'success') {
+            // Store auth data from Supabase
             localStorage.setItem('chatnct_username', data.username);
             localStorage.setItem('chatnct_is_admin', data.is_admin ? 'true' : 'false');
             localStorage.setItem('chatnct_role', data.role || 'student');
+            localStorage.setItem('chatnct_access_token', data.access_token);
+            if (data.refresh_token) localStorage.setItem('chatnct_refresh_token', data.refresh_token);
+            if (data.user_id) localStorage.setItem('chatnct_user_id', data.user_id);
 
             const role = (data.role || 'student').toLowerCase();
             showNotification(data.is_admin ? 'Welcome, Admin! 🎯' : `Welcome back, ${data.username}!`);

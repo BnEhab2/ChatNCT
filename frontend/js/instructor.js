@@ -100,14 +100,15 @@ function _renderQR(code, token, timestamp) {
     if (token) {
         qrContent += `&token=${token}&t=${timestamp}`;
     }
-    qrDisplay.innerHTML = '';
-    new QRCode(qrDisplay, {
+    qrDisplay.innerHTML = '<div id="qrWrapper" style="background:#ffffff; padding:15px; border-radius:10px; display:inline-block;"></div>';
+    const qrWrapper = document.getElementById('qrWrapper');
+    new QRCode(qrWrapper, {
         text: qrContent,
-        width: 280,
-        height: 280,
-        colorDark: "#1a173a",
-        colorLight: "#e0d8fe",
-        correctLevel: QRCode.CorrectLevel.H
+        width: 250,
+        height: 250,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.L
     });
 }
 
