@@ -52,10 +52,9 @@ async function validateSession() {
         studentId = sid;
 
         // Show session banner
-        document.getElementById("bannerCourse").textContent =
-            `${data.course_code} — ${data.course_name}`;
-        document.getElementById("bannerInstructor").textContent =
-            `Instructor: ${data.instructor_name}`;
+        const codePrint = data.course_code ? `${data.course_code} — ` : "";
+        document.getElementById("bannerCourse").textContent = codePrint + data.course_name;
+        document.getElementById("bannerInstructor").textContent = `Instructor: ${data.instructor_name}`;
         document.getElementById("sessionBanner").style.display = "block";
 
         // Move to step 2

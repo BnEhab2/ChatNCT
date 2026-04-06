@@ -48,13 +48,18 @@ def get_schema() -> dict:
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+    cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name")
     tables = [row[0] for row in cur.fetchall()]
 
     schema = {}
     for table in tables:
-        cur.execute(f"PRAGMA table_info({table})")
-        columns = [{"name": col[1], "type": col[2], "nullable": not col[3], "pk": bool(col[5])} for col in cur.fetchall()]
+        cur.execute("""
+            SELECT column_name, data_type, is_nullable, 
+                   (SELECT COUNT(*) FROM information_schema.key_column_usage kcu JOIN information_schema.table_constraints tc ON kcu.constraint_name = tc.constraint_name WHERE kcu.table_name = c.table_name AND kcu.column_name = c.column_name AND tc.constraint_type = 'PRIMARY KEY') as is_pk
+            FROM information_schema.columns c
+            WHERE table_schema = 'public' AND table_name = %s
+        """, (table,))
+        columns = [{"name": col[0], "type": col[1], "nullable": col[2] == 'YES', "pk": col[3] > 0} for col in cur.fetchall()]
         schema[table] = columns
 
     conn.close()

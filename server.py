@@ -148,28 +148,69 @@ def generate_code():
         return jsonify({"status": "error", "message": f"Agent error: {str(e)}"}), 500
 
 
-# ── Auth (Demo) ────────────────────────────────────────────────────────
+# ── Auth (Supabase Auth) ───────────────────────────────────────────────
 @app.route("/api/auth/login", methods=["POST"])
 def login():
-    """Demo login — accepts any credentials, flags admin."""
+    """Verify credentials via Supabase Auth."""
     data = request.get_json()
-    username = data.get("username", "")
+    username = data.get("username", "").strip()
     password = data.get("password", "")
 
-    if username == "webadmin" and password == "webadmin":
-        return jsonify({
-            "status": "success",
-            "is_admin": True,
-            "username": username,
-        })
-    elif username and password:
-        return jsonify({
-            "status": "success",
-            "is_admin": False,
-            "username": username,
-        })
-    else:
+    if not username or not password:
         return jsonify({"status": "error", "message": "Username and password required."}), 400
+
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_ANON_KEY")
+
+    # Build email: if user types student code or name, append @nct.edu
+    email = username if "@" in username else f"{username}@nct.edu"
+
+    try:
+        auth_res = http_requests.post(
+            f"{supabase_url}/auth/v1/token?grant_type=password",
+            headers={
+                "apikey": supabase_key,
+                "Content-Type": "application/json",
+            },
+            json={"email": email, "password": password},
+            timeout=10,
+        )
+        auth_data = auth_res.json()
+
+        if auth_res.status_code == 200 and auth_data.get("access_token"):
+            user_meta = auth_data.get("user", {}).get("user_metadata", {})
+            display_name = user_meta.get("name", username)
+            role = user_meta.get("role", "student")
+
+            # Try to get display name from students table
+            try:
+                from mainAgent.sub_agents.university_agent.db.database import get_connection
+                conn = get_connection()
+                cur = conn.cursor()
+                student_code = user_meta.get("student_code", username)
+                cur.execute("SELECT name FROM students WHERE student_code = %s", (student_code,))
+                row = cur.fetchone()
+                if row:
+                    display_name = row[0]
+                conn.close()
+            except Exception:
+                pass
+
+            return jsonify({
+                "status": "success",
+                "is_admin": role.lower() == "admin",
+                "username": display_name,
+                "role": role,
+                "access_token": auth_data["access_token"],
+            })
+        else:
+            msg = auth_data.get("error_description") or auth_data.get("msg") or "Invalid credentials"
+            return jsonify({"status": "error", "message": msg}), 401
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": f"Auth error: {str(e)}"}), 500
+
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -265,12 +306,40 @@ def serve_static(path):
 # ══════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
+    import ssl
+    import socket
+    
+    def get_lan_ip():
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+            s.close()
+            return ip
+        except Exception:
+            return "127.0.0.1"
+            
+    try:
+        from mainAgent.sub_agents.university_agent.web.generate_cert import generate_self_signed_cert
+        cert_dir = os.path.dirname(__file__)
+        cert_path, key_path = generate_self_signed_cert(cert_dir)
+        ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ssl_ctx.load_cert_chain(cert_path, key_path)
+    except Exception as e:
+        print(f"Warning: Could not generate SSL certs. Falling back to HTTP. {e}")
+        ssl_ctx = None
+
+    lan_ip = get_lan_ip()
+    protocol = "https" if ssl_ctx else "http"
+
     print("\n" + "=" * 60)
-    print("🚀 ChatNCT Server")
+    print("🚀 ChatNCT Server (Unified App)")
     print("=" * 60)
-    print(f"  Frontend:   http://localhost:5000/")
-    print(f"  API:        http://localhost:5000/api/chat")
-    print(f"  Attendance: {ATTENDANCE_SERVER}")
+    print(f"  Local:      {protocol}://localhost:5000/")
+    print(f"  Network:    {protocol}://{lan_ip}:5000/")
+    print("=" * 60)
+    print("⚠️  To test from mobile camera, you MUST open the Network link")
+    print("   on your mobile and accept the 'Not Secure' warning.")
     print("=" * 60 + "\n")
 
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=ssl_ctx)

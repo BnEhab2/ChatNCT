@@ -15,7 +15,8 @@ async function loadCourses() {
             const opt = document.createElement("option");
             opt.value = c.course_id;
             opt.dataset.instructor = c.instructor_id || 1;
-            opt.textContent = `${c.course_code} — ${c.course_name}`;
+            const codePrint = c.course_code ? `${c.course_code} — ` : "";
+            opt.textContent = `${codePrint}${c.course_name}`;
             sel.appendChild(opt);
         });
     } catch (e) {
@@ -42,8 +43,8 @@ async function createSession() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                course_id: parseInt(courseId),
-                instructor_id: parseInt(instructorId),
+                course_id: courseId,
+                instructor_id: instructorId,
                 duration_minutes: parseInt(duration),
             }),
         });
@@ -62,8 +63,8 @@ async function createSession() {
         document.getElementById("createCard").style.display = "none";
         document.getElementById("sessionCard").style.display = "block";
         document.getElementById("sessionCode").textContent = data.session_code;
-        document.getElementById("courseName").textContent =
-            `${data.course.course_code} — ${data.course.course_name}`;
+        const codePrint = data.course.course_code ? `${data.course.course_code} — ` : "";
+        document.getElementById("courseName").textContent = codePrint + data.course.course_name;
 
         const exp = new Date(data.expires_at);
         document.getElementById("expiresAt").textContent = exp.toLocaleTimeString();

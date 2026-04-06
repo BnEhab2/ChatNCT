@@ -49,10 +49,11 @@ def main():
     
     print("\n" + "=" * 60)
     print("✅ Both servers are running!")
-    print(f"  🌐 Frontend:    http://localhost:5000/")
-    print(f"  🤖 Chat API:    http://localhost:5000/api/chat")
+    print(f"  🌐 Frontend:    https://localhost:5000/")
+    print(f"  🤖 Chat API:    https://localhost:5000/api/chat")
     print(f"  📱 Attendance:  https://localhost:5001/")
     print("=" * 60)
+    print("⚠️  Accept the 'Not Secure' warning in your browser.")
     print("\nPress Ctrl+C to stop all servers.\n")
     
     try:

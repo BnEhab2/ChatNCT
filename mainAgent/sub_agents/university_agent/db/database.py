@@ -1,30 +1,23 @@
-"""SQLite database — loads schema from schema.sql and provides connections."""
+"""PostgreSQL database — provides connections to Supabase."""
 
-import sqlite3, os
+import os
+import psycopg2
+from psycopg2.extras import DictCursor
+from dotenv import load_dotenv
 
-_DIR = os.path.dirname(os.path.dirname(__file__))
-DB_PATH = os.path.join(_DIR, "university.db")
-SCHEMA_PATH = os.path.join(_DIR, "schema.sql")
-
+# Try to find the .env file in the mainAgent directory
+_DIR = os.path.dirname(os.path.dirname(__file__)) # university_agent
+_MAIN_AGENT_DIR = os.path.dirname(os.path.dirname(_DIR)) # mainAgent
+env_path = os.path.join(_MAIN_AGENT_DIR, ".env")
+if os.path.exists(env_path):
+    load_dotenv(env_path)
+else:
+    load_dotenv() # Fallback
 
 def get_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        raise ValueError("DATABASE_URL is not set in the environment variables.")
+    
+    conn = psycopg2.connect(db_url, cursor_factory=DictCursor)
     return conn
-
-
-def init_database():
-    """Read schema.sql and execute it to create all tables and seed data.
-
-    Uses a raw connection (FK OFF) because the INSERT order in schema.sql
-    may reference tables whose data hasn't been inserted yet.
-    """
-    with open(SCHEMA_PATH, "r", encoding="utf-8") as f:
-        schema_sql = f.read()
-    conn = sqlite3.connect(DB_PATH)
-    conn.executescript(schema_sql)
-    conn.close()
-
-
-init_database()

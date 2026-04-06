@@ -48,14 +48,22 @@ async function onQrCodeSuccess(decodedText) {
     }
 
     statusText.textContent = 'QR Code found! Verifying session...';
-    const sessionCode = decodedText.trim();
+    // Extract session code from URL if QR contains a full link
+    let sessionCode = decodedText.trim();
+    try {
+        const url = new URL(sessionCode);
+        const codeParam = url.searchParams.get('code');
+        if (codeParam) sessionCode = codeParam;
+    } catch (_) {
+        // Not a URL, use as-is (raw session code)
+    }
 
     // Verify session
     try {
         const response = await fetch(`/api/session/${sessionCode}`);
         const data = await response.json();
 
-        if (data.status === 'active') {
+        if (data.status === 'success' || data.status === 'active') {
             statusText.textContent = `Session: ${data.course_name || sessionCode} — Enter your Student ID`;
             showStudentIdForm(sessionCode, data.course_name || 'Unknown');
         } else {
@@ -205,4 +213,13 @@ document.getElementById('closeCamera')?.addEventListener('click', stopCamera);
 
 document.getElementById('cameraModal')?.addEventListener('click', (e) => {
     if (e.target === document.getElementById('cameraModal')) stopCamera();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code) {
+        // Skip scanning if code provided in URL
+        onQrCodeSuccess(code);
+    }
 });

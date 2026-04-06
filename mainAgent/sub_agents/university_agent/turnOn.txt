@@ -1,3 +1,0 @@
-python C:\Users\HooooBaaaa\cursor\Python\university_agent\web\attendance_server.py
-ngrok config add-authtoken 3AY4ccXzny2ffn0dIym5D7jC6k0_jmUVEfZsvsowATcerKbS
-ngrok http https://localhost:(your server port)
