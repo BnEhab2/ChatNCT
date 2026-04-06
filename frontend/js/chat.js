@@ -1,9 +1,10 @@
 // ══════════════════════════════════════════════════════════════
-// ChatNCT — Chat Page Logic
+// ChatNCT — Chat Page Logic (Feature 1: Supabase Persistence)
 // ══════════════════════════════════════════════════════════════
 
 const API_URL = '/api/chat';
 let isWaiting = false;
+let currentChatSessionId = null;  // Supabase chat_sessions.id
 
 // ── View Switching ─────────────────────────────────────────
 function switchView(viewName, element) {
@@ -96,10 +97,16 @@ async function sendToBackend(message) {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: message, user_id: getUsername() })
+            body: JSON.stringify({
+                message: message,
+                user_id: getUsername(),
+                session_id: currentChatSessionId,  // Feature 1: persist
+            })
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
+        // Track session ID returned from server
+        if (data.session_id) currentChatSessionId = data.session_id;
         return data.status === 'success' ? data.response : (data.message || 'حدث خطأ');
     } catch (e) {
         console.error('Backend:', e);
@@ -185,6 +192,97 @@ style.textContent = `
 `;
 if (document.head) document.head.appendChild(style);
 
+// ══════════════════════════════════════════════════════════════
+// Feature 1: Chat Session Management (Supabase)
+// ══════════════════════════════════════════════════════════════
+
+async function loadChatSessions() {
+    try {
+        const res = await fetch(`/api/chat/sessions?user_id=${encodeURIComponent(getUsername())}`);
+        const data = await res.json();
+        if (data.status === 'success') {
+            renderSessionList(data.sessions);
+        }
+    } catch (e) {
+        console.error('Load sessions error:', e);
+    }
+}
+
+function renderSessionList(sessions) {
+    const container = document.getElementById('chatHistoryList');
+    if (!container) return;
+    container.innerHTML = '';
+    sessions.forEach(s => {
+        const item = document.createElement('div');
+        item.className = 'chat-history-item';
+        item.dataset.sessionId = s.id;
+        item.innerHTML = `
+            <span class="chat-history-title" onclick="resumeSession('${s.id}')">${s.title}</span>
+            <div class="chat-history-actions">
+                <button class="chat-history-btn" onclick="renameSession('${s.id}')" title="Rename">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="chat-history-btn delete" onclick="deleteSession('${s.id}')" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(item);
+    });
+}
+
+async function resumeSession(sessionId) {
+    currentChatSessionId = sessionId;
+    if (chatMessages) chatMessages.innerHTML = '';
+    switchView('chat');
+    try {
+        const res = await fetch(`/api/chat/sessions/${sessionId}/messages`);
+        const data = await res.json();
+        if (data.status === 'success') {
+            data.messages.forEach(m => addMessage(m.content, m.role === 'user' ? 'user' : 'bot'));
+        }
+    } catch (e) {
+        console.error('Resume session error:', e);
+    }
+}
+
+async function deleteSession(sessionId) {
+    if (!confirm('Delete this chat session?')) return;
+    try {
+        await fetch(`/api/chat/sessions/${sessionId}`, { method: 'DELETE' });
+        if (currentChatSessionId === sessionId) {
+            currentChatSessionId = null;
+            if (chatMessages) chatMessages.innerHTML = '';
+        }
+        loadChatSessions();
+        showNotification('Session deleted', 'success');
+    } catch (e) {
+        console.error('Delete error:', e);
+    }
+}
+
+async function renameSession(sessionId) {
+    const newTitle = prompt('Enter new title:');
+    if (!newTitle || !newTitle.trim()) return;
+    try {
+        await fetch(`/api/chat/sessions/${sessionId}/rename`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: newTitle.trim() }),
+        });
+        loadChatSessions();
+        showNotification('Session renamed', 'success');
+    } catch (e) {
+        console.error('Rename error:', e);
+    }
+}
+
+function newChat() {
+    currentChatSessionId = null;
+    if (chatMessages) chatMessages.innerHTML = '';
+    switchView('chat');
+}
+
 // ── Init: Check URL params ─────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
@@ -206,5 +304,8 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => startChat(pendingPrompt), 500);
         }
     }
+
+    // Feature 1: Load chat history from Supabase
+    loadChatSessions();
 });
 

@@ -174,6 +174,34 @@
             .message-input { font-size: 16px; }
             .main-container { padding: 70px 10px 0; }
         }
+        /* ── Chat History Sidebar ──────────────────────────── */
+        .chat-history-section { padding: 0 10px; margin-top: 5px; }
+        .chat-history-header {
+            display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+            color: #b0a9ff; font-size: 12px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .chat-history-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 12px; color: #ddd8fd; cursor: pointer;
+            border-radius: 10px; transition: all 0.2s ease; font-size: 14px;
+            margin-bottom: 2px;
+        }
+        .chat-history-item:hover { background: rgba(124,102,227,0.15); }
+        .chat-history-title {
+            flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            cursor: pointer;
+        }
+        .chat-history-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s; }
+        .chat-history-item:hover .chat-history-actions { opacity: 1; }
+        .chat-history-btn {
+            width: 28px; height: 28px; border: none; border-radius: 6px;
+            background: rgba(124,102,227,0.2); color: #b0a9ff; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 12px;
+            transition: all 0.2s;
+        }
+        .chat-history-btn:hover { background: rgba(124,102,227,0.4); }
+        .chat-history-btn.delete:hover { background: rgba(239,68,68,0.3); color: #ef4444; }
     </style>
 </head>
 <body>
@@ -188,19 +216,24 @@
             <div class="menu-item active" data-view="dashboard" onclick="switchView('dashboard', this)">
                 <i class="fas fa-th-large"></i><span>Dashboard</span>
             </div>
-            <div class="menu-item" data-view="chat" onclick="switchView('chat', this)">
+            <div class="menu-item" data-view="chat" onclick="newChat(); if(window.innerWidth<=768) closeSidebar();">
                 <i class="fas fa-plus-square"></i><span>New Chat</span>
             </div>
-            <div class="menu-item" onclick="navigateTo('attendance')">
+            <div class="menu-item" data-role="student" onclick="navigateTo('attendance')">
                 <i class="fas fa-clipboard-check"></i><span>Attendance</span>
             </div>
-            <div class="menu-item" onclick="navigateTo('instructor')">
+            <div class="menu-item" data-role="instructor,admin" onclick="navigateTo('instructor')">
                 <i class="fas fa-chalkboard-teacher"></i><span>Instructor Panel</span>
             </div>
             <div class="menu-item" onclick="navigateTo('prompt')">
                 <i class="fas fa-magic"></i><span>Prompt Generator</span>
             </div>
             <div class="menu-divider"></div>
+            <!-- Feature 1: Chat History -->
+            <div class="chat-history-section">
+                <div class="chat-history-header"><i class="fas fa-history"></i> Recent Chats</div>
+                <div id="chatHistoryList"></div>
+            </div>
         </div>
         <div class="sidebar-footer">
             <div class="user-info-brief">
@@ -240,8 +273,11 @@
                     <div class="action-card" onclick="startChat('Help me study')">
                         <i class="fas fa-graduation-cap"></i><span>Study Help</span>
                     </div>
-                    <div class="action-card" onclick="navigateTo('attendance')">
+                    <div class="action-card" data-card-role="student" onclick="navigateTo('attendance')">
                         <img src="img/Groups.png" alt="Attendance"><span>Attendance</span>
+                    </div>
+                    <div class="action-card" data-card-role="instructor,admin" onclick="navigateTo('instructor')">
+                        <i class="fas fa-chalkboard-teacher"></i><span>Instructor Panel</span>
                     </div>
                     <div class="action-card" onclick="navigateTo('prompt')">
                         <img src="img/Groupw.png" alt="Prompt"><span>Prompt Generator</span>

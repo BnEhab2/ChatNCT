@@ -104,13 +104,15 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         if (data.status === 'success') {
             localStorage.setItem('chatnct_username', data.username);
             localStorage.setItem('chatnct_is_admin', data.is_admin ? 'true' : 'false');
+            localStorage.setItem('chatnct_role', data.role || 'student');
 
+            const role = (data.role || 'student').toLowerCase();
             showNotification(data.is_admin ? 'Welcome, Admin! 🎯' : `Welcome back, ${data.username}!`);
 
             setTimeout(() => {
-                if (data.is_admin) {
+                if (role === 'instructor' || role === 'admin') {
                     localStorage.setItem('chatnct_skip_dashboard', 'true');
-                    window.location.href = 'chat.html?view=chat&admin=true';
+                    window.location.href = 'instructor.html';
                 } else {
                     localStorage.removeItem('chatnct_skip_dashboard');
                     window.location.href = 'chat.html';

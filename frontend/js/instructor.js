@@ -2,8 +2,13 @@
 // ChatNCT — Instructor Panel (QR Generation + Session Mgmt)
 // ══════════════════════════════════════════════════════════════
 
+if (getRole() === 'student') {
+    window.location.href = 'chat.html';
+}
+
 let currentSessionCode = null;
 let reportInterval = null;
+let qrRefreshInterval = null;
 
 const courseSelect = document.getElementById('courseSelect');
 const startBtn = document.getElementById('startSessionBtn');
@@ -82,11 +87,19 @@ startBtn.addEventListener('click', async () => {
     }
 });
 
-// ── Generate QR Code ───────────────────────────────────────
+// ── Generate QR Code (Feature 2: Rotating every 5s) ───────
 function generateQRCode(code) {
-    // Use the attendance URL as QR content
-    const qrContent = `${window.location.origin}/attendance.html?code=${code}`;
+    // Initial render
+    _renderQR(code, '', 0);
+    // Start rotating QR tokens every 5 seconds
+    startQRRefresh(code);
+}
 
+function _renderQR(code, token, timestamp) {
+    let qrContent = `${window.location.origin}/attendance.html?code=${code}`;
+    if (token) {
+        qrContent += `&token=${token}&t=${timestamp}`;
+    }
     qrDisplay.innerHTML = '';
     new QRCode(qrDisplay, {
         text: qrContent,
@@ -96,6 +109,31 @@ function generateQRCode(code) {
         colorLight: "#e0d8fe",
         correctLevel: QRCode.CorrectLevel.H
     });
+}
+
+function startQRRefresh(code) {
+    stopQRRefresh();
+    _fetchAndRenderQR(code);
+    qrRefreshInterval = setInterval(() => _fetchAndRenderQR(code), 5000);
+}
+
+function stopQRRefresh() {
+    if (qrRefreshInterval) {
+        clearInterval(qrRefreshInterval);
+        qrRefreshInterval = null;
+    }
+}
+
+async function _fetchAndRenderQR(code) {
+    try {
+        const res = await fetch(`/api/session/${code}/qr-token`);
+        const data = await res.json();
+        if (data.status === 'success' && data.token) {
+            _renderQR(code, data.token, data.timestamp);
+        }
+    } catch (err) {
+        console.warn('QR token refresh failed:', err);
+    }
 }
 
 // ── Show Session Active ────────────────────────────────────
@@ -129,6 +167,7 @@ closeBtn.addEventListener('click', async () => {
 
     // Reset UI
     stopReportPolling();
+    stopQRRefresh();
     currentSessionCode = null;
     sessionInfo.style.display = 'none';
     qrDisplay.innerHTML = '<div class="qr-placeholder-icon"><i class="fas fa-qrcode"></i><p>QR will appear here</p></div>';
