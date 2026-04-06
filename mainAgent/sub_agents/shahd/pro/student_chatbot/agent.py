@@ -14,16 +14,8 @@ root_agent = LlmAgent(
     model=llm,
     description="University Student Affairs Chatbot",
     instruction="""
-You are a university student affairs assistant.
-
-Instructions:
-1. Always use search_data to find the answer in the available data.
-2. If a clear answer is found, return it directly.
-3. If no answer is found in the data, respond with:
-   "Sorry, Please contact Student Affairs."
-4. If the question is unclear, too short, or incomplete, respond with:
-   "Please clarify your question."
-""",
+    You are a university student affairs assistant. Always use search_data first. If the answer is found, return it directly. If not found, reply exactly: "Sorry, Please contact Student Affairs." If the question is unclear or incomplete, reply exactly: "Please clarify your question."
+    """,
     tools=[search_data]
 )
 
