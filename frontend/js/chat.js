@@ -96,10 +96,10 @@ async function sendToBackend(message) {
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify({
                 message: message,
-                user_id: getUsername(),
+                user_id: getUserId(),
                 session_id: currentChatSessionId,  // Feature 1: persist
             })
         });
@@ -198,7 +198,9 @@ if (document.head) document.head.appendChild(style);
 
 async function loadChatSessions() {
     try {
-        const res = await fetch(`/api/chat/sessions?user_id=${encodeURIComponent(getUsername())}`);
+        const res = await fetch(`/api/chat/sessions?user_id=${encodeURIComponent(getUserId())}`, {
+            headers: getAuthHeaders(),
+        });
         const data = await res.json();
         if (data.status === 'success') {
             renderSessionList(data.sessions);

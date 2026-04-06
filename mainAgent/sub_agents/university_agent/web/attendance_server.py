@@ -110,8 +110,8 @@ def _generate_qr_token(session_id: int) -> dict:
     conn = get_connection()
     try:
         cur = conn.cursor()
-        # Clean expired tokens (older than 30s)
-        cur.execute("DELETE FROM qr_tokens WHERE created_at < now() - interval '30 seconds'")
+        # Clean expired tokens (older than 180s)
+        cur.execute("DELETE FROM qr_tokens WHERE created_at < now() - interval '180 seconds'")
         cur.execute(
             "INSERT INTO qr_tokens (session_id, token) VALUES (%s, %s)",
             (session_id, token)
@@ -149,11 +149,6 @@ def _validate_qr_token(session_id: int, token: str) -> tuple:
 
         if row["session_id"] != session_id:
             return False, "TOKEN_INVALID"
-
-        # Check expiry (5 seconds)
-        token_age = (datetime.now() - row["created_at"].replace(tzinfo=None)).total_seconds()
-        if token_age > 10:  # 10s grace period for network lag
-            return False, "TOKEN_EXPIRED"
 
         # Mark as used (single-use)
         cur.execute("UPDATE qr_tokens SET used = true WHERE id = %s", (row["id"],))
@@ -585,10 +580,24 @@ def verify_attendance():
             if not valid:
                 return _error(err_code)
 
+        # ── 2) Get student and database UUID ─────────────────────────
+        cur.execute("SELECT id AS db_student_id, name, image_url AS photo_path FROM students WHERE student_code = %s OR id::text = %s", (student_id, student_id))
+        student = cur.fetchone()
+        if not student:
+            return _error("STUDENT_NOT_FOUND")
+
+        student = dict(student)
+        db_student_id = student["db_student_id"]
+        photo_rel = student.get("photo_path")
+        
+        # Ensure photos directory exists
+        if not os.path.exists(PHOTOS_DIR):
+            os.makedirs(PHOTOS_DIR, exist_ok=True)
+
         # ── Feature 5: Duplicate Protection ──────────────────────────
         cur.execute(
             "SELECT id FROM attendance WHERE student_id = %s AND session_id = %s",
-            (student_id, sid)
+            (db_student_id, sid)
         )
         if cur.fetchone():
             return _error("ATTENDANCE_DUPLICATE")
@@ -597,15 +606,6 @@ def verify_attendance():
         allowed, err_resp = _check_device_binding(student_id, sid, request)
         if not allowed:
             return err_resp
-
-        # ── 2) Get student photo ─────────────────────────────────────
-        cur.execute("SELECT id, name, image_url AS photo_path FROM students WHERE id = %s", (student_id,))
-        student = cur.fetchone()
-        if not student:
-            return _error("STUDENT_NOT_FOUND")
-
-        student = dict(student)
-        photo_rel = student.get("photo_path")
 
         # ── 3) Face Verification ─────────────────────────────────────
         if photo_rel and os.path.exists(os.path.join(PACKAGE_DIR, photo_rel) if not os.path.isabs(str(photo_rel)) else str(photo_rel)):
@@ -639,10 +639,27 @@ def verify_attendance():
                 except Exception as e:
                     return _error("FACE_VERIFY_ERROR", {"detail": str(e)})
         else:
-            # No registered photo — auto-verify with warning
-            verified = True
-            distance = 0.0
-            print(f"⚠️  No registered photo for student {student_id}, auto-verifying.")
+            # ── Auto-Enrollment (First time scanning) ───────────────
+            try:
+                # Decode image and save to disk
+                if images_data and len(images_data) > 0:
+                    captured = _decode_base64_image(images_data[-1])
+                else:
+                    captured = _decode_base64_image(image_data)
+                    
+                photo_rel = f"photos/{student_id}.jpg"
+                photo_path = os.path.join(PACKAGE_DIR, "photos", f"{student_id}.jpg")
+                cv2.imwrite(photo_path, captured)
+                
+                # Update database
+                cur.execute("UPDATE students SET image_url = %s WHERE id = %s", (photo_rel, db_student_id))
+                conn.commit()
+                
+                verified = True
+                distance = 0.0
+                print(f"📸 Auto-registered photo for student {student_id}")
+            except Exception as e:
+                return _error("FACE_VERIFY_ERROR", {"detail": f"Failed to register photo: {e}"})
 
         # ── 4) Record attendance ─────────────────────────────────────
         today = now.strftime("%Y-%m-%d")
@@ -653,7 +670,7 @@ def verify_attendance():
         cur.execute("""
             INSERT INTO attendance (student_id, course_id, session_id, date, status, verified_by, notes)
             VALUES (%s, %s, %s, %s, 'Present', 'face', %s)
-        """, (student_id, session["course_id"], sid, today, notes))
+        """, (db_student_id, session["course_id"], sid, today, notes))
         conn.commit()
 
         return jsonify({

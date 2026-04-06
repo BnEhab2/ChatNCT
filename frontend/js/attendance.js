@@ -44,7 +44,7 @@ async function startQrScanner() {
         html5QrCode = new Html5Qrcode("qrReader");
         await html5QrCode.start(
             { facingMode: "environment" },
-            { fps: 10, qrbox: { width: 250, height: 250 } },
+            { fps: 10 },
             onQrCodeSuccess,
             onQrCodeError
         );
@@ -62,8 +62,10 @@ function onQrCodeError(errorMessage) {
 }
 
 async function onQrCodeSuccess(decodedText) {
+    alert("QR Detected! " + decodedText);
+    
     if (html5QrCode) {
-        await html5QrCode.stop();
+        try { await html5QrCode.stop(); } catch(e){ console.error(e); }
         html5QrCode = null;
     }
 

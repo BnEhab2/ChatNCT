@@ -102,6 +102,24 @@ async def _run_agent(user_id: str, message: str) -> str:
 
 
 # ══════════════════════════════════════════════════════════════════════
+# HELPERS
+# ══════════════════════════════════════════════════════════════════════
+
+def _resolve_student_uuid(user_id: str) -> str:
+    """Look up a student's UUID from their student_code. Returns None if not found."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM students WHERE student_code = %s", (user_id,))
+        row = cur.fetchone()
+        if row:
+            return str(row["id"])
+        return None
+    finally:
+        release_connection(conn)
+
+
+# ══════════════════════════════════════════════════════════════════════
 # API ENDPOINTS
 # ══════════════════════════════════════════════════════════════════════
 
@@ -371,6 +389,8 @@ def login():
                 "username": display_name,
                 "role": role,
                 "access_token": auth_data["access_token"],
+                "refresh_token": auth_data.get("refresh_token", ""),
+                "user_id": student_code,
             })
         else:
             msg = auth_data.get("error_description") or auth_data.get("msg") or "Invalid credentials"
@@ -522,4 +542,4 @@ if __name__ == "__main__":
     print("   on your mobile and accept the 'Not Secure' warning.")
     print("=" * 60 + "\n")
 
-    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=ssl_ctx)
+    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False, ssl_context=ssl_ctx)
