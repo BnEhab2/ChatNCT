@@ -163,7 +163,7 @@ async function startFaceVerify(sessionCode) {
 
         if (!livenessResult.passed) {
             stopCamera();
-            showResult('error', `❌ Liveness check failed: ${livenessResult.reason}`);
+            showResult('error', `Liveness check failed: ${livenessResult.reason}`);
             return;
         }
 
@@ -193,9 +193,9 @@ async function startFaceVerify(sessionCode) {
             const data = await response.json();
 
             if (data.status === 'success') {
-                showResult('success', `✅ Attendance recorded!\nStudent: ${data.student_name || studentId}`);
+                showResult('success', `Attendance recorded!\nStudent: ${data.student_name || studentId}`);
             } else {
-                showResult('error', `❌ ${data.message || 'Verification failed'}\n${data.code || ''}`);
+                showResult('error', `${data.message || 'Verification failed'}\n${data.code || ''}`);
             }
         } catch (err) {
             console.error('Verify error:', err);
@@ -279,7 +279,7 @@ function _showChallengeOverlay(text) {
         `;
         document.body.appendChild(overlay);
     }
-    overlay.textContent = `🔍 ${text}`;
+    overlay.textContent = `${text}`;
     overlay.style.display = 'block';
 }
 

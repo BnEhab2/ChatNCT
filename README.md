@@ -1,14 +1,14 @@
-# 🎓 ChatNCT – AI-Powered Assistant for NCT University
+# ChatNCT – AI-Powered Assistant for NCT University
 
-## 📌 Overview
+## Overview
 
 **ChatNCT** is an AI-powered platform designed for students and instructors at NCT University. It enhances the educational experience through an intelligent chat system that supports learning, academic assistance, and automated attendance tracking.
 
 ---
 
-## 🚀 Features
+## Features
 
-### 👨‍🎓 Student Portal
+### Student Portal
 
 * Secure login باستخدام university email
 * AI Chat Assistant capable of:
@@ -28,7 +28,7 @@
 
 ---
 
-### 👨‍🏫 Instructor Portal
+### Instructor Portal
 
 * Instructor authentication
 * Create and manage attendance sessions
@@ -38,7 +38,7 @@
 
 ---
 
-## 🧠 System Architecture
+## System Architecture
 
 * **Frontend:** HTML, CSS, JavaScript
 * **Backend:** Flask (Python)
@@ -51,7 +51,7 @@
 
 ---
 
-## 🗄️ Database Design
+## Database Design
 
 The system is built on a structured relational database including:
 
@@ -67,7 +67,7 @@ The system is built on a structured relational database including:
 
 ---
 
-## 🔐 Authentication
+## Authentication
 
 * No manual sign-up required
 * Students and instructors are pre-registered in the system
@@ -78,7 +78,7 @@ The system is built on a structured relational database including:
 
 ---
 
-## 📷 Attendance Workflow
+## Attendance Workflow
 
 1. Instructor creates an attendance session
 2. A dynamic QR code is generated
@@ -91,7 +91,7 @@ The system is built on a structured relational database including:
 
 ---
 
-## 📦 Installation
+## Installation
 
 ```bash id="a1b2c3"
 git clone https://github.com/your-repo/chatnct.git
@@ -101,7 +101,7 @@ pip install -r requirements.txt
 
 ---
 
-## ▶️ Run the Project
+## Run the Project
 
 ```bash id="d4e5f6"
 python app.py
@@ -109,12 +109,12 @@ python app.py
 
 ---
 
-## 👥 Team
+## Team
 
 NCT University Students
 
 ---
 
-## 📄 License
+## License
 
 This project is developed for educational purposes.
