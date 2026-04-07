@@ -42,7 +42,7 @@ CORS(app)
 try:
     run_migrations()
 except Exception as e:
-    print(f"⚠️  Migration error (non-fatal): {e}")
+    print(f"Migration error (non-fatal): {e}")
 
 # ── ADK Session Management ────────────────────────────────────────────
 APP_NAME = "chatnct"

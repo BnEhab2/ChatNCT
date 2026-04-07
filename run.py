@@ -14,13 +14,13 @@ import signal
 
 def main():
     print("\n" + "=" * 60)
-    print("🎓 ChatNCT — University AI System")
+    print("ChatNCT — University AI System")
     print("=" * 60)
     
     project_dir = os.path.dirname(os.path.abspath(__file__))
     
     # Start attendance server on port 5001
-    print("\n📱 Starting Attendance Server (port 5001)...")
+    print("\nStarting Attendance Server (port 5001)...")
     attendance_proc = subprocess.Popen(
         [sys.executable, "-c", 
          "import os, sys; "
@@ -41,30 +41,30 @@ def main():
     time.sleep(2)
     
     # Start main server on port 5000
-    print("🚀 Starting Main Server (port 5000)...")
+    print("Starting Main Server (port 5000)...")
     main_proc = subprocess.Popen(
         [sys.executable, "server.py"],
         cwd=project_dir,
     )
     
     print("\n" + "=" * 60)
-    print("✅ Both servers are running!")
-    print(f"  🌐 Frontend:    https://localhost:5000/")
-    print(f"  🤖 Chat API:    https://localhost:5000/api/chat")
-    print(f"  📱 Attendance:  https://localhost:5001/")
+    print("Both servers are running!")
+    print(f"Frontend:https://localhost:5000/")
+    print(f"Chat API:https://localhost:5000/api/chat")
+    print(f"Attendance:https://localhost:5001/")
     print("=" * 60)
-    print("⚠️  Accept the 'Not Secure' warning in your browser.")
+    print("Accept the 'Not Secure' warning in your browser.")
     print("\nPress Ctrl+C to stop all servers.\n")
     
     try:
         main_proc.wait()
     except KeyboardInterrupt:
-        print("\n\n🛑 Shutting down servers...")
+        print("\n\n Shutting down servers...")
         attendance_proc.terminate()
         main_proc.terminate()
         attendance_proc.wait()
         main_proc.wait()
-        print("✅ All servers stopped.")
+        print("All servers stopped.")
 
 if __name__ == "__main__":
     main()
