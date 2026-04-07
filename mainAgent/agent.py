@@ -10,7 +10,7 @@ Orchestrates all sub-agents:
 
 from google.adk.agents import LlmAgent
 from google.adk.models.lite_llm import LiteLlm
-from .sub_agents.prompt_wizard.agent import prompt_wizard
+from .sub_agents.Lex.agent import root_agent as prompt_wizard
 from .sub_agents.marwan.study_agent.agent import root_agent as study_agent
 from .sub_agents.shahd.pro.student_chatbot.agent import root_agent as student_chatbot
 from .sub_agents.university_agent.agent import root_agent as university_agent
