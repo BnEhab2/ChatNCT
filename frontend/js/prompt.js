@@ -19,7 +19,7 @@ generateBtn.addEventListener('click', async () => {
     if (isGenerating) return;
 
     isGenerating = true;
-    generateBtn.textContent = 'Generating...';
+    generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
     generateBtn.disabled = true;
     promptOutput.value = 'جاري توليد الـ Prompt...';
 
@@ -44,7 +44,7 @@ generateBtn.addEventListener('click', async () => {
         showNotification('Connection error', 'error');
     } finally {
         isGenerating = false;
-        generateBtn.textContent = 'Generate Prompt';
+        generateBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generate Prompt';
         generateBtn.disabled = false;
     }
 });
@@ -68,13 +68,13 @@ executeBtn.addEventListener('click', () => {
 ['dragenter', 'dragover'].forEach(eventName => {
     ideaInput.addEventListener(eventName, () => {
         ideaInput.style.borderColor = '#7c66e3';
-        ideaInput.style.background = 'rgba(255, 255, 255, 0.6)';
+        ideaInput.style.background = 'rgba(62, 58, 131, 1)';
     }, false);
 });
 ['dragleave', 'drop'].forEach(eventName => {
     ideaInput.addEventListener(eventName, () => {
-        ideaInput.style.borderColor = 'rgba(45, 27, 105, 0.3)';
-        ideaInput.style.background = 'rgba(255, 255, 255, 0.3)';
+        ideaInput.style.borderColor = 'rgba(124, 102, 227, 0.4)';
+        ideaInput.style.background = 'rgba(62, 58, 131, 0.8)';
     }, false);
 });
 ideaInput.addEventListener('drop', (e) => {
@@ -96,7 +96,7 @@ document.getElementById('pasteBtn').addEventListener('click', async () => {
 // ── Upload Button ──────────────────────────────────────────
 const fileInput = document.getElementById('fileInput');
 document.getElementById('uploadBtn').addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', function() {
+fileInput.addEventListener('change', function () {
     if (this.files.length > 0) handleFiles(this.files);
 });
 

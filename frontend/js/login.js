@@ -116,10 +116,10 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
             setTimeout(() => {
                 if (role === 'instructor' || role === 'admin') {
                     localStorage.setItem('chatnct_skip_dashboard', 'true');
-                    window.location.href = 'instructor.html';
+                    window.location.href = 'dashboard.html';
                 } else {
                     localStorage.removeItem('chatnct_skip_dashboard');
-                    window.location.href = 'chat.html';
+                    window.location.href = 'dashboard.html';
                 }
             }, 800);
         } else {
