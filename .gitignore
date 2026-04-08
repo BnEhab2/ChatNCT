@@ -7,3 +7,4 @@ node_modules/
 *.pem
 university.db
 *.rar
+mainAgent/sub_agents/Mixxx/vibe_coder/.env
