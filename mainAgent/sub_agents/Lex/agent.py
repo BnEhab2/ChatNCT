@@ -9,7 +9,7 @@ gpt_model = LiteLlm(
 )
 
 root_agent = Agent(
-    name="Architect_Pro",
+    name="prompt_wizard",
     model=gpt_model,
     description="Generates clean, professional instruction sets without structural tags.",
     instruction="""
