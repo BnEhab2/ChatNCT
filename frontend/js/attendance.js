@@ -108,7 +108,7 @@ async function onQrCodeSuccess(decodedText) {
 function showStudentIdForm(sessionCode, courseName) {
     const formHtml = `
         <div class="id-form" id="idForm">
-            <h3 style="color:#e0d8fe; margin-bottom:10px; font-size:18px;">📚 ${courseName}</h3>
+            <h3 style="color:#e0d8fe; margin-bottom:10px; font-size:18px;"> ${courseName}</h3>
             <input type="text" id="studentIdInput" placeholder="Enter your Student ID"
                 style="width:100%; padding:14px 20px; border-radius:15px; border:2px solid rgba(124,102,227,0.4);
                 background:rgba(62,58,131,0.8); color:#fff; font-family:'Montserrat',sans-serif;
@@ -125,7 +125,17 @@ function showStudentIdForm(sessionCode, courseName) {
     }
 }
 
-// ── Feature 3+4: Multi-Frame Capture + Liveness ───────────
+// ── Feature 3+4: Multi-Frame Capture + Liveness (Server-Side Logic) ───────────
+function captureFastFrame(videoElement) {
+    const canvas = document.createElement('canvas');
+    // Scale down width to 320 for extremely fast network transmission (low latency)
+    canvas.width = 320;
+    canvas.height = Math.floor(videoElement.videoHeight * (320 / videoElement.videoWidth));
+    canvas.getContext('2d').drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+    // Use JPEG with 0.5 quality to make base64 string very small
+    return canvas.toDataURL('image/jpeg', 0.5);
+}
+
 async function startFaceVerify(sessionCode) {
     const studentId = document.getElementById('studentIdInput')?.value.trim();
     if (!studentId) {
@@ -133,7 +143,7 @@ async function startFaceVerify(sessionCode) {
         return;
     }
 
-    statusText.textContent = 'Opening camera for liveness check...';
+    statusText.textContent = 'Opening camera for verification...';
 
     const cameraModal = document.getElementById('cameraModal');
     const videoElement = document.getElementById('videoElement');
@@ -145,11 +155,8 @@ async function startFaceVerify(sessionCode) {
         });
         videoElement.srcObject = currentStream;
 
-        // Feature 4: Run liveness challenges first, then multi-frame capture
         const captureBtn = document.getElementById('captureBtn');
-        captureBtn.textContent = '📸 Starting liveness check...';
-        captureBtn.disabled = true;
-        captureBtn.style.display = 'flex';
+        captureBtn.style.display = 'none'; // Automated flow, no manual capture
 
         // Wait for video to be ready
         await new Promise(resolve => {
@@ -157,25 +164,98 @@ async function startFaceVerify(sessionCode) {
             setTimeout(resolve, 1000);
         });
 
-        // Run liveness detection
-        statusText.textContent = 'Performing liveness check...';
-        const livenessResult = await runLivenessCheck(videoElement);
-
-        if (!livenessResult.passed) {
+        // ================= STATE 0: IDENTITY CHECK =================
+        statusText.textContent = 'Phase 1: Verifying Identity...';
+        _showChallengeOverlay('Verifying Identity... Please look at the camera');
+        
+        let identityPassed = false;
+        let faceBox = null;
+        let verifiedFrame = null;
+        let attemptCount = 0;
+        
+        while (!identityPassed && attemptCount < 8) {
+            attemptCount++;
+            await new Promise(r => setTimeout(r, 1500)); // Check every 1.5 seconds
+            if (!currentStream) return; // User closed camera
+            
+            const frame = captureFastFrame(videoElement);
+            try {
+                const res = await fetch('/api/attendance/check_identity', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ student_id: studentId, image: frame })
+                });
+                const data = await res.json();
+                
+                if (data.status === 'success' && data.verified && data.faceBox) {
+                    identityPassed = true;
+                    faceBox = data.faceBox;
+                    verifiedFrame = frame; // Save the verified frame to submit at the end
+                } else if (data.status === 'error' && data.message !== 'No face detected.') {
+                     // Fatal error (e.g. Student not found, No photo)
+                     stopCamera();
+                     return showResult('error', data.message);
+                } else {
+                    _showChallengeOverlay(`Attempt ${attemptCount}/8: ${data.message || 'No face detected'}`);
+                }
+            } catch(e) {
+                console.error("Identity Check Error:", e);
+            }
+        }
+        
+        if (!identityPassed) {
             stopCamera();
-            showResult('error', `Liveness check failed: ${livenessResult.reason}`);
-            return;
+            return showResult('error', 'Identity verification failed after maximum attempts.');
         }
 
-        statusText.textContent = 'Liveness passed! Capturing frames...';
+        // ================= STATE 1: LIVENESS CHALLENGE =================
+        statusText.textContent = 'Phase 2: Liveness Challenge...';
+        let challenges = [];
+        try {
+            const res = await fetch('/api/attendance/challenges');
+            const data = await res.json();
+            challenges = data.challenges || [];
+        } catch (e) {}
 
-        // Feature 3: Capture multiple frames
-        const frames = await captureMultipleFrames(videoElement, 5);
-
+        for (let i = 0; i < challenges.length; i++) {
+            const challenge = challenges[i];
+            let poseMatched = false;
+            let challengeStart = Date.now();
+            _showChallengeOverlay(`Challenge ${i+1}/${challenges.length}: ${challenge.label}`);
+            
+            while (!poseMatched) {
+                await new Promise(r => setTimeout(r, 300)); // Fast loop (300ms) for real-time tracking
+                if (!currentStream) return;
+                
+                if (Date.now() - challengeStart > 10000) {
+                    // 10 second timeout per challenge
+                    stopCamera();
+                    return showResult('error', `Timeout waiting for Liveness Pose: ${challenge.label}`);
+                }
+                
+                const frame = captureFastFrame(videoElement);
+                try {
+                    const res = await fetch('/api/attendance/check_pose', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image: frame, faceBox: faceBox })
+                    });
+                    const data = await res.json();
+                    
+                    if (data.status === 'success' && data.pose === challenge.action) {
+                        poseMatched = true; // Success! Move to next challenge
+                    }
+                } catch(e) {
+                    console.error("Pose Check Error:", e);
+                }
+            }
+        }
+        
+        // ================= STATE 2: COMPLETE =================
+        _hideChallengeOverlay();
         stopCamera();
-        statusText.textContent = 'Verifying face...';
+        statusText.textContent = 'Liveness passed! Recording attendance...';
 
-        // Submit verification
         try {
             const response = await fetch('/api/attendance/verify', {
                 method: 'POST',
@@ -183,10 +263,10 @@ async function startFaceVerify(sessionCode) {
                 body: JSON.stringify({
                     session_code: sessionCode,
                     student_id: studentId,
-                    images: frames,
-                    image: frames[0],  // Fallback single image
+                    images: [],
+                    image: verifiedFrame,  // Submit the high-confidence frame that passed identity
                     qr_token: currentQrToken || '',
-                    liveness_passed: livenessResult.passed,
+                    liveness_passed: true,
                     device_fingerprint: getDeviceFingerprint(),
                 })
             });
@@ -201,68 +281,12 @@ async function startFaceVerify(sessionCode) {
             console.error('Verify error:', err);
             showResult('error', 'Server connection error');
         }
+
     } catch (err) {
         console.error('Camera error:', err);
         showNotification('Unable to access camera', 'error');
         cameraModal.classList.remove('active');
     }
-}
-
-// ── Feature 3: Capture Multiple Frames ────────────────────
-async function captureMultipleFrames(videoElement, count = 5) {
-    const frames = [];
-    for (let i = 0; i < count; i++) {
-        const canvas = document.createElement('canvas');
-        canvas.width = videoElement.videoWidth;
-        canvas.height = videoElement.videoHeight;
-        canvas.getContext('2d').drawImage(videoElement, 0, 0);
-        frames.push(canvas.toDataURL('image/jpeg', 0.7));
-        // Wait 300ms between frames to get movement
-        if (i < count - 1) {
-            await new Promise(r => setTimeout(r, 300));
-        }
-    }
-    return frames;
-}
-
-// ── Feature 4: Client-Side Liveness Detection ─────────────
-async function runLivenessCheck(videoElement) {
-    // Fetch random challenges from backend
-    let challenges;
-    try {
-        const res = await fetch('/api/attendance/challenges');
-        const data = await res.json();
-        challenges = data.challenges || [];
-    } catch (e) {
-        // Fallback challenges
-        challenges = [
-            { action: 'blink', label: 'Blink your eyes' },
-            { action: 'smile', label: 'Smile' },
-        ];
-    }
-
-    if (challenges.length === 0) {
-        return { passed: true, reason: 'No challenges required' };
-    }
-
-    // Simple liveness: check for significant frame changes during each challenge
-    for (const challenge of challenges) {
-        statusText.textContent = `Liveness: ${challenge.label}`;
-
-        // Show challenge instruction on the video overlay
-        _showChallengeOverlay(challenge.label);
-
-        // Wait for user to perform action (3 seconds)
-        const moved = await _detectMovementDuring(videoElement, 3000);
-
-        if (!moved) {
-            _hideChallengeOverlay();
-            return { passed: false, reason: `Failed: ${challenge.label} — no movement detected` };
-        }
-    }
-
-    _hideChallengeOverlay();
-    return { passed: true, reason: 'All challenges passed' };
 }
 
 function _showChallengeOverlay(text) {
@@ -271,11 +295,11 @@ function _showChallengeOverlay(text) {
         overlay = document.createElement('div');
         overlay.id = 'livenessOverlay';
         overlay.style.cssText = `
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            position: fixed; top: 75%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(0,0,0,0.8); color: #fff; padding: 20px 40px;
             border-radius: 15px; font-size: 24px; font-weight: bold; z-index: 10002;
             font-family: 'Montserrat', sans-serif; text-align: center;
-            border: 2px solid rgba(124,102,227,0.6);
+            border: 2px solid rgba(124,102,227,0.6); width: 80%;
         `;
         document.body.appendChild(overlay);
     }
@@ -286,42 +310,6 @@ function _showChallengeOverlay(text) {
 function _hideChallengeOverlay() {
     const overlay = document.getElementById('livenessOverlay');
     if (overlay) overlay.style.display = 'none';
-}
-
-async function _detectMovementDuring(videoElement, durationMs) {
-    const canvas = document.createElement('canvas');
-    canvas.width = videoElement.videoWidth;
-    canvas.height = videoElement.videoHeight;
-    const ctx = canvas.getContext('2d');
-
-    // Capture initial frame
-    ctx.drawImage(videoElement, 0, 0);
-    const initialData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-
-    const startTime = Date.now();
-    let maxDiff = 0;
-
-    while (Date.now() - startTime < durationMs) {
-        await new Promise(r => setTimeout(r, 200));
-        ctx.drawImage(videoElement, 0, 0);
-        const currentData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-
-        // Calculate pixel difference
-        let totalDiff = 0;
-        const sampleStep = 40;  // Sample every 40 pixels for performance
-        let samples = 0;
-        for (let i = 0; i < currentData.length; i += sampleStep * 4) {
-            totalDiff += Math.abs(currentData[i] - initialData[i]);
-            samples++;
-        }
-        const avgDiff = totalDiff / samples;
-        if (avgDiff > maxDiff) maxDiff = avgDiff;
-
-        // Early success if movement detected
-        if (maxDiff > 8) return true;
-    }
-
-    return maxDiff > 5;
 }
 
 // ── Stop Camera ───────────────────────────────────────────
@@ -339,7 +327,7 @@ function stopCamera() {
 
 // ── Result Display ────────────────────────────────────────
 function showResult(type, message) {
-    const icon = type === 'success' ? '✅' : '❌';
+    const icon = type === 'success' ? '' : '';
     const color = type === 'success' ? '#22c55e' : '#ef4444';
     if (resultCard) {
         resultCard.innerHTML = `

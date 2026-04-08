@@ -21,10 +21,10 @@ def generate_self_signed_cert(cert_dir: str = None) -> tuple[str, str]:
     key_path = os.path.join(cert_dir, "key.pem")
 
     if os.path.exists(cert_path) and os.path.exists(key_path):
-        print("✅ SSL certificate already exists.")
+        print(" SSL certificate already exists.")
         return cert_path, key_path
 
-    print("🔐 Generating self-signed SSL certificate...")
+    print(" Generating self-signed SSL certificate...")
 
     # Try using Python's built-in ssl/cryptography first
     try:
@@ -73,7 +73,7 @@ def generate_self_signed_cert(cert_dir: str = None) -> tuple[str, str]:
         with open(cert_path, "wb") as f:
             f.write(cert.public_bytes(serialization.Encoding.PEM))
 
-        print(f"✅ Certificate generated: {cert_path}")
+        print(f" Certificate generated: {cert_path}")
         return cert_path, key_path
 
     except ImportError:
@@ -87,12 +87,12 @@ def generate_self_signed_cert(cert_dir: str = None) -> tuple[str, str]:
             "-days", "365", "-nodes",
             "-subj", "/CN=Attendance Server/O=University",
         ], check=True, capture_output=True)
-        print(f"✅ Certificate generated (openssl): {cert_path}")
+        print(f" Certificate generated (openssl): {cert_path}")
         return cert_path, key_path
     except (subprocess.CalledProcessError, FileNotFoundError):
         pass
 
-    print("❌ Cannot generate SSL certificate.")
+    print(" Cannot generate SSL certificate.")
     print("   Install 'cryptography' package: pip install cryptography")
     sys.exit(1)
 

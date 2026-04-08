@@ -118,7 +118,7 @@ def run_migrations():
         cur = conn.cursor()
         cur.execute(_MIGRATIONS)
         conn.commit()
-        print("✅ Database migrations applied.")
+        print(" Database migrations applied.")
     except Exception as e:
         conn.rollback()
         print(f"⚠️  Migration warning: {e}")
