@@ -25,11 +25,10 @@ def main():
         [sys.executable, "-c", 
          "import os, sys; "
          f"sys.path.insert(0, r'{project_dir}'); "
-         "os.chdir(r'" + os.path.join(project_dir, "mainAgent", "sub_agents", "university_agent") + "'); "
-         "from web.attendance_server import app; "
+         "from mainAgent.web.attendance_server import app; "
          "import ssl; "
-         "from web.generate_cert import generate_self_signed_cert; "
-         "cert_dir = r'" + os.path.join(project_dir, "mainAgent", "sub_agents", "university_agent", "web") + "'; "
+         "from mainAgent.web.generate_cert import generate_self_signed_cert; "
+         "cert_dir = r'" + os.path.join(project_dir, "mainAgent", "web") + "'; "
          "cert_path, key_path = generate_self_signed_cert(cert_dir); "
          "ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); "
          "ssl_ctx.load_cert_chain(cert_path, key_path); "
@@ -50,8 +49,8 @@ def main():
     print("\n" + "=" * 60)
     print("Both servers are running!")
     print(f"Frontend:https://localhost:5000/")
-    print(f"Chat API:https://localhost:5000/api/chat")
-    print(f"Attendance:https://localhost:5001/")
+    print(f"Chat API: https://localhost:5000/api/chat")
+    print(f"Attendance API: https://localhost:5001/ (Backend Only)")
     print("=" * 60)
     print("Accept the 'Not Secure' warning in your browser.")
     print("\nPress Ctrl+C to stop all servers.\n")
@@ -59,7 +58,7 @@ def main():
     try:
         main_proc.wait()
     except KeyboardInterrupt:
-        print("\n\n Shutting down servers...")
+        print("\n\nShutting down servers...")
         attendance_proc.terminate()
         main_proc.terminate()
         attendance_proc.wait()

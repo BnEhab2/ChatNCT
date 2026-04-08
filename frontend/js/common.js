@@ -33,8 +33,8 @@ if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
 // ── Navigation ─────────────────────────────────────────────
 function navigateTo(page) {
     const routes = {
-        'dashboard': 'chat.html',
-        'newchat': 'chat.html?view=chat',
+        'dashboard': 'dashboard.html',
+        'newchat': 'chat.html',
         'chat': 'chat.html?view=chat',
         'attendance': 'attendance.html',
         'instructor': 'instructor.html',

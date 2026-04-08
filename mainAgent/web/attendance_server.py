@@ -8,31 +8,50 @@ import hashlib
 import hmac
 import time
 import threading
+import tempfile
 from datetime import datetime, timedelta
 
 import cv2
 import numpy as np
+import requests as http_requests
 from flask import Flask, render_template, request, jsonify
+from dotenv import load_dotenv
 
-# Add parent so we can import db module
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from db.database import get_connection, release_connection
-try:
-    from web.face_verifier import FaceVerifier
-except ImportError:
-    from face_verifier import FaceVerifier
+# Load environment variables
+_WEB_DIR = os.path.dirname(__file__)           # mainAgent/web
+_MAIN_AGENT_DIR = os.path.dirname(_WEB_DIR)     # mainAgent
+_ROOT_DIR = os.path.dirname(_MAIN_AGENT_DIR)    # project root
+for _p in [os.path.join(_ROOT_DIR, ".env"), os.path.join(_MAIN_AGENT_DIR, ".env")]:
+    if os.path.exists(_p):
+        load_dotenv(_p)
+
+# Import database module from mainAgent.db
+sys.path.insert(0, _ROOT_DIR)
+from mainAgent.db.database import get_connection, release_connection
+from mainAgent.web.face_verifier import FaceVerifier
 
 # Initialize FaceVerifier once at startup
 face_verifier = FaceVerifier()
 
-app = Flask(
-    __name__,
-    static_folder=os.path.join(os.path.dirname(__file__), "static"),
-    static_url_path="/static",
-)
+app = Flask(__name__)
 
-PACKAGE_DIR = os.path.dirname(os.path.dirname(__file__))
-PHOTOS_DIR = os.path.join(PACKAGE_DIR, "photos")
+# ── Supabase Storage Config ────────────────────────────────────────────
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
+SUPABASE_BUCKET = "students_image"
+
+@app.route("/")
+def index():
+    return jsonify({
+        "status": "online",
+        "service": "ChatNCT Attendance API",
+        "message": "This is a backend API. Please use the main frontend on port 5000."
+    })
+
+
+# Temp directory for caching downloaded student photos
+TEMP_PHOTOS_DIR = os.path.join(tempfile.gettempdir(), "chatnct_photos")
+os.makedirs(TEMP_PHOTOS_DIR, exist_ok=True)
 
 # Secret key for HMAC token generation
 QR_SECRET = os.getenv("QR_SECRET", "chatnct-qr-secret-2026")
@@ -98,6 +117,38 @@ def _decode_base64_image(data_url: str) -> np.ndarray:
     img_bytes = base64.b64decode(data_url)
     arr = np.frombuffer(img_bytes, dtype=np.uint8)
     return cv2.imdecode(arr, cv2.IMREAD_COLOR)
+
+
+# ── Supabase Photo Download ───────────────────────────────────────────
+def _download_student_photo(student_code: str) -> str:
+    """Download a student's photo from Supabase students_image bucket.
+    
+    Returns the local cached path, or None if not found.
+    Tries common extensions: .png, .jpg, .jpeg
+    """
+    # Check cache first
+    for ext in [".png", ".jpg", ".jpeg"]:
+        cached = os.path.join(TEMP_PHOTOS_DIR, f"{student_code}{ext}")
+        if os.path.exists(cached):
+            return cached
+
+    # Try downloading from Supabase
+    for ext in [".png", ".jpg", ".jpeg"]:
+        filename = f"{student_code}{ext}"
+        url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{filename}"
+        try:
+            resp = http_requests.get(url, timeout=10)
+            if resp.status_code == 200 and len(resp.content) > 100:
+                local_path = os.path.join(TEMP_PHOTOS_DIR, filename)
+                with open(local_path, "wb") as f:
+                    f.write(resp.content)
+                print(f"📸 Downloaded photo for student {student_code} from Supabase")
+                return local_path
+        except Exception as e:
+            print(f"⚠️  Failed to download {filename}: {e}")
+            continue
+
+    return None
 
 
 # ── Feature 2: QR Token Generation (HMAC-based, 5s expiry) ───────────
@@ -378,15 +429,7 @@ _auto_close_thread.start()
 # API ENDPOINTS
 # ══════════════════════════════════════════════════════════════════════
 
-# ── Pages (legacy) ────────────────────────────────────────────────────
-@app.route("/")
-def instructor_page():
-    return render_template("instructor.html")
 
-
-@app.route("/student")
-def student_page():
-    return render_template("student.html")
 
 
 # ── API: Courses List ─────────────────────────────────────────────────
@@ -580,19 +623,15 @@ def verify_attendance():
             if not valid:
                 return _error(err_code)
 
-        # ── 2) Get student and database UUID ─────────────────────────
-        cur.execute("SELECT id AS db_student_id, name, image_url AS photo_path FROM students WHERE student_code = %s OR id::text = %s", (student_id, student_id))
+        # ── 2) Get student info ──────────────────────────────────────
+        cur.execute("SELECT id AS db_student_id, name, student_code FROM students WHERE student_code = %s OR id::text = %s", (student_id, student_id))
         student = cur.fetchone()
         if not student:
             return _error("STUDENT_NOT_FOUND")
 
         student = dict(student)
         db_student_id = student["db_student_id"]
-        photo_rel = student.get("photo_path")
-        
-        # Ensure photos directory exists
-        if not os.path.exists(PHOTOS_DIR):
-            os.makedirs(PHOTOS_DIR, exist_ok=True)
+        student_code = student.get("student_code", student_id)
 
         # ── Feature 5: Duplicate Protection ──────────────────────────
         cur.execute(
@@ -607,61 +646,41 @@ def verify_attendance():
         if not allowed:
             return err_resp
 
-        # ── 3) Face Verification ─────────────────────────────────────
-        if photo_rel and os.path.exists(os.path.join(PACKAGE_DIR, photo_rel) if not os.path.isabs(str(photo_rel)) else str(photo_rel)):
-            photo_path = os.path.join(PACKAGE_DIR, photo_rel) if not os.path.isabs(str(photo_rel)) else str(photo_rel)
+        # ── 3) Download photo from Supabase ──────────────────────────
+        photo_path = _download_student_photo(student_code)
+        if not photo_path:
+            return _error("FACE_NO_PHOTO")
 
-            # Feature 3: Multi-frame verification
-            if images_data and len(images_data) >= 3:
-                result = _verify_multi_frame(images_data, photo_path)
-                if result.get("static"):
-                    return _error("FACE_STATIC_IMAGE")
-                if not result["verified"]:
-                    return _error("FACE_LOW_CONFIDENCE", {
-                        "avg_confidence": result.get("avg_confidence", 0),
-                        "frames_checked": result.get("frames_checked", 0),
-                    })
-                distance = result.get("avg_distance", 0)
-                verified = True
-            else:
-                # Single-frame fallback
-                try:
-                    captured = _decode_base64_image(image_data)
-                except Exception as e:
-                    return _error("FACE_DECODE_ERROR", {"detail": str(e)})
-
-                try:
-                    verification = face_verifier.verifyIdentity(captured, photo_path)
-                    distance = round(verification["distance"], 4)
-                    verified = verification["verified"]
-                    if not verified:
-                        return _error("FACE_VERIFY_FAILED", {"distance": distance})
-                except Exception as e:
-                    return _error("FACE_VERIFY_ERROR", {"detail": str(e)})
+        # ── 4) Face Verification ─────────────────────────────────────
+        # Feature 3: Multi-frame verification
+        if images_data and len(images_data) >= 3:
+            result = _verify_multi_frame(images_data, photo_path)
+            if result.get("static"):
+                return _error("FACE_STATIC_IMAGE")
+            if not result["verified"]:
+                return _error("FACE_LOW_CONFIDENCE", {
+                    "avg_confidence": result.get("avg_confidence", 0),
+                    "frames_checked": result.get("frames_checked", 0),
+                })
+            distance = result.get("avg_distance", 0)
+            verified = True
         else:
-            # ── Auto-Enrollment (First time scanning) ───────────────
+            # Single-frame fallback
             try:
-                # Decode image and save to disk
-                if images_data and len(images_data) > 0:
-                    captured = _decode_base64_image(images_data[-1])
-                else:
-                    captured = _decode_base64_image(image_data)
-                    
-                photo_rel = f"photos/{student_id}.jpg"
-                photo_path = os.path.join(PACKAGE_DIR, "photos", f"{student_id}.jpg")
-                cv2.imwrite(photo_path, captured)
-                
-                # Update database
-                cur.execute("UPDATE students SET image_url = %s WHERE id = %s", (photo_rel, db_student_id))
-                conn.commit()
-                
-                verified = True
-                distance = 0.0
-                print(f"📸 Auto-registered photo for student {student_id}")
+                captured = _decode_base64_image(image_data)
             except Exception as e:
-                return _error("FACE_VERIFY_ERROR", {"detail": f"Failed to register photo: {e}"})
+                return _error("FACE_DECODE_ERROR", {"detail": str(e)})
 
-        # ── 4) Record attendance ─────────────────────────────────────
+            try:
+                verification = face_verifier.verifyIdentity(captured, photo_path)
+                distance = round(verification["distance"], 4)
+                verified = verification["verified"]
+                if not verified:
+                    return _error("FACE_VERIFY_FAILED", {"distance": distance})
+            except Exception as e:
+                return _error("FACE_VERIFY_ERROR", {"detail": str(e)})
+
+        # ── 5) Record attendance ─────────────────────────────────────
         today = now.strftime("%Y-%m-%d")
         notes = "Verified via Face+QR"
         if liveness_passed:
@@ -752,10 +771,7 @@ def close_session(code):
 # ── Main ──────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     import ssl
-    try:
-        from university_agent.web.generate_cert import generate_self_signed_cert
-    except ImportError:
-        from generate_cert import generate_self_signed_cert
+    from mainAgent.web.generate_cert import generate_self_signed_cert
 
     cert_dir = os.path.dirname(__file__)
     cert_path, key_path = generate_self_signed_cert(cert_dir)

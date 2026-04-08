@@ -6,48 +6,19 @@ const API_URL = '/api/chat';
 let isWaiting = false;
 let currentChatSessionId = null;  // Supabase chat_sessions.id
 
-// ── View Switching ─────────────────────────────────────────
-function switchView(viewName, element) {
-    if (element) {
-        document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
-        element.classList.add('active');
-    }
-    const dashboardView = document.getElementById('dashboardView');
-    const chatView = document.getElementById('chatView');
-    if (viewName === 'dashboard') {
-        if (dashboardView) dashboardView.classList.add('active');
-        if (chatView) chatView.classList.remove('active');
-    } else if (viewName === 'chat') {
-        if (dashboardView) dashboardView.classList.remove('active');
-        if (chatView) chatView.classList.add('active');
-        const input = document.getElementById('messageInput');
-        if (input) setTimeout(() => input.focus(), 100);
-    }
-    if (window.innerWidth <= 768) closeSidebar();
-}
-
-function startChat(initialMessage = '') {
-    const dashboardView = document.getElementById('dashboardView');
-    const chatView = document.getElementById('chatView');
-    if (dashboardView) dashboardView.classList.remove('active');
-    if (chatView) chatView.classList.add('active');
-    document.querySelectorAll('.menu-item').forEach(item => {
-        item.classList.remove('active');
-        if (item.dataset && item.dataset.view === 'chat') item.classList.add('active');
-    });
-    if (initialMessage) {
-        const input = document.getElementById('messageInput');
-        if (input) {
-            input.value = initialMessage;
-            setTimeout(() => sendMessage(), 300);
-        }
-    }
-}
-
 // ── Chat Logic ─────────────────────────────────────────────
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
 const chatMessages = document.getElementById('chatMessages');
+
+function startChat(initialMessage = '') {
+    if (initialMessage) {
+        if (messageInput) {
+            messageInput.value = initialMessage;
+            setTimeout(() => sendMessage(), 300);
+        }
+    }
+}
 const studyBtn = document.getElementById('studyBtn');
 const studyPopup = document.getElementById('studyPopup');
 
@@ -117,13 +88,6 @@ async function sendToBackend(message) {
 async function sendMessage() {
     const message = messageInput ? messageInput.value.trim() : '';
     if (!message || isWaiting) return;
-
-    const dashboardView = document.getElementById('dashboardView');
-    const chatView = document.getElementById('chatView');
-    if (dashboardView && chatView) {
-        dashboardView.classList.remove('active');
-        chatView.classList.add('active');
-    }
 
     await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -236,7 +200,6 @@ function renderSessionList(sessions) {
 async function resumeSession(sessionId) {
     currentChatSessionId = sessionId;
     if (chatMessages) chatMessages.innerHTML = '';
-    switchView('chat');
     try {
         const res = await fetch(`/api/chat/sessions/${sessionId}/messages`);
         const data = await res.json();
@@ -282,20 +245,16 @@ async function renameSession(sessionId) {
 function newChat() {
     currentChatSessionId = null;
     if (chatMessages) chatMessages.innerHTML = '';
-    switchView('chat');
 }
 
 // ── Init: Check URL params ─────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('view') === 'chat') {
-        switchView('chat');
-    }
 
-    // Set greeting
-    const greetingEl = document.getElementById('greetingText');
-    if (greetingEl) {
-        greetingEl.innerHTML = `Hi, ${getUsername()}<br>I'm ChatNCT`;
+    // Initial message if passed from Start Chat links
+    const initialRaw = params.get('initial');
+    if (initialRaw) {
+        setTimeout(() => startChat(initialRaw), 300);
     }
 
     // Handle pending prompt from Prompt Generator page

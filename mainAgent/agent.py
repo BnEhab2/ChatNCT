@@ -4,7 +4,6 @@ Orchestrates all sub-agents:
   - prompt_wizard      → Professional AI prompt generation (CO-STAR)
   - study_agent        → Lecture summaries & quizzes (RAG)
   - student_chatbot    → Student affairs Q&A (FAISS)
-  - university_agent   → Database, attendance, face recognition
   - vibe_coder_agent   → Code generation & project building (Gemini)
 """
 
@@ -13,7 +12,6 @@ from google.adk.models.lite_llm import LiteLlm
 from .sub_agents.Lex.agent import root_agent as prompt_wizard
 from .sub_agents.marwan.study_agent.agent import root_agent as study_agent
 from .sub_agents.shahd.pro.student_chatbot.agent import root_agent as student_chatbot
-from .sub_agents.university_agent.agent import root_agent as university_agent
 from .sub_agents.Mixxx.vibe_coder.agent import vibe_coder_agent
 import os
 
@@ -31,9 +29,8 @@ root_agent = LlmAgent(
     - Prompt writing/improving/system prompts -> prompt_wizard
     - Study, lectures, summaries, quizzes, revision, C++, Database, IT, Linux, OS -> study_agent
     - Fees, admissions, schedules, training, student affairs -> student_chatbot
-    - Student info, grades, courses, attendance, face verification, university database -> university_agent
     - Coding, debugging, projects, software building -> vibe_coder_agent
     - Otherwise answer directly.
     If unclear, ask a short clarifying question.""",
-    sub_agents=[prompt_wizard, study_agent, student_chatbot, university_agent, vibe_coder_agent],
+    sub_agents=[prompt_wizard, study_agent, student_chatbot, vibe_coder_agent],
 )

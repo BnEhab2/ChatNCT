@@ -1,11 +1,3 @@
-"""
-server.py — ChatNCT Backend API Middleware
-
-Central Flask server that connects the frontend with all AI agents.
-Serves the frontend files and proxies requests to the appropriate agents
-and the attendance server.
-"""
-
 import os
 import sys
 import asyncio
@@ -30,7 +22,7 @@ from google.genai import types
 from mainAgent.agent import root_agent
 
 # ── Database imports ───────────────────────────────────────────────────
-from mainAgent.sub_agents.university_agent.db.database import (
+from mainAgent.db.database import (
     get_connection, release_connection, run_migrations
 )
 
@@ -56,7 +48,7 @@ runner = Runner(
 # Store user sessions (user_id → session_id)
 user_sessions = {}
 
-ATTENDANCE_SERVER = os.getenv("ATTENDANCE_SERVER_URL", "https://localhost:5001")
+ATTENDANCE_SERVER = os.getenv("ATTENDANCE_SERVER_URL", "https://127.0.0.1:5001")
 
 # ── Persistent Event Loop (Feature 9: Performance) ────────────────────
 _loop = asyncio.new_event_loop()
@@ -406,12 +398,23 @@ def login():
 # ══════════════════════════════════════════════════════════════════════
 
 @app.route("/api/courses", methods=["GET"])
-def proxy_courses():
+def get_courses():
+    conn = get_connection()
     try:
-        r = http_requests.get(f"{ATTENDANCE_SERVER}/api/courses", verify=False, timeout=5)
-        return jsonify(r.json()), r.status_code
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT c.id AS course_id, c.course_code, c.name AS course_name,
+                   i.id AS instructor_id, i.name AS instructor_name
+            FROM courses c
+            LEFT JOIN instructors i ON c.instructor_id = i.id
+            ORDER BY c.course_code
+        """)
+        rows = [dict(r) for r in cur.fetchall()]
+        return jsonify(rows)
     except Exception as e:
-        return jsonify({"status": "error", "message": f"Attendance server unreachable: {e}"}), 502
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        release_connection(conn)
 
 
 @app.route("/api/session/create", methods=["POST"])
@@ -420,7 +423,7 @@ def proxy_create_session():
         r = http_requests.post(
             f"{ATTENDANCE_SERVER}/api/session/create",
             json=request.get_json(),
-            verify=False, timeout=5,
+            verify=False, timeout=15,
         )
         return jsonify(r.json()), r.status_code
     except Exception as e:
@@ -430,7 +433,7 @@ def proxy_create_session():
 @app.route("/api/session/<code>", methods=["GET"])
 def proxy_check_session(code):
     try:
-        r = http_requests.get(f"{ATTENDANCE_SERVER}/api/session/{code}", verify=False, timeout=5)
+        r = http_requests.get(f"{ATTENDANCE_SERVER}/api/session/{code}", verify=False, timeout=15)
         return jsonify(r.json()), r.status_code
     except Exception as e:
         return jsonify({"status": "error", "message": f"Attendance server unreachable: {e}"}), 502
@@ -440,7 +443,7 @@ def proxy_check_session(code):
 def proxy_qr_token(code):
     """Proxy: get rotating QR token."""
     try:
-        r = http_requests.get(f"{ATTENDANCE_SERVER}/api/session/{code}/qr-token", verify=False, timeout=5)
+        r = http_requests.get(f"{ATTENDANCE_SERVER}/api/session/{code}/qr-token", verify=False, timeout=15)
         return jsonify(r.json()), r.status_code
     except Exception as e:
         return jsonify({"status": "error", "message": f"Attendance server unreachable: {e}"}), 502
@@ -463,7 +466,7 @@ def proxy_verify_attendance():
 def proxy_challenges():
     """Proxy: get liveness challenges."""
     try:
-        r = http_requests.get(f"{ATTENDANCE_SERVER}/api/attendance/challenges", verify=False, timeout=5)
+        r = http_requests.get(f"{ATTENDANCE_SERVER}/api/attendance/challenges", verify=False, timeout=15)
         return jsonify(r.json()), r.status_code
     except Exception as e:
         return jsonify({"status": "error", "message": f"Attendance server unreachable: {e}"}), 502
@@ -472,7 +475,7 @@ def proxy_challenges():
 @app.route("/api/session/<code>/report", methods=["GET"])
 def proxy_session_report(code):
     try:
-        r = http_requests.get(f"{ATTENDANCE_SERVER}/api/session/{code}/report", verify=False, timeout=5)
+        r = http_requests.get(f"{ATTENDANCE_SERVER}/api/session/{code}/report", verify=False, timeout=15)
         return jsonify(r.json()), r.status_code
     except Exception as e:
         return jsonify({"status": "error", "message": f"Attendance server unreachable: {e}"}), 502
@@ -481,7 +484,7 @@ def proxy_session_report(code):
 @app.route("/api/session/<code>/close", methods=["POST"])
 def proxy_close_session(code):
     try:
-        r = http_requests.post(f"{ATTENDANCE_SERVER}/api/session/{code}/close", verify=False, timeout=5)
+        r = http_requests.post(f"{ATTENDANCE_SERVER}/api/session/{code}/close", verify=False, timeout=15)
         return jsonify(r.json()), r.status_code
     except Exception as e:
         return jsonify({"status": "error", "message": f"Attendance server unreachable: {e}"}), 502
@@ -520,7 +523,7 @@ if __name__ == "__main__":
             return "127.0.0.1"
 
     try:
-        from mainAgent.sub_agents.university_agent.web.generate_cert import generate_self_signed_cert
+        from mainAgent.web.generate_cert import generate_self_signed_cert
         cert_dir = os.path.dirname(__file__)
         cert_path, key_path = generate_self_signed_cert(cert_dir)
         ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)

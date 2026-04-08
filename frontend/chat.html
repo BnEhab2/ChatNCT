@@ -21,30 +21,6 @@
         .view-section { display: none; animation: fadeIn 0.5s ease; flex: 1; overflow: hidden; }
         .view-section.active { display: flex; flex-direction: column; }
 
-        /* ── Dashboard ──────────────────────────────────────── */
-        .dashboard-container {
-            display: flex; flex-direction: column; align-items: center;
-            justify-content: center; flex: 1; text-align: center; overflow-y: auto;
-        }
-        .robot-character { width: 200px; height: 200px; margin-bottom: 30px; animation: floatRobot 3s infinite ease-in-out; }
-        .robot-character img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 30px rgba(124,102,227,0.6)); }
-        .greeting-text {
-            font-family: 'Poetsen One', cursive; font-size: clamp(28px, 5vw, 42px);
-            color: #e0d8fe; margin-bottom: 40px;
-            text-shadow: 0 0 30px rgba(124,102,227,0.5); line-height: 1.3;
-        }
-        .quick-actions { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-bottom: 50px; }
-        .action-card {
-            width: 120px; height: 120px; background: var(--panel-bg);
-            border: 2px solid var(--panel-border); border-radius: 25px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 10px; cursor: pointer; transition: all 0.3s ease; backdrop-filter: blur(10px);
-        }
-        .action-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(124,102,227,0.4); border-color: #7c66e3; }
-        .action-card i { font-size: 34px; color: #e0d8fe; margin-bottom: 5px; }
-        .action-card img { width: 50px; height: 50px; object-fit: contain; filter: brightness(0) invert(1); }
-        .action-card span { color: #e0d8fe; font-size: 14px; font-weight: 600; text-align: center; }
-
         /* ── Chat ───────────────────────────────────────────── */
         .chat-container { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
         .chat-messages {
@@ -161,12 +137,6 @@
         @media (max-width: 768px) {
             .message-wrapper { max-width: 85%; }
             .message-bubble { padding: 14px 20px; font-size: 17px; }
-            .quick-actions { gap: 12px; }
-            .action-card { width: 100px; height: 100px; border-radius: 20px; }
-            .action-card i { font-size: 28px; }
-            .action-card img { width: 40px; height: 40px; }
-            .action-card span { font-size: 12px; }
-            .robot-character { width: 150px; height: 150px; }
         }
         @media (max-width: 480px) {
             .message-wrapper { max-width: 92%; }
@@ -213,10 +183,10 @@
             <button class="sidebar-close" id="sidebarClose" aria-label="Close menu"><i class="fas fa-times"></i></button>
         </div>
         <div class="sidebar-menu">
-            <div class="menu-item active" data-view="dashboard" onclick="switchView('dashboard', this)">
+            <div class="menu-item" onclick="navigateTo('dashboard')">
                 <i class="fas fa-th-large"></i><span>Dashboard</span>
             </div>
-            <div class="menu-item" data-view="chat" onclick="newChat(); if(window.innerWidth<=768) closeSidebar();">
+            <div class="menu-item active" onclick="newChat(); if(window.innerWidth<=768) closeSidebar();">
                 <i class="fas fa-plus-square"></i><span>New Chat</span>
             </div>
             <div class="menu-item" data-role="student" onclick="navigateTo('attendance')">
@@ -265,31 +235,7 @@
     </div>
 
     <div class="main-container">
-        <div class="view-section active" id="dashboardView">
-            <div class="dashboard-container">
-                <div class="robot-character"><img src="img/Head of Charcter.png" alt="ChatNCT Robot"></div>
-                <h1 class="greeting-text" id="greetingText">Hi, Guest<br>I'm ChatNCT</h1>
-                <div class="quick-actions">
-                    <div class="action-card" onclick="startChat('Help me study')">
-                        <i class="fas fa-graduation-cap"></i><span>Study Help</span>
-                    </div>
-                    <div class="action-card" data-card-role="student" onclick="navigateTo('attendance')">
-                        <img src="img/Groups.png" alt="Attendance"><span>Attendance</span>
-                    </div>
-                    <div class="action-card" data-card-role="instructor,admin" onclick="navigateTo('instructor')">
-                        <i class="fas fa-chalkboard-teacher"></i><span>Instructor Panel</span>
-                    </div>
-                    <div class="action-card" onclick="navigateTo('prompt')">
-                        <img src="img/Groupw.png" alt="Prompt"><span>Prompt Generator</span>
-                    </div>
-                    <div class="action-card" onclick="startChat('Explain a concept')">
-                        <i class="fas fa-lightbulb"></i><span>Explain Topic</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="view-section" id="chatView">
+        <div class="view-section active" id="chatView">
             <div class="chat-container">
                 <div class="chat-messages" id="chatMessages" role="log" aria-live="polite"></div>
             </div>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatNCT - Dashboard</title>
+    <meta name="description" content="ChatNCT AI Assistant Dashboard">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;600&family=Poetsen+One&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        .main-container {
+            width: 100%; max-width: 1400px; margin: 0 auto;
+            padding: 90px 20px 0; position: relative; z-index: 10;
+            height: calc(100vh - 0px); display: flex; flex-direction: column; overflow: hidden;
+        }
+        .dashboard-container {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; flex: 1; text-align: center; overflow-y: hidden;
+            animation: fadeIn 0.5s ease; padding-bottom: 20px;
+        }
+        .robot-character { width: 170px; height: 170px; margin-bottom: 5px; animation: floatRobot 3s infinite ease-in-out; }
+        .robot-character img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 30px rgba(124,102,227,0.6)); }
+        
+        .greeting-text {
+            font-family: 'Poetsen One', cursive; font-size: clamp(26px, 4vw, 36px);
+            color: #e0d8fe; margin-bottom: 12px;
+            text-shadow: 0 0 30px rgba(124,102,227,0.5); line-height: 1.2;
+        }
+        .dashboard-description {
+            font-size: clamp(14px, 1.8vw, 17px);
+            color: #b0a9ff; margin-bottom: 25px;
+            max-width: 650px; line-height: 1.6;
+            background: rgba(28,26,74,0.6); padding: 18px 25px;
+            border-radius: 20px; border: 1px solid rgba(124,102,227,0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .quick-actions { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+        .action-card {
+            width: 125px; height: 125px; background: var(--panel-bg);
+            border: 2px solid var(--panel-border); border-radius: 20px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 12px; cursor: pointer; transition: all 0.3s ease; backdrop-filter: blur(10px);
+        }
+        .action-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(124,102,227,0.4); border-color: #7c66e3; }
+        .action-card i { font-size: 32px; color: #e0d8fe; margin-bottom: 0px; }
+        .action-card img { width: 45px; height: 45px; object-fit: contain; filter: brightness(0) invert(1); }
+        .action-card span { color: #e0d8fe; font-size: 14px; font-weight: 600; text-align: center; }
+
+        @media (max-width: 768px) {
+            .quick-actions { gap: 12px; }
+            .action-card { width: 105px; height: 105px; border-radius: 18px; gap: 8px; }
+            .action-card i { font-size: 26px; }
+            .action-card img { width: 35px; height: 35px; }
+            .action-card span { font-size: 12px; }
+            .robot-character { width: 130px; height: 130px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><img src="img/Logo.png" alt="ChatNCT"></div>
+            <button class="sidebar-close" id="sidebarClose" aria-label="Close menu"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-item active" onclick="navigateTo('dashboard')">
+                <i class="fas fa-th-large"></i><span>Dashboard</span>
+            </div>
+            <div class="menu-item" onclick="navigateTo('chat')">
+                <i class="fas fa-plus-square"></i><span>New Chat</span>
+            </div>
+            <div class="menu-item" data-role="student" onclick="navigateTo('attendance')">
+                <i class="fas fa-clipboard-check"></i><span>Attendance</span>
+            </div>
+            <div class="menu-item" data-role="instructor,admin" onclick="navigateTo('instructor')">
+                <i class="fas fa-chalkboard-teacher"></i><span>Instructor Panel</span>
+            </div>
+            <div class="menu-item" onclick="navigateTo('prompt')">
+                <i class="fas fa-magic"></i><span>Prompt Generator</span>
+            </div>
+            <div class="menu-divider"></div>
+        </div>
+        <div class="sidebar-footer">
+            <div class="user-info-brief">
+                <div class="user-avatar" id="userAvatar">G</div>
+                <div class="user-name" id="userNameDisplay">Guest</div>
+            </div>
+            <a href="#" class="sidebar-login" onclick="logout(); return false;">
+                <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+            </a>
+        </div>
+    </div>
+
+    <nav class="navbar">
+        <div class="navbar-left">
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="chat-robot-icon"><img src="img/Character.png" alt="ChatNCT Robot"></div>
+            <div class="chat-status"><span class="status-dot online"></span><span>ChatNCT is ready to help</span></div>
+        </div>
+        <div class="header-logo"><img src="img/Logo.png" alt="ChatNCT"></div>
+    </nav>
+
+    <div class="animated-bg">
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="glow-orb"></div><div class="glow-orb"></div>
+    </div>
+
+    <div class="main-container">
+        <div class="dashboard-container">
+            <div class="robot-character"><img src="img/Head of Charcter.png" alt="ChatNCT Robot"></div>
+            <h1 class="greeting-text" id="greetingText">Welcome!</h1>
+            <p class="dashboard-description">
+                <strong>ChatNCT</strong> is your intelligent AI University Assistant. It has no direct relation to a simple chat box — it is a smart supervisor that explains concepts, quizzes you on your courses, generates professional prompts via CO-STAR framework, and automates face-recognition smart attendance. Choose your destination below.
+            </p>
+            <div class="quick-actions">
+                <div class="action-card" onclick="navigateTo('chat')">
+                    <i class="fas fa-comments"></i><span>AI Chat</span>
+                </div>
+                <div class="action-card" data-card-role="student" onclick="navigateTo('attendance')">
+                    <img src="img/Groups.png" alt="Attendance"><span>Attendance</span>
+                </div>
+                <div class="action-card" data-card-role="instructor,admin" onclick="navigateTo('instructor')">
+                    <i class="fas fa-chalkboard-teacher"></i><span>Instructor Panel</span>
+                </div>
+                <div class="action-card" onclick="navigateTo('prompt')">
+                    <img src="img/Groupw.png" alt="Prompt"><span>Prompt Generator</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const greetingEl = document.getElementById('greetingText');
+            if (greetingEl) {
+                const hour = new Date().getHours();
+                let timeGreet = 'Welcome';
+                if (hour >= 5 && hour < 12) timeGreet = 'Good Morning';
+                else if (hour >= 12 && hour < 17) timeGreet = 'Good Afternoon';
+                else timeGreet = 'Good Evening';
+                const name = getUsername();
+                greetingEl.innerHTML = `${timeGreet}, ${name}! 👋`;
+            }
+        });
+    </script>
+</body>
+</html>
