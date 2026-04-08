@@ -104,7 +104,7 @@ pip install -r requirements.txt
 ## Run the Project
 
 ```bash id="d4e5f6"
-python app.py
+python run.py
 ```
 
 ---
