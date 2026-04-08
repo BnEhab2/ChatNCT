@@ -69,7 +69,7 @@ def load_materials(materials_dir: str = "materials") -> Dict[str, str]:
             except Exception as e:
                 print(f"✗ Error loading {file}: {e}")
     
-    print(f"\n✅ Total materials loaded: {len(materials)}")
+    print(f"\n Total materials loaded: {len(materials)}")
     return materials
 
 
@@ -298,11 +298,11 @@ def get_available_subjects() -> list:
 
 # Auto-load materials when module is imported
 print("\n" + "="*60)
-print("🔍 Loading materials...")
+print(" Loading materials...")
 print("="*60)
 load_materials()
 subjects = get_available_subjects()
-print(f"\n📚 Available subjects ({len(subjects)}):")
+print(f"\n Available subjects ({len(subjects)}):")
 for subject in subjects:
     print(f"   • {subject}")
 print("="*60)

@@ -462,6 +462,32 @@ def proxy_verify_attendance():
         return jsonify({"status": "error", "message": f"Attendance server unreachable: {e}"}), 502
 
 
+@app.route("/api/attendance/check_identity", methods=["POST"])
+def proxy_check_identity():
+    try:
+        r = http_requests.post(
+            f"{ATTENDANCE_SERVER}/api/attendance/check_identity",
+            json=request.get_json(),
+            verify=False, timeout=30,
+        )
+        return jsonify(r.json()), r.status_code
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Server unreachable: {e}"}), 502
+
+
+@app.route("/api/attendance/check_pose", methods=["POST"])
+def proxy_check_pose():
+    try:
+        r = http_requests.post(
+            f"{ATTENDANCE_SERVER}/api/attendance/check_pose",
+            json=request.get_json(),
+            verify=False, timeout=10,
+        )
+        return jsonify(r.json()), r.status_code
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Server unreachable: {e}"}), 502
+
+
 @app.route("/api/attendance/challenges", methods=["GET"])
 def proxy_challenges():
     """Proxy: get liveness challenges."""
@@ -536,7 +562,7 @@ if __name__ == "__main__":
     protocol = "https" if ssl_ctx else "http"
 
     print("\n" + "=" * 60)
-    print("🚀 ChatNCT Server (Unified App)")
+    print(" ChatNCT Server (Unified App)")
     print("=" * 60)
     print(f"  Local:      {protocol}://localhost:5000/")
     print(f"  Network:    {protocol}://{lan_ip}:5000/")

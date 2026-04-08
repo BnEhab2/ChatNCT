@@ -111,7 +111,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
             if (data.user_id) localStorage.setItem('chatnct_user_id', data.user_id);
 
             const role = (data.role || 'student').toLowerCase();
-            showNotification(data.is_admin ? 'Welcome, Admin! 🎯' : `Welcome back, ${data.username}!`);
+            showNotification(data.is_admin ? 'Welcome, Admin! ' : `Welcome back, ${data.username}!`);
 
             setTimeout(() => {
                 if (role === 'instructor' || role === 'admin') {

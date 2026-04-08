@@ -142,7 +142,7 @@ def _download_student_photo(student_code: str) -> str:
                 local_path = os.path.join(TEMP_PHOTOS_DIR, filename)
                 with open(local_path, "wb") as f:
                     f.write(resp.content)
-                print(f"📸 Downloaded photo for student {student_code} from Supabase")
+                print(f" Downloaded photo for student {student_code} from Supabase")
                 return local_path
         except Exception as e:
             print(f"⚠️  Failed to download {filename}: {e}")
@@ -573,8 +573,81 @@ def check_session(code):
 @app.route("/api/attendance/challenges", methods=["GET"])
 def get_challenges():
     """Return randomized liveness challenge sequence."""
-    challenges = _generate_liveness_challenges(3)
+    # Modified to return pose challenges matching FaceVerifier
+    challenges = [
+        {"action": "center", "label": "Look Straight"},
+        {"action": "left", "label": "Look Left"},
+        {"action": "right", "label": "Look Right"},
+        {"action": "center", "label": "Look Straight"}
+    ]
     return jsonify({"status": "success", "challenges": challenges})
+
+# ── API: Check Identity (Web Liveness Loop Phase 1) ───────────────────
+@app.route("/api/attendance/check_identity", methods=["POST"])
+def check_identity():
+    data = request.get_json()
+    student_id = data.get("student_id", "").strip()
+    image_data = data.get("image", "")
+
+    if not student_id or not image_data:
+        return _error("MISSING_FIELDS")
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT student_code FROM students WHERE student_code = %s OR id::text = %s", (student_id, student_id))
+        student = cur.fetchone()
+        if not student:
+            return _error("STUDENT_NOT_FOUND")
+            
+        student_code = dict(student).get("student_code", student_id)
+        photo_path = _download_student_photo(student_code)
+        if not photo_path:
+            return _error("FACE_NO_PHOTO")
+
+        try:
+            captured = _decode_base64_image(image_data)
+        except Exception as e:
+            return _error("FACE_DECODE_ERROR", {"detail": str(e)})
+
+        verification = face_verifier.verifyIdentity(captured, photo_path)
+        
+        # We need faceBox formatted cleanly for JSON: x, y, w, h
+        fb = verification.get("faceBox")
+        face_box_list = [int(v) for v in fb] if fb is not None else None
+
+        return jsonify({
+            "status": "success",
+            "verified": verification.get("verified", False),
+            "message": verification.get("message", ""),
+            "distance": verification.get("distance", 0.0),
+            "faceBox": face_box_list
+        })
+    finally:
+        release_connection(conn)
+
+# ── API: Check Head Pose (Web Liveness Loop Phase 2) ──────────────────
+@app.route("/api/attendance/check_pose", methods=["POST"])
+def check_pose():
+    data = request.get_json()
+    image_data = data.get("image", "")
+    face_box = data.get("faceBox", None)
+
+    if not image_data or not face_box or len(face_box) != 4:
+        return jsonify({"status": "error", "message": "Missing image or faceBox"}), 400
+
+    try:
+        captured = _decode_base64_image(image_data)
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Decode error: {str(e)}"}), 400
+
+    pose = face_verifier.getHeadPose(captured, face_box)
+    
+    return jsonify({
+        "status": "success",
+        "pose": pose
+    })
+
 
 
 # ── API: Verify & Record Attendance (Features 2-7, 10) ────────────────
@@ -720,7 +793,7 @@ def session_report(code):
 
         session = dict(session)
         cur.execute("""
-            SELECT a.id AS attendance_id, a.student_id, s.name AS student_name,
+            SELECT a.id AS attendance_id, a.student_id, s.student_code, s.name AS student_name,
                    a.date, a.status, a.verified_by, a.notes, a.created_at
             FROM attendance a
             JOIN students s ON a.student_id = s.id
@@ -776,7 +849,7 @@ if __name__ == "__main__":
     cert_dir = os.path.dirname(__file__)
     cert_path, key_path = generate_self_signed_cert(cert_dir)
 
-    print(f"\n📱 Face + QR Attendance Server (HTTPS)")
+    print(f"\n Face + QR Attendance Server (HTTPS)")
     print("=" * 55)
     print(f"  Local:      https://localhost:5000/")
     print(f"  Network:    https://{LAN_IP}:5000/")

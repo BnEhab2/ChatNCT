@@ -33,7 +33,7 @@ generateBtn.addEventListener('click', async () => {
 
         if (data.status === 'success') {
             promptOutput.value = data.prompt;
-            showNotification('Prompt generated successfully! ✨', 'success');
+            showNotification('Prompt generated successfully! ', 'success');
         } else {
             promptOutput.value = 'Error: ' + (data.message || 'Unknown error');
             showNotification('Failed to generate prompt', 'error');

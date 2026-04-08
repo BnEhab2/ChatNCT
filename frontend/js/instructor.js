@@ -9,6 +9,7 @@ if (getRole() === 'student') {
 let currentSessionCode = null;
 let reportInterval = null;
 let qrRefreshInterval = null;
+let currentReportData = [];
 
 const courseSelect = document.getElementById('courseSelect');
 const startBtn = document.getElementById('startSessionBtn');
@@ -74,7 +75,7 @@ startBtn.addEventListener('click', async () => {
             showSessionActive(currentSessionCode, courseSelect.options[courseSelect.selectedIndex].text);
             generateQRCode(currentSessionCode);
             startReportPolling();
-            showNotification('Session started! 🎉', 'success');
+            showNotification('Session started! ', 'success');
         } else {
             showNotification(data.message || 'Failed to create session', 'error');
         }
@@ -161,7 +162,7 @@ closeBtn.addEventListener('click', async () => {
     closeBtn.disabled = true;
     try {
         await fetch(`/api/session/${currentSessionCode}/close`, { method: 'POST' });
-        showNotification('Session closed ✅', 'success');
+        showNotification('Session closed ', 'success');
     } catch (err) {
         console.error('Close session error:', err);
     }
@@ -188,9 +189,44 @@ downloadBtn.addEventListener('click', () => {
         link.download = `attendance-qr-${currentSessionCode}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
-        showNotification('QR Code downloaded! 📥', 'success');
+        showNotification('QR Code downloaded! ', 'success');
     }
 });
+
+// ── Download CSV ───────────────────────────────────────────
+const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+if (downloadCsvBtn) {
+    downloadCsvBtn.addEventListener('click', () => {
+        if (!currentReportData || currentReportData.length === 0) {
+            return showNotification('No attendance data available to export.', 'error');
+        }
+        
+        // Add UTF-8 BOM for Excel to properly display Arabic/special chars
+        let csvContent = "\uFEFF"; 
+        csvContent += "Index,Student ID,Student Name,Time,Status\n";
+        
+        currentReportData.forEach((record, index) => {
+            const studentId = record.student_code || record.student_id;
+            const studentName = record.student_name ? `"${record.student_name}"` : "—";
+            const time = record.time || record.timestamp || record.created_at || "—";
+            // Strip commas from time and name to prevent CSV breaks just in case
+            const safeTime = `"${time.replace(/"/g, '""')}"`;
+            
+            csvContent += `${index + 1},${studentId},${studentName},${safeTime},Present\n`;
+        });
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `attendance_report_${currentSessionCode}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showNotification('CSV Report downloaded! ', 'success');
+    });
+}
 
 // ── Live Report Polling ────────────────────────────────────
 function startReportPolling() {
@@ -212,16 +248,19 @@ async function fetchReport() {
         const data = await response.json();
 
         if (data.attendance && data.attendance.length > 0) {
+            currentReportData = data.attendance;
             attendanceTable.style.display = 'block';
             attendanceBody.innerHTML = '';
             data.attendance.forEach((record, index) => {
                 const row = document.createElement('tr');
+                const studentId = record.student_code || record.student_id;
+                const timeStr = record.time || record.timestamp || record.created_at || '—';
                 row.innerHTML = `
                     <td>${index + 1}</td>
-                    <td>${record.student_id}</td>
+                    <td>${studentId}</td>
                     <td>${record.student_name || '—'}</td>
-                    <td>${record.time || record.timestamp || '—'}</td>
-                    <td><span style="color:#22c55e;">✅</span></td>
+                    <td>${timeStr}</td>
+                    <td><span style="color:#22c55e;"></span></td>
                 `;
                 attendanceBody.appendChild(row);
             });
