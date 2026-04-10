@@ -1,10 +1,10 @@
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : 'https://minadiaa-chatnct.hf.space';
+
 
 // ══════════════════════════════════════════════════════════════
 // ChatNCT — Chat Page Logic (Feature 1: Supabase Persistence)
 // ══════════════════════════════════════════════════════════════
 
-const API_URL = '/api/chat';
+const API_URL = `${API_BASE}/api/chat`;
 let isWaiting = false;
 let currentChatSessionId = null;  // Supabase chat_sessions.id
 
