@@ -1,3 +1,5 @@
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : 'https://chatnct.onrender.com';
+
 // ══════════════════════════════════════════════════════════════
 // ChatNCT — Instructor Panel (QR Generation + Session Mgmt)
 // ══════════════════════════════════════════════════════════════
@@ -24,7 +26,7 @@ const sessionStatus = document.getElementById('sessionStatus');
 // ── Load Courses ───────────────────────────────────────────
 async function loadCourses() {
     try {
-        const response = await fetch('/api/courses');
+        const response = await fetch(`${API_BASE}/api/courses`);
         const data = await response.json();
         if (Array.isArray(data)) {
             data.forEach(course => {
@@ -63,7 +65,7 @@ startBtn.addEventListener('click', async () => {
     startBtn.textContent = 'Creating...';
 
     try {
-        const response = await fetch('/api/session/create', {
+        const response = await fetch(`${API_BASE}/api/session/create`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ course_id: courseId })
@@ -128,7 +130,7 @@ function stopQRRefresh() {
 
 async function _fetchAndRenderQR(code) {
     try {
-        const res = await fetch(`/api/session/${code}/qr-token`);
+        const res = await fetch(`${API_BASE}/api/session/${code}/qr-token`);
         const data = await res.json();
         if (data.status === 'success' && data.token) {
             _renderQR(code, data.token, data.timestamp);
@@ -161,7 +163,7 @@ closeBtn.addEventListener('click', async () => {
 
     closeBtn.disabled = true;
     try {
-        await fetch(`/api/session/${currentSessionCode}/close`, { method: 'POST' });
+        await fetch(`${API_BASE}/api/session/${currentSessionCode}/close`, { method: 'POST' });
         showNotification('Session closed ', 'success');
     } catch (err) {
         console.error('Close session error:', err);
@@ -244,7 +246,7 @@ function stopReportPolling() {
 async function fetchReport() {
     if (!currentSessionCode) return;
     try {
-        const response = await fetch(`/api/session/${currentSessionCode}/report`);
+        const response = await fetch(`${API_BASE}/api/session/${currentSessionCode}/report`);
         const data = await response.json();
 
         if (data.attendance && data.attendance.length > 0) {

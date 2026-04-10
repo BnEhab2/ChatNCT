@@ -1,3 +1,5 @@
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : 'https://chatnct.onrender.com';
+
 // ══════════════════════════════════════════════════════════════
 // ChatNCT — Prompt Generator Logic
 // ══════════════════════════════════════════════════════════════
@@ -24,7 +26,7 @@ generateBtn.addEventListener('click', async () => {
     promptOutput.value = 'جاري توليد الـ Prompt...';
 
     try {
-        const response = await fetch('/api/prompt/generate', {
+        const response = await fetch(`${API_BASE}/api/prompt/generate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idea: ideaText, user_id: getUsername() })

@@ -1,3 +1,5 @@
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : 'https://chatnct.onrender.com';
+
 // ══════════════════════════════════════════════════════════════
 // ChatNCT — Login Page Logic
 // ══════════════════════════════════════════════════════════════
@@ -94,7 +96,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     errorMsg.textContent = '';
 
     try {
-        const response = await fetch('/api/auth/login', {
+        const response = await fetch(`${API_BASE}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })

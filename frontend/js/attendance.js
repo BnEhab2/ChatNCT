@@ -1,3 +1,5 @@
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : 'https://chatnct.onrender.com';
+
 // ══════════════════════════════════════════════════════════════
 // ChatNCT — Student Attendance (QR Scanner + Multi-Frame Face + Liveness)
 // Features: 2 (QR Token), 3 (Multi-Frame), 4 (Liveness), 7 (Device FP)
@@ -87,7 +89,7 @@ async function onQrCodeSuccess(decodedText) {
 
     // Verify session
     try {
-        const response = await fetch(`/api/session/${sessionCode}`);
+        const response = await fetch(`${API_BASE}/api/session/${sessionCode}`);
         const data = await response.json();
 
         if (data.status === 'success' || data.status === 'active') {
@@ -128,12 +130,12 @@ function showStudentIdForm(sessionCode, courseName) {
 // ── Feature 3+4: Multi-Frame Capture + Liveness (Server-Side Logic) ───────────
 function captureFastFrame(videoElement) {
     const canvas = document.createElement('canvas');
-    // Scale down width to 320 for extremely fast network transmission (low latency)
-    canvas.width = 320;
-    canvas.height = Math.floor(videoElement.videoHeight * (320 / videoElement.videoWidth));
+    // Scale down width to 480 for fast transmission while keeping face quality
+    canvas.width = 480;
+    canvas.height = Math.floor(videoElement.videoHeight * (480 / videoElement.videoWidth));
     canvas.getContext('2d').drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-    // Use JPEG with 0.5 quality to make base64 string very small
-    return canvas.toDataURL('image/jpeg', 0.5);
+    // Use JPEG with 0.7 quality to balance speed and face recognition accuracy
+    return canvas.toDataURL('image/jpeg', 0.7);
 }
 
 async function startFaceVerify(sessionCode) {
@@ -180,7 +182,7 @@ async function startFaceVerify(sessionCode) {
             
             const frame = captureFastFrame(videoElement);
             try {
-                const res = await fetch('/api/attendance/check_identity', {
+                const res = await fetch(`${API_BASE}/api/attendance/check_identity`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ student_id: studentId, image: frame })
@@ -196,7 +198,8 @@ async function startFaceVerify(sessionCode) {
                      stopCamera();
                      return showResult('error', data.message);
                 } else {
-                    _showChallengeOverlay(`Attempt ${attemptCount}/8: ${data.message || 'No face detected'}`);
+                    const dist = data.distance ? ` (d=${data.distance.toFixed(3)})` : '';
+                    _showChallengeOverlay(`Attempt ${attemptCount}/8: ${data.message || 'No face detected'}${dist}`);
                 }
             } catch(e) {
                 console.error("Identity Check Error:", e);
@@ -212,7 +215,7 @@ async function startFaceVerify(sessionCode) {
         statusText.textContent = 'Phase 2: Liveness Challenge...';
         let challenges = [];
         try {
-            const res = await fetch('/api/attendance/challenges');
+            const res = await fetch(`${API_BASE}/api/attendance/challenges`);
             const data = await res.json();
             challenges = data.challenges || [];
         } catch (e) {}
@@ -235,12 +238,18 @@ async function startFaceVerify(sessionCode) {
                 
                 const frame = captureFastFrame(videoElement);
                 try {
-                    const res = await fetch('/api/attendance/check_pose', {
+                    const res = await fetch(`${API_BASE}/api/attendance/check_pose`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ image: frame, faceBox: faceBox })
                     });
                     const data = await res.json();
+                    
+                    // Show what pose was detected vs expected
+                    const dbg = data.debug || '';
+                    const y = data.yaw !== undefined ? data.yaw.toFixed(1) : '?';
+                    const p = data.pitch !== undefined ? data.pitch.toFixed(1) : '?';
+                    _showChallengeOverlay(`${challenge.label}\nDetected: ${data.pose} | Need: ${challenge.action}\nYaw:${y} Pitch:${p} [${dbg}]`);
                     
                     if (data.status === 'success' && data.pose === challenge.action) {
                         poseMatched = true; // Success! Move to next challenge
@@ -257,7 +266,7 @@ async function startFaceVerify(sessionCode) {
         statusText.textContent = 'Liveness passed! Recording attendance...';
 
         try {
-            const response = await fetch('/api/attendance/verify', {
+            const response = await fetch(`${API_BASE}/api/attendance/verify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
