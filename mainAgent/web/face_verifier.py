@@ -57,6 +57,14 @@ class FaceVerifier:
         # ── MediaPipe FaceLandmarker for head pose ─────────────────
         self._landmarker = None
         if _MP_AVAILABLE:
+            if not os.path.exists(_MODEL_PATH):
+                print(f"[FaceVerifier] Downloading MediaPipe model...")
+                import urllib.request
+                try:
+                    urllib.request.urlretrieve("https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task", _MODEL_PATH)
+                except Exception as e:
+                    print(f"Error downloading model: {e}")
+
             if os.path.exists(_MODEL_PATH):
                 try:
                     base_options = mp_python.BaseOptions(
