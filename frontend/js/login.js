@@ -129,7 +129,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         }
     } catch (err) {
         console.error('Login error:', err);
-        errorMsg.textContent = 'Connection error. Make sure the server is running.';
+        errorMsg.textContent = 'Connection error to: ' + (API_BASE || 'localhost') + '. Make sure the server is running.';
     } finally {
         btn.innerText = originalText;
         btn.disabled = false;
