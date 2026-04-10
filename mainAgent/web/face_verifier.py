@@ -245,9 +245,9 @@ class FaceVerifier:
         if abs(yaw) < YAW_THRESH and abs(pitch) < PITCH_THRESH:
             pose = "center"
         elif yaw < -YAW_THRESH:
-            pose = "right"    # nose moved toward left eye = looking right
+            pose = "left"     # Fixed: looking left
         elif yaw > YAW_THRESH:
-            pose = "left"     # nose moved toward right eye = looking left
+            pose = "right"    # Fixed: looking right
         elif pitch < -PITCH_THRESH:
             pose = "up"
         elif pitch > PITCH_THRESH:
@@ -267,5 +267,5 @@ class FaceVerifier:
 
         offset = face_cx - frame_cx
         if abs(offset) > w * 0.15:
-            return "right" if offset > 0 else "left"
+            return "left" if offset > 0 else "right"
         return "center"
