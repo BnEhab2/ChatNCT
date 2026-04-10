@@ -145,7 +145,7 @@ def _download_student_photo(student_code: str) -> str:
                 print(f" Downloaded photo for student {student_code} from Supabase")
                 return local_path
         except Exception as e:
-            print(f"⚠️  Failed to download {filename}: {e}")
+            print(f"[WARN] Failed to download {filename}: {e}")
             continue
 
     return None
@@ -414,7 +414,7 @@ def _auto_close_sessions():
             conn.commit()
             release_connection(conn)
             if closed > 0:
-                print(f"⏰ Auto-closed {closed} expired session(s).")
+                print(f"[AUTO-CLOSE] Auto-closed {closed} expired session(s).")
         except Exception as e:
             print(f"Auto-close error: {e}")
         time.sleep(30)
@@ -610,7 +610,13 @@ def check_identity():
         except Exception as e:
             return _error("FACE_DECODE_ERROR", {"detail": str(e)})
 
+        print(f"[DEBUG] check_identity: student={student_code}, captured_shape={captured.shape}, photo={photo_path}")
+
         verification = face_verifier.verifyIdentity(captured, photo_path)
+
+        print(f"[DEBUG] verification result: verified={verification.get('verified')}, "
+              f"distance={verification.get('distance')}, message={verification.get('message')}, "
+              f"faceBox={verification.get('faceBox')}")
         
         # We need faceBox formatted cleanly for JSON: x, y, w, h
         fb = verification.get("faceBox")
@@ -645,7 +651,10 @@ def check_pose():
     
     return jsonify({
         "status": "success",
-        "pose": pose
+        "pose": pose.get("pose", "unknown"),
+        "yaw": pose.get("yaw", 0),
+        "pitch": pose.get("pitch", 0),
+        "debug": pose.get("debug", "")
     })
 
 

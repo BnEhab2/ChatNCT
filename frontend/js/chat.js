@@ -1,3 +1,5 @@
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '' : 'https://chatnct.onrender.com';
+
 // ══════════════════════════════════════════════════════════════
 // ChatNCT — Chat Page Logic (Feature 1: Supabase Persistence)
 // ══════════════════════════════════════════════════════════════
@@ -162,7 +164,7 @@ if (document.head) document.head.appendChild(style);
 
 async function loadChatSessions() {
     try {
-        const res = await fetch(`/api/chat/sessions?user_id=${encodeURIComponent(getUserId())}`, {
+        const res = await fetch(`${API_BASE}/api/chat/sessions?user_id=${encodeURIComponent(getUserId())}`, {
             headers: getAuthHeaders(),
         });
         const data = await res.json();
@@ -201,7 +203,7 @@ async function resumeSession(sessionId) {
     currentChatSessionId = sessionId;
     if (chatMessages) chatMessages.innerHTML = '';
     try {
-        const res = await fetch(`/api/chat/sessions/${sessionId}/messages`);
+        const res = await fetch(`${API_BASE}/api/chat/sessions/${sessionId}/messages`);
         const data = await res.json();
         if (data.status === 'success') {
             data.messages.forEach(m => addMessage(m.content, m.role === 'user' ? 'user' : 'bot'));
@@ -214,7 +216,7 @@ async function resumeSession(sessionId) {
 async function deleteSession(sessionId) {
     if (!confirm('Delete this chat session?')) return;
     try {
-        await fetch(`/api/chat/sessions/${sessionId}`, { method: 'DELETE' });
+        await fetch(`${API_BASE}/api/chat/sessions/${sessionId}`, { method: 'DELETE' });
         if (currentChatSessionId === sessionId) {
             currentChatSessionId = null;
             if (chatMessages) chatMessages.innerHTML = '';
@@ -230,7 +232,7 @@ async function renameSession(sessionId) {
     const newTitle = prompt('Enter new title:');
     if (!newTitle || !newTitle.trim()) return;
     try {
-        await fetch(`/api/chat/sessions/${sessionId}/rename`, {
+        await fetch(`${API_BASE}/api/chat/sessions/${sessionId}/rename`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title: newTitle.trim() }),

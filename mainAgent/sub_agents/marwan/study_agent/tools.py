@@ -65,9 +65,9 @@ def load_materials(materials_dir: str = "materials") -> Dict[str, str]:
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
                     materials[file] = f.read()
-                    print(f"✓ Loaded: {file}")
+                    print(f"[OK] Loaded: {file}")
             except Exception as e:
-                print(f"✗ Error loading {file}: {e}")
+                print(f"[ERROR] Error loading {file}: {e}")
     
     print(f"\n Total materials loaded: {len(materials)}")
     return materials

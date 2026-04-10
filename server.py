@@ -455,7 +455,7 @@ def proxy_verify_attendance():
         r = http_requests.post(
             f"{ATTENDANCE_SERVER}/api/attendance/verify",
             json=request.get_json(),
-            verify=False, timeout=30,
+            verify=False, timeout=120,
         )
         return jsonify(r.json()), r.status_code
     except Exception as e:
@@ -468,9 +468,14 @@ def proxy_check_identity():
         r = http_requests.post(
             f"{ATTENDANCE_SERVER}/api/attendance/check_identity",
             json=request.get_json(),
-            verify=False, timeout=30,
+            verify=False, timeout=120,
         )
-        return jsonify(r.json()), r.status_code
+        resp_data = r.json()
+        sys.stderr.write(f"[FACE-DEBUG] verified={resp_data.get('verified')}, "
+              f"distance={resp_data.get('distance')}, msg={resp_data.get('message')}, "
+              f"faceBox={resp_data.get('faceBox')}\n")
+        sys.stderr.flush()
+        return jsonify(resp_data), r.status_code
     except Exception as e:
         return jsonify({"status": "error", "message": f"Server unreachable: {e}"}), 502
 
@@ -483,7 +488,10 @@ def proxy_check_pose():
             json=request.get_json(),
             verify=False, timeout=10,
         )
-        return jsonify(r.json()), r.status_code
+        resp_data = r.json()
+        sys.stderr.write(f"[POSE-DEBUG] pose={resp_data.get('pose')}\n")
+        sys.stderr.flush()
+        return jsonify(resp_data), r.status_code
     except Exception as e:
         return jsonify({"status": "error", "message": f"Server unreachable: {e}"}), 502
 
@@ -567,7 +575,7 @@ if __name__ == "__main__":
     print(f"  Local:      {protocol}://localhost:5000/")
     print(f"  Network:    {protocol}://{lan_ip}:5000/")
     print("=" * 60)
-    print("⚠️  To test from mobile camera, you MUST open the Network link")
+    print("[WARNING]  To test from mobile camera, you MUST open the Network link")
     print("   on your mobile and accept the 'Not Secure' warning.")
     print("=" * 60 + "\n")
 
