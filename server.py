@@ -506,6 +506,20 @@ def proxy_challenges():
         return jsonify({"status": "error", "message": f"Attendance server unreachable: {e}"}), 502
 
 
+@app.route("/api/attendance/prepare", methods=["POST"])
+def proxy_prepare():
+    """Proxy: pre-cache student embedding for fast identity check."""
+    try:
+        r = http_requests.post(
+            f"{ATTENDANCE_SERVER}/api/attendance/prepare",
+            json=request.get_json(),
+            verify=False, timeout=30,
+        )
+        return jsonify(r.json()), r.status_code
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Attendance server unreachable: {e}"}), 502
+
+
 @app.route("/api/session/<code>/report", methods=["GET"])
 def proxy_session_report(code):
     try:

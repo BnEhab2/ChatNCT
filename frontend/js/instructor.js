@@ -134,9 +134,13 @@ async function _fetchAndRenderQR(code) {
         const data = await res.json();
         if (data.status === 'success' && data.token) {
             _renderQR(code, data.token, data.timestamp);
+        } else if (data.code === 'SESSION_CLOSED' || data.code === 'SESSION_EXPIRED') {
+            // Session ended — stop refreshing and notify
+            stopQRRefresh();
+            showNotification('Session has ended. QR code is no longer valid.', 'error');
         }
     } catch (err) {
-        console.warn('QR token refresh failed:', err);
+        console.warn('QR token refresh failed (will retry):', err);
     }
 }
 

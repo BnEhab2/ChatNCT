@@ -1,8 +1,12 @@
 
-
 // ══════════════════════════════════════════════════════════════
-// ChatNCT — Student Attendance (QR Scanner + Multi-Frame Face + Liveness)
-// Features: 2 (QR Token), 3 (Multi-Frame), 4 (Liveness), 7 (Device FP)
+// ChatNCT — Student Attendance
+// QR Scanner + Fast Identity Check + CLIENT-SIDE Liveness
+//
+// Liveness detection runs ENTIRELY in the browser using MediaPipe
+// FaceLandmarker JS — zero network round-trips for pose detection.
+// This gives instant (~60fps) head-pose tracking vs the old
+// 300ms+ per-frame server round-trips.
 // ══════════════════════════════════════════════════════════════
 
 if (getRole() === 'instructor' || getRole() === 'admin') {
@@ -11,13 +15,138 @@ if (getRole() === 'instructor' || getRole() === 'admin') {
 
 let html5QrCode = null;
 let currentStream = null;
-let currentQrToken = null;  // Feature 2: rotating token
+let currentQrToken = null;
 
 const qrScanner = document.getElementById('qrScanner');
 const qrPlaceholder = document.getElementById('qrPlaceholder');
 const statusText = document.getElementById('statusText');
 const cameraBtn = document.getElementById('cameraBtn');
 const resultCard = document.getElementById('resultCard');
+
+
+// ══════════════════════════════════════════════════════════════
+// CLIENT-SIDE MEDIAPIPE FACE LANDMARKER
+//
+// Loads MediaPipe Face Landmarker directly in the browser.
+// Once loaded, pose detection runs at 60fps with ZERO network
+// latency. The model (~3.7 MB) is cached by the browser.
+// ══════════════════════════════════════════════════════════════
+
+let faceLandmarker = null;
+let mpReady = false;
+let mpLoadPromise = null;
+let _lastMpTimestamp = -1;
+
+async function initMediaPipe() {
+    if (mpReady) return true;
+    if (mpLoadPromise) return mpLoadPromise;
+
+    mpLoadPromise = (async () => {
+        try {
+            console.log("[MP] Loading MediaPipe FaceLandmarker (client-side)...");
+            const vision = await import(
+                "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs"
+            );
+            const filesetResolver = await vision.FilesetResolver.forVisionTasks(
+                "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+            );
+            faceLandmarker = await vision.FaceLandmarker.createFromOptions(filesetResolver, {
+                baseOptions: {
+                    modelAssetPath:
+                        "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task",
+                    delegate: "GPU",
+                },
+                runningMode: "VIDEO",
+                numFaces: 1,
+                minFaceDetectionConfidence: 0.4,
+                minFacePresenceConfidence: 0.4,
+            });
+            mpReady = true;
+            console.log("[OK] MediaPipe FaceLandmarker ready (GPU, client-side)");
+            return true;
+        } catch (e) {
+            console.error("[WARN] MediaPipe load failed:", e);
+            mpLoadPromise = null;
+            return false;
+        }
+    })();
+    return mpLoadPromise;
+}
+
+// Start loading MediaPipe immediately in the background
+initMediaPipe();
+
+
+/**
+ * Detect head pose from a live video element using MediaPipe.
+ * Runs 100% locally at ~60fps. No network calls.
+ *
+ * Returns { pose: string, yaw: number, pitch: number } or null.
+ */
+function detectPoseClientSide(videoElement, timestamp) {
+    if (!faceLandmarker || !mpReady) return null;
+    // Ensure monotonically increasing timestamps
+    if (timestamp <= _lastMpTimestamp) timestamp = _lastMpTimestamp + 1;
+    _lastMpTimestamp = timestamp;
+
+    let results;
+    try {
+        results = faceLandmarker.detectForVideo(videoElement, timestamp);
+    } catch (e) {
+        return null;
+    }
+
+    if (!results.faceLandmarks || results.faceLandmarks.length === 0) return null;
+
+    const lm = results.faceLandmarks[0];
+    const nose = lm[1];    // nose tip
+    const leftEye = lm[33];   // left eye outer (person's anatomical left)
+    const rightEye = lm[263];  // right eye outer
+    const forehead = lm[10];   // top of forehead
+    const chin = lm[152];  // bottom of chin
+
+    // ── YAW (left/right) ──
+    const eyeWidth = rightEye.x - leftEye.x;
+    if (Math.abs(eyeWidth) < 0.001) return null;
+
+    const noseRatio = (nose.x - leftEye.x) / eyeWidth;
+    const yaw = (noseRatio - 0.5) * 100;
+
+    // ── PITCH (up/down) ──
+    const faceHeight = chin.y - forehead.y;
+    if (Math.abs(faceHeight) < 0.001) return null;
+
+    const noseVRatio = (nose.y - forehead.y) / faceHeight;
+    const pitch = (noseVRatio - 0.45) * 100;
+
+    // ── Classify ──
+    const YAW_THRESH = 5;     // Lowered from 8 — much more responsive
+    const PITCH_THRESH = 8;
+
+    let pose = 'center';
+    if (Math.abs(yaw) < YAW_THRESH && Math.abs(pitch) < PITCH_THRESH) {
+        pose = 'center';
+    } else if (yaw < -YAW_THRESH) {
+        pose = 'left';
+    } else if (yaw > YAW_THRESH) {
+        pose = 'right';
+    } else if (pitch < -PITCH_THRESH) {
+        pose = 'up';
+    } else if (pitch > PITCH_THRESH) {
+        pose = 'down';
+    }
+
+    return {
+        pose,
+        yaw: Math.round(yaw * 10) / 10,
+        pitch: Math.round(pitch * 10) / 10,
+    };
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════
 
 // ── Feature 7: Device Fingerprint ─────────────────────────
 function getDeviceFingerprint() {
@@ -35,7 +164,19 @@ function getDeviceFingerprint() {
     return Math.abs(hash).toString(36);
 }
 
-// ── Start QR Scanner ──────────────────────────────────────
+function captureFastFrame(videoElement) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 640;
+    canvas.height = Math.floor(videoElement.videoHeight * (640 / videoElement.videoWidth));
+    canvas.getContext('2d').drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', 0.85);
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// QR SCANNER
+// ══════════════════════════════════════════════════════════════
+
 async function startQrScanner() {
     if (qrPlaceholder) qrPlaceholder.style.display = 'none';
     cameraBtn.textContent = 'Scanning...';
@@ -65,9 +206,9 @@ function onQrCodeError(errorMessage) {
 
 async function onQrCodeSuccess(decodedText) {
     alert("QR Detected! " + decodedText);
-    
+
     if (html5QrCode) {
-        try { await html5QrCode.stop(); } catch(e){ console.error(e); }
+        try { await html5QrCode.stop(); } catch (e) { console.error(e); }
         html5QrCode = null;
     }
 
@@ -106,7 +247,11 @@ async function onQrCodeSuccess(decodedText) {
     }
 }
 
-// ── Student ID Form ───────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════
+// STUDENT ID FORM
+// ══════════════════════════════════════════════════════════════
+
 function showStudentIdForm(sessionCode, courseName) {
     const formHtml = `
         <div class="id-form" id="idForm">
@@ -127,16 +272,17 @@ function showStudentIdForm(sessionCode, courseName) {
     }
 }
 
-// ── Feature 3+4: Multi-Frame Capture + Liveness (Server-Side Logic) ───────────
-function captureFastFrame(videoElement) {
-    const canvas = document.createElement('canvas');
-    // Scale down width to 480 for fast transmission while keeping face quality
-    canvas.width = 480;
-    canvas.height = Math.floor(videoElement.videoHeight * (480 / videoElement.videoWidth));
-    canvas.getContext('2d').drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-    // Use JPEG with 0.7 quality to balance speed and face recognition accuracy
-    return canvas.toDataURL('image/jpeg', 0.7);
-}
+
+// ══════════════════════════════════════════════════════════════
+// FACE VERIFY + CLIENT-SIDE LIVENESS
+//
+// Flow:
+//   1. /api/attendance/prepare   — pre-cache embedding (non-blocking)
+//   2. Open camera
+//   3. Phase 1: Identity check   — send frames to server (cached embedding = fast)
+//   4. Phase 2: Liveness         — 100% client-side MediaPipe (60fps, zero latency)
+//   5. Phase 3: Record           — send verified frame to server
+// ══════════════════════════════════════════════════════════════
 
 async function startFaceVerify(sessionCode) {
     const studentId = document.getElementById('studentIdInput')?.value.trim();
@@ -145,8 +291,19 @@ async function startFaceVerify(sessionCode) {
         return;
     }
 
-    statusText.textContent = 'Opening camera for verification...';
+    // ── Step 0: Pre-warm server (download photo + cache embedding) ──
+    statusText.textContent = 'Preparing verification...';
+    try {
+        await fetch(`${API_BASE}/api/attendance/prepare`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ student_id: studentId })
+        });
+    } catch (e) {
+        console.warn("Prepare call failed (non-fatal):", e);
+    }
 
+    // ── Step 1: Open Camera ──────────────────────────────────
     const cameraModal = document.getElementById('cameraModal');
     const videoElement = document.getElementById('videoElement');
 
@@ -157,8 +314,7 @@ async function startFaceVerify(sessionCode) {
         });
         videoElement.srcObject = currentStream;
 
-        const captureBtn = document.getElementById('captureBtn');
-        captureBtn.style.display = 'none'; // Automated flow, no manual capture
+        document.getElementById('captureBtn').style.display = 'none';
 
         // Wait for video to be ready
         await new Promise(resolve => {
@@ -166,20 +322,23 @@ async function startFaceVerify(sessionCode) {
             setTimeout(resolve, 1000);
         });
 
-        // ================= STATE 0: IDENTITY CHECK =================
-        statusText.textContent = 'Phase 1: Verifying Identity...';
-        _showChallengeOverlay('Verifying Identity... Please look at the camera');
-        
+        // Brief settle time for auto-exposure/focus
+        await new Promise(r => setTimeout(r, 500));
+
+
+        // ═══════════════════════════════════════════════════════
+        // PHASE 1: IDENTITY CHECK (server-side, but fast with cached embedding)
+        // ═══════════════════════════════════════════════════════
+        statusText.textContent = 'Verifying identity...';
+        _showChallengeOverlay('🔍 Verifying identity...\nLook at the camera');
+
         let identityPassed = false;
         let faceBox = null;
         let verifiedFrame = null;
-        let attemptCount = 0;
-        
-        while (!identityPassed && attemptCount < 8) {
-            attemptCount++;
-            await new Promise(r => setTimeout(r, 1500)); // Check every 1.5 seconds
-            if (!currentStream) return; // User closed camera
-            
+
+        for (let attempt = 1; attempt <= 10; attempt++) {
+            if (!currentStream) return;
+
             const frame = captureFastFrame(videoElement);
             try {
                 const res = await fetch(`${API_BASE}/api/attendance/check_identity`, {
@@ -188,108 +347,135 @@ async function startFaceVerify(sessionCode) {
                     body: JSON.stringify({ student_id: studentId, image: frame })
                 });
                 const data = await res.json();
-                
+
                 if (data.status === 'success' && data.verified && data.faceBox) {
                     identityPassed = true;
                     faceBox = data.faceBox;
-                    verifiedFrame = frame; // Save the verified frame to submit at the end
-                } else if (data.status === 'error' && data.message !== 'No face detected.') {
-                     // Fatal error (e.g. Student not found, No photo)
-                     stopCamera();
-                     return showResult('error', data.message);
+                    verifiedFrame = frame;
+                    break;
+                } else if (data.status === 'error' && data.code &&
+                    !['FACE_VERIFY_FAILED', 'FACE_DECODE_ERROR'].includes(data.code) &&
+                    data.message !== 'No face detected.') {
+                    // Fatal error (e.g. Student not found, No photo)
+                    stopCamera();
+                    return showResult('error', data.message);
                 } else {
-                    const dist = data.distance ? ` (d=${data.distance.toFixed(3)})` : '';
-                    _showChallengeOverlay(`Attempt ${attemptCount}/8: ${data.message || 'No face detected'}${dist}`);
+                    const confidence = data.distance ? Math.round((1 - data.distance) * 100) : 0;
+                    _showChallengeOverlay(
+                        `🔍 Verifying... (${attempt}/10)\n` +
+                        `${data.message || 'Looking for face...'}`
+                    );
                 }
-            } catch(e) {
-                console.error("Identity Check Error:", e);
+            } catch (e) {
+                console.error("Identity check error:", e);
             }
-        }
-        
-        if (!identityPassed) {
-            stopCamera();
-            return showResult('error', 'Identity verification failed after maximum attempts.');
+
+            // Wait 500ms between attempts
+            await new Promise(r => setTimeout(r, 500));
         }
 
-        // ================= STATE 1: LIVENESS CHALLENGE =================
-        statusText.textContent = 'Phase 2: Liveness Challenge...';
+        if (!identityPassed) {
+            stopCamera();
+            return showResult('error', 'Identity verification failed.\nPlease try again with better lighting.');
+        }
+
+
+        // ═══════════════════════════════════════════════════════
+        // PHASE 2: CLIENT-SIDE LIVENESS (MediaPipe in browser)
+        //
+        // This is the key optimisation: pose detection runs at
+        // 60fps directly in the browser. No network calls.
+        // Old approach: 300ms+ per frame server round-trip
+        // New approach: ~16ms per frame (requestAnimationFrame)
+        // ═══════════════════════════════════════════════════════
+        statusText.textContent = 'Liveness check...';
+
+        // Make sure MediaPipe is ready
+        if (!mpReady) {
+            _showChallengeOverlay('⏳ Loading face tracker...');
+            const loaded = await initMediaPipe();
+            if (!loaded) {
+                // MediaPipe unavailable — fall back to server-side liveness
+                console.warn("[WARN] MediaPipe unavailable, falling back to server-side");
+                const serverLivenessOk = await _serverSideLiveness(videoElement, faceBox);
+                if (!serverLivenessOk) return;
+                // If server liveness passed, continue to Phase 3
+                _hideChallengeOverlay();
+                stopCamera();
+                await _recordAttendance(sessionCode, studentId, verifiedFrame, true);
+                return;
+            }
+        }
+
+        // Get challenge from server
         let challenges = [];
         try {
             const res = await fetch(`${API_BASE}/api/attendance/challenges`);
             const data = await res.json();
             challenges = data.challenges || [];
-        } catch (e) {}
+        } catch (e) {
+            challenges = [{ action: 'left', label: 'Look Left' }];
+        }
 
+        // Run each challenge with client-side detection
         for (let i = 0; i < challenges.length; i++) {
             const challenge = challenges[i];
-            let poseMatched = false;
-            let challengeStart = Date.now();
-            _showChallengeOverlay(`Challenge ${i+1}/${challenges.length}: ${challenge.label}`);
-            
-            while (!poseMatched) {
-                await new Promise(r => setTimeout(r, 300)); // Fast loop (300ms) for real-time tracking
+            let matched = false;
+            let matchCount = 0;
+            const REQUIRED_MATCHES = 3;  // Need 3 consecutive frames matching
+            const startTime = Date.now();
+
+            _showChallengeOverlay(`👉 ${challenge.label}`);
+
+            while (!matched) {
                 if (!currentStream) return;
-                
-                if (Date.now() - challengeStart > 10000) {
-                    // 10 second timeout per challenge
+
+                if (Date.now() - startTime > 15000) {
                     stopCamera();
-                    return showResult('error', `Timeout waiting for Liveness Pose: ${challenge.label}`);
+                    return showResult('error', `Timeout: ${challenge.label}.\nTry again.`);
                 }
-                
-                const frame = captureFastFrame(videoElement);
-                try {
-                    const res = await fetch(`${API_BASE}/api/attendance/check_pose`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ image: frame, faceBox: faceBox })
-                    });
-                    const data = await res.json();
-                    
-                    // Show what pose was detected vs expected
-                    const dbg = data.debug || '';
-                    const y = data.yaw !== undefined ? data.yaw.toFixed(1) : '?';
-                    const p = data.pitch !== undefined ? data.pitch.toFixed(1) : '?';
-                    _showChallengeOverlay(`${challenge.label}\nDetected: ${data.pose} | Need: ${challenge.action}\nYaw:${y} Pitch:${p} [${dbg}]`);
-                    
-                    if (data.status === 'success' && data.pose === challenge.action) {
-                        poseMatched = true; // Success! Move to next challenge
+
+                // Wait for next animation frame (smooth 60fps loop)
+                const timestamp = await new Promise(resolve => {
+                    requestAnimationFrame(ts => resolve(ts));
+                });
+
+                const poseResult = detectPoseClientSide(videoElement, timestamp);
+
+                if (poseResult) {
+                    if (poseResult.pose === challenge.action) {
+                        matchCount++;
+                        if (matchCount >= REQUIRED_MATCHES) {
+                            matched = true;
+                            _showChallengeOverlay(`✅ ${challenge.label} — Passed!`);
+                        } else {
+                            _showChallengeOverlay(
+                                `👉 ${challenge.label}  ✓ Hold... (${matchCount}/${REQUIRED_MATCHES})`
+                            );
+                        }
+                    } else {
+                        matchCount = 0;
+                        _showChallengeOverlay(
+                            `👉 ${challenge.label}\nDetected: ${poseResult.pose} | yaw: ${poseResult.yaw}`
+                        );
                     }
-                } catch(e) {
-                    console.error("Pose Check Error:", e);
+                } else {
+                    matchCount = 0;
+                    _showChallengeOverlay(`👉 ${challenge.label}\n(No face detected — look at camera)`);
                 }
             }
+
+            // Brief pause after passing challenge
+            await new Promise(r => setTimeout(r, 400));
         }
-        
-        // ================= STATE 2: COMPLETE =================
+
+
+        // ═══════════════════════════════════════════════════════
+        // PHASE 3: RECORD ATTENDANCE
+        // ═══════════════════════════════════════════════════════
         _hideChallengeOverlay();
         stopCamera();
-        statusText.textContent = 'Liveness passed! Recording attendance...';
-
-        try {
-            const response = await fetch(`${API_BASE}/api/attendance/verify`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    session_code: sessionCode,
-                    student_id: studentId,
-                    images: [],
-                    image: verifiedFrame,  // Submit the high-confidence frame that passed identity
-                    qr_token: currentQrToken || '',
-                    liveness_passed: true,
-                    device_fingerprint: getDeviceFingerprint(),
-                })
-            });
-            const data = await response.json();
-
-            if (data.status === 'success') {
-                showResult('success', `Attendance recorded!\nStudent: ${data.student_name || studentId}`);
-            } else {
-                showResult('error', `${data.message || 'Verification failed'}\n${data.code || ''}`);
-            }
-        } catch (err) {
-            console.error('Verify error:', err);
-            showResult('error', 'Server connection error');
-        }
+        await _recordAttendance(sessionCode, studentId, verifiedFrame, true);
 
     } catch (err) {
         console.error('Camera error:', err);
@@ -298,6 +484,97 @@ async function startFaceVerify(sessionCode) {
     }
 }
 
+
+/**
+ * Fallback: server-side liveness check (used when MediaPipe JS fails to load).
+ * Returns true if liveness passed, false otherwise.
+ */
+async function _serverSideLiveness(videoElement, faceBox) {
+    let challenges = [];
+    try {
+        const res = await fetch(`${API_BASE}/api/attendance/challenges`);
+        const data = await res.json();
+        challenges = data.challenges || [];
+    } catch (e) {
+        challenges = [{ action: 'left', label: 'Look Left' }];
+    }
+
+    for (let i = 0; i < challenges.length; i++) {
+        const challenge = challenges[i];
+        let poseMatched = false;
+        let challengeStart = Date.now();
+        _showChallengeOverlay(`${challenge.label} (server mode)`);
+
+        while (!poseMatched) {
+            await new Promise(r => setTimeout(r, 300));
+            if (!currentStream) return false;
+
+            if (Date.now() - challengeStart > 12000) {
+                stopCamera();
+                showResult('error', `Timeout: ${challenge.label}`);
+                return false;
+            }
+
+            const frame = captureFastFrame(videoElement);
+            try {
+                const res = await fetch(`${API_BASE}/api/attendance/check_pose`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: frame, faceBox: faceBox })
+                });
+                const data = await res.json();
+                _showChallengeOverlay(
+                    `${challenge.label}\nDetected: ${data.pose} | yaw: ${data.yaw?.toFixed(1)}`
+                );
+                if (data.status === 'success' && data.pose === challenge.action) {
+                    poseMatched = true;
+                }
+            } catch (e) {
+                console.error("Pose check error:", e);
+            }
+        }
+    }
+    return true;
+}
+
+
+/**
+ * Send the verified frame to the server to record attendance.
+ */
+async function _recordAttendance(sessionCode, studentId, imageFrame, livenessPassed) {
+    statusText.textContent = 'Recording attendance...';
+    try {
+        const response = await fetch(`${API_BASE}/api/attendance/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                session_code: sessionCode,
+                student_id: studentId,
+                images: [],
+                image: imageFrame,
+                qr_token: currentQrToken || '',
+                liveness_passed: livenessPassed,
+                device_fingerprint: getDeviceFingerprint(),
+            })
+        });
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            showResult('success', `✅ Attendance recorded!\nStudent: ${data.student_name || studentId}`);
+        } else {
+            showResult('error', `${data.message || 'Verification failed'}\n${data.code || ''}`);
+        }
+    } catch (err) {
+        console.error('Verify error:', err);
+        showResult('error', 'Server connection error');
+    }
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════════════════════════════
+
 function _showChallengeOverlay(text) {
     let overlay = document.getElementById('livenessOverlay');
     if (!overlay) {
@@ -305,14 +582,16 @@ function _showChallengeOverlay(text) {
         overlay.id = 'livenessOverlay';
         overlay.style.cssText = `
             position: fixed; top: 75%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8); color: #fff; padding: 20px 40px;
-            border-radius: 15px; font-size: 24px; font-weight: bold; z-index: 10002;
+            background: rgba(0,0,0,0.85); color: #fff; padding: 20px 30px;
+            border-radius: 15px; font-size: 20px; font-weight: bold; z-index: 10002;
             font-family: 'Montserrat', sans-serif; text-align: center;
-            border: 2px solid rgba(124,102,227,0.6); width: 80%;
+            border: 2px solid rgba(124,102,227,0.6); width: 85%; max-width: 500px;
+            white-space: pre-line; line-height: 1.4;
+            backdrop-filter: blur(10px);
         `;
         document.body.appendChild(overlay);
     }
-    overlay.textContent = `${text}`;
+    overlay.textContent = text;
     overlay.style.display = 'block';
 }
 
@@ -336,7 +615,7 @@ function stopCamera() {
 
 // ── Result Display ────────────────────────────────────────
 function showResult(type, message) {
-    const icon = type === 'success' ? '' : '';
+    const icon = type === 'success' ? '✅' : '❌';
     const color = type === 'success' ? '#22c55e' : '#ef4444';
     if (resultCard) {
         resultCard.innerHTML = `
@@ -365,7 +644,11 @@ function resetScanner() {
     if (qrReader) qrReader.innerHTML = '';
 }
 
-// ── Init ──────────────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+
 cameraBtn.addEventListener('click', startQrScanner);
 document.getElementById('closeCamera')?.addEventListener('click', stopCamera);
 

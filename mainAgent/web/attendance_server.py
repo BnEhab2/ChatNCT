@@ -572,15 +572,53 @@ def check_session(code):
 # ── Feature 4: API: Get Liveness Challenges ───────────────────────────
 @app.route("/api/attendance/challenges", methods=["GET"])
 def get_challenges():
-    """Return randomized liveness challenge sequence."""
-    # Modified to return pose challenges matching FaceVerifier
-    challenges = [
-        {"action": "center", "label": "Look Straight"},
+    """Return a single random liveness challenge for fast verification."""
+    pool = [
         {"action": "left", "label": "Look Left"},
         {"action": "right", "label": "Look Right"},
-        {"action": "center", "label": "Look Straight"}
     ]
-    return jsonify({"status": "success", "challenges": challenges})
+    selected = [random.choice(pool)]
+    return jsonify({"status": "success", "challenges": selected})
+
+
+# ── API: Prepare Verification (Pre-cache embedding) ───────────────────
+@app.route("/api/attendance/prepare", methods=["POST"])
+def prepare_verification():
+    """Pre-download student photo and cache its face embedding.
+
+    Called BEFORE the camera opens so the first identity check is fast.
+    Without this, the first call to check_identity has to download the
+    photo AND compute the embedding, adding 1–3 seconds.
+    """
+    data = request.get_json()
+    student_id = data.get("student_id", "").strip()
+
+    if not student_id:
+        return _error("MISSING_FIELDS")
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT student_code FROM students WHERE student_code = %s OR id::text = %s",
+            (student_id, student_id)
+        )
+        student = cur.fetchone()
+        if not student:
+            return _error("STUDENT_NOT_FOUND")
+
+        student_code = dict(student).get("student_code", student_id)
+        photo_path = _download_student_photo(student_code)
+        if not photo_path:
+            return _error("FACE_NO_PHOTO")
+
+        # Pre-cache the embedding so check_identity is instant
+        face_verifier.cache_embedding(photo_path)
+
+        return jsonify({"status": "success", "message": "Ready for verification."})
+    finally:
+        release_connection(conn)
+
 
 # ── API: Check Identity (Web Liveness Loop Phase 1) ───────────────────
 @app.route("/api/attendance/check_identity", methods=["POST"])
@@ -612,11 +650,13 @@ def check_identity():
 
         print(f"[DEBUG] check_identity: student={student_code}, captured_shape={captured.shape}, photo={photo_path}")
 
+        t0 = time.time()
         verification = face_verifier.verifyIdentity(captured, photo_path)
+        elapsed = time.time() - t0
 
         print(f"[DEBUG] verification result: verified={verification.get('verified')}, "
               f"distance={verification.get('distance')}, message={verification.get('message')}, "
-              f"faceBox={verification.get('faceBox')}")
+              f"faceBox={verification.get('faceBox')} | took {elapsed:.3f}s")
         
         # We need faceBox formatted cleanly for JSON: x, y, w, h
         fb = verification.get("faceBox")
@@ -678,17 +718,35 @@ def verify_attendance():
     conn = get_connection()
     try:
         cur = conn.cursor()
+
+        # Debug: log what we're looking for
+        print(f"[VERIFY] Looking for session_code='{session_code}', is_active=1")
+
         cur.execute(
             "SELECT * FROM attendance_sessions WHERE session_code = %s AND is_active = 1",
             (session_code,)
         )
         session = cur.fetchone()
         if not session:
+            # Debug: check if session exists at all (without is_active filter)
+            cur.execute(
+                "SELECT session_code, is_active, expires_at FROM attendance_sessions WHERE session_code = %s",
+                (session_code,)
+            )
+            debug_row = cur.fetchone()
+            if debug_row:
+                debug_row = dict(debug_row)
+                print(f"[VERIFY] Session EXISTS but is_active={debug_row['is_active']}, "
+                      f"expires_at={debug_row['expires_at']}, now={datetime.now()}")
+            else:
+                print(f"[VERIFY] Session '{session_code}' does NOT exist in DB at all!")
             return _error("SESSION_NOT_FOUND")
 
         session = dict(session)
         now = datetime.now()
         expires_str = str(session["expires_at"]).replace("+00:00", "")
+        print(f"[VERIFY] Session found: is_active={session['is_active']}, "
+              f"expires_at={expires_str}, now={now}")
         if now > datetime.fromisoformat(expires_str):
             return _error("SESSION_EXPIRED")
 
