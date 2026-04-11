@@ -1,18 +1,22 @@
 """Face Verifier — Face recognition and liveness verification module.
 
-Uses DeepFace (Facenet + ssd) for fast identity verification
+Uses DeepFace (Facenet + opencv) for fast identity verification
 and MediaPipe FaceLandmarker (Tasks API) for accurate head-pose estimation.
 
 Performance optimisations
 ─────────────────────────
-- **ssd** detector backend instead of retinaface (~10× faster)
+- **opencv** detector backend for fast face detection
 - Models pre-loaded at startup via a warm-up call
 - Images down-scaled before verification to reduce processing time
+- **Embedding cache** for registered images — avoids redundant computation
+  (only the live frame embedding is computed per request, ~2× faster)
 """
 import os
 import cv2
 import numpy as np
 import math
+import time
+import threading
 from deepface import DeepFace
 
 # Try to import mediapipe Tasks API for head pose estimation
@@ -53,6 +57,10 @@ class FaceVerifier:
 
     def __init__(self):
         print("[OK] Face Verifier Initialized (DeepFace + MediaPipe)")
+
+        # ── Embedding Cache (Thread-safe) ──────────────────────────
+        self._embedding_cache = {}
+        self._cache_lock = threading.Lock()
 
         # ── MediaPipe FaceLandmarker for head pose ─────────────────
         self._landmarker = None
@@ -107,10 +115,61 @@ class FaceVerifier:
             print(f"[WARN] Warm-up skipped: {e}")
 
     # ──────────────────────────────────────────────────────────────
-    # Stage 1: Identity Verification
+    # Embedding Cache
+    # ──────────────────────────────────────────────────────────────
+    def cache_embedding(self, image_path: str) -> bool:
+        """Pre-compute and cache the embedding for a registered image.
+        Returns True if successful.
+        """
+        with self._cache_lock:
+            if image_path in self._embedding_cache:
+                return True
+        try:
+            t0 = time.time()
+            result = DeepFace.represent(
+                img_path=image_path,
+                model_name=_MODEL_NAME,
+                detector_backend=_DETECTOR_BACKEND,
+                enforce_detection=False,
+            )
+            if result and len(result) > 0:
+                emb = np.array(result[0]["embedding"])
+                with self._cache_lock:
+                    self._embedding_cache[image_path] = emb
+                elapsed = time.time() - t0
+                print(f"[CACHE] Embedding cached for {os.path.basename(image_path)} ({elapsed:.3f}s)")
+                return True
+        except Exception as e:
+            print(f"[WARN] Failed to cache embedding for {image_path}: {e}")
+        return False
+
+    def _get_cached_embedding(self, image_path: str):
+        """Get cached embedding, computing it if not cached yet."""
+        with self._cache_lock:
+            if image_path in self._embedding_cache:
+                return self._embedding_cache[image_path]
+        self.cache_embedding(image_path)
+        with self._cache_lock:
+            return self._embedding_cache.get(image_path)
+
+    @staticmethod
+    def _cosine_distance(a: np.ndarray, b: np.ndarray) -> float:
+        """Compute cosine distance between two embedding vectors."""
+        dot_product = np.dot(a, b)
+        norm_a = np.linalg.norm(a)
+        norm_b = np.linalg.norm(b)
+        if norm_a == 0 or norm_b == 0:
+            return 1.0
+        return 1.0 - (dot_product / (norm_a * norm_b))
+
+    # ──────────────────────────────────────────────────────────────
+    # Stage 1: Identity Verification (with Embedding Cache)
     # ──────────────────────────────────────────────────────────────
     def verifyIdentity(self, liveFrame: np.ndarray, registeredImagePath: str) -> dict:
         """Verify that the face in *liveFrame* matches *registeredImagePath*.
+
+        Uses cached embedding for the registered image so only the live frame
+        needs to be processed — roughly 2× faster than DeepFace.verify().
 
         Returns dict with keys:
             verified (bool), message (str), distance (float), faceBox ([x,y,w,h] | None)
@@ -118,7 +177,7 @@ class FaceVerifier:
         result = {
             "verified": False,
             "message": "",
-            "distance": 0.0,
+            "distance": 1.0,
             "faceBox": None,
         }
 
@@ -126,24 +185,35 @@ class FaceVerifier:
             result["message"] = "Registered image not found."
             return result
 
+        # Get cached registered embedding (computed once, reused for every frame)
+        registered_emb = self._get_cached_embedding(registeredImagePath)
+        if registered_emb is None:
+            result["message"] = "Could not compute registered image embedding."
+            return result
+
         # Down-scale for speed
         liveFrame = _downscale(liveFrame)
 
         try:
-            # DeepFace.verify handles detection internally
-            verification = DeepFace.verify(
-                img1_path=liveFrame,
-                img2_path=registeredImagePath,
+            t0 = time.time()
+            # Compute live frame embedding only (registered is cached)
+            live_result = DeepFace.represent(
+                img_path=liveFrame,
                 model_name=_MODEL_NAME,
                 detector_backend=_DETECTOR_BACKEND,
                 enforce_detection=False,
-                distance_metric=_DISTANCE_METRIC,
             )
+            elapsed = time.time() - t0
 
-            result["distance"] = verification["distance"]
+            if not live_result or len(live_result) == 0:
+                result["message"] = "No face detected."
+                return result
 
-            # Extract detected face region from DeepFace response
-            facial_area = verification.get("facial_areas", {}).get("img1")
+            live_data = live_result[0]
+            live_emb = np.array(live_data["embedding"])
+
+            # Extract face box
+            facial_area = live_data.get("facial_area", {})
             if facial_area:
                 x = facial_area.get("x", 0)
                 y = facial_area.get("y", 0)
@@ -152,12 +222,20 @@ class FaceVerifier:
                 if w > 0 and h > 0:
                     result["faceBox"] = [int(x), int(y), int(w), int(h)]
 
-            # Use our own threshold (more lenient than DeepFace default)
-            if verification["distance"] <= self.VERIFY_THRESHOLD:
+            # Compute cosine distance
+            distance = float(self._cosine_distance(registered_emb, live_emb))
+            result["distance"] = distance
+
+            if distance <= self.VERIFY_THRESHOLD:
                 result["verified"] = True
                 result["message"] = "Identity verified."
+            elif distance > 0.8:
+                # Very high distance usually means no real face was detected
+                result["message"] = "No face detected."
             else:
-                result["message"] = f"Identity mismatch (distance={verification['distance']:.3f})."
+                result["message"] = f"Identity mismatch (distance={distance:.3f})."
+
+            print(f"[PERF] verifyIdentity took {elapsed:.3f}s (represent) | distance={distance:.3f}")
 
         except ValueError as e:
             # DeepFace raises ValueError when no face is detected
@@ -239,8 +317,9 @@ class FaceVerifier:
         pitch = (nose_v_ratio - 0.45) * 100  # 0.45 is roughly center
 
         # ── Classify ──
-        YAW_THRESH = 8
-        PITCH_THRESH = 10
+        # Lowered thresholds for more responsive detection
+        YAW_THRESH = 5
+        PITCH_THRESH = 8
 
         if abs(yaw) < YAW_THRESH and abs(pitch) < PITCH_THRESH:
             pose = "center"
