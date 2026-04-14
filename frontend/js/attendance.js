@@ -16,6 +16,7 @@ if (getRole() === 'instructor' || getRole() === 'admin') {
 let html5QrCode = null;
 let currentStream = null;
 let currentQrToken = null;
+let qrProcessing = false;   // Guard: prevent re-entry from rapid QR scans
 
 const qrScanner = document.getElementById('qrScanner');
 const qrPlaceholder = document.getElementById('qrPlaceholder');
@@ -119,12 +120,45 @@ function detectPoseClientSide(videoElement, timestamp) {
     const noseVRatio = (nose.y - forehead.y) / faceHeight;
     const pitch = (noseVRatio - 0.45) * 100;
 
+    // ── SMILE detection (mouth width / height ratio) ──
+    const mouthLeft  = lm[61];   // left corner of mouth
+    const mouthRight = lm[291];  // right corner of mouth
+    const upperLip   = lm[13];   // upper lip center
+    const lowerLip   = lm[14];   // lower lip center
+
+    const mouthWidth  = Math.abs(mouthRight.x - mouthLeft.x);
+    const mouthHeight = Math.abs(lowerLip.y - upperLip.y);
+    const smileRatio  = mouthHeight > 0.001 ? mouthWidth / mouthHeight : 0;
+    const isSmiling   = smileRatio > 4.5;  // wide mouth = smile
+
+    // ── BLINK detection (Eye Aspect Ratio) ──
+    // Left eye EAR
+    const lEyeTop = lm[159];  const lEyeBot = lm[145];
+    const lEyeIn  = lm[33];   const lEyeOut = lm[133];
+    const lEAR = Math.abs(lEyeTop.y - lEyeBot.y) /
+                 (Math.abs(lEyeOut.x - lEyeIn.x) + 0.0001);
+
+    // Right eye EAR
+    const rEyeTop = lm[386];  const rEyeBot = lm[374];
+    const rEyeIn  = lm[362];  const rEyeOut = lm[263];
+    const rEAR = Math.abs(rEyeTop.y - rEyeBot.y) /
+                 (Math.abs(rEyeOut.x - rEyeIn.x) + 0.0001);
+
+    const avgEAR   = (lEAR + rEAR) / 2;
+    const isBlinking = avgEAR < 0.15;  // eyes closed
+
     // ── Classify ──
     const YAW_THRESH = 5;     // Lowered from 8 — much more responsive
     const PITCH_THRESH = 8;
 
     let pose = 'center';
-    if (Math.abs(yaw) < YAW_THRESH && Math.abs(pitch) < PITCH_THRESH) {
+
+    // Priority: blink > smile > head pose
+    if (isBlinking) {
+        pose = 'blink';
+    } else if (isSmiling) {
+        pose = 'smile';
+    } else if (Math.abs(yaw) < YAW_THRESH && Math.abs(pitch) < PITCH_THRESH) {
         pose = 'center';
     } else if (yaw < -YAW_THRESH) {
         pose = 'left';
@@ -140,6 +174,8 @@ function detectPoseClientSide(videoElement, timestamp) {
         pose,
         yaw: Math.round(yaw * 10) / 10,
         pitch: Math.round(pitch * 10) / 10,
+        smileRatio: Math.round(smileRatio * 10) / 10,
+        ear: Math.round(avgEAR * 100) / 100,
     };
 }
 
@@ -205,12 +241,23 @@ function onQrCodeError(errorMessage) {
 }
 
 async function onQrCodeSuccess(decodedText) {
-    alert("QR Detected! " + decodedText);
+    // ── Guard: prevent multiple firings (library calls back repeatedly) ──
+    if (qrProcessing) return;
+    qrProcessing = true;
 
+    console.log("QR Detected:", decodedText);
+
+    // Stop the QR scanner and fully release the back camera
     if (html5QrCode) {
         try { await html5QrCode.stop(); } catch (e) { console.error(e); }
         html5QrCode = null;
     }
+    // Clear the QR reader DOM to ensure no leftover video elements hold the camera
+    const qrReader = document.getElementById('qrReader');
+    if (qrReader) qrReader.innerHTML = '';
+
+    // Brief delay so the browser fully releases the camera hardware
+    await new Promise(r => setTimeout(r, 300));
 
     statusText.textContent = 'QR Code found! Verifying session...';
 
@@ -307,6 +354,18 @@ async function startFaceVerify(sessionCode) {
     const cameraModal = document.getElementById('cameraModal');
     const videoElement = document.getElementById('videoElement');
 
+    // Make sure any previous camera (QR scanner) is fully stopped
+    if (currentStream) {
+        currentStream.getTracks().forEach(t => t.stop());
+        currentStream = null;
+    }
+    if (html5QrCode) {
+        try { await html5QrCode.stop(); } catch (_) {}
+        html5QrCode = null;
+    }
+    const qrReader = document.getElementById('qrReader');
+    if (qrReader) qrReader.innerHTML = '';
+
     try {
         cameraModal.classList.add('active');
         currentStream = await navigator.mediaDevices.getUserMedia({
@@ -362,7 +421,7 @@ async function startFaceVerify(sessionCode) {
                 } else {
                     const confidence = data.distance ? Math.round((1 - data.distance) * 100) : 0;
                     _showChallengeOverlay(
-                        `🔍 Verifying... (${attempt}/10)\n` +
+                        `Verifying... (${attempt}/10)\n` +
                         `${data.message || 'Looking for face...'}`
                     );
                 }
@@ -392,7 +451,7 @@ async function startFaceVerify(sessionCode) {
 
         // Make sure MediaPipe is ready
         if (!mpReady) {
-            _showChallengeOverlay('⏳ Loading face tracker...');
+            _showChallengeOverlay('Loading face tracker...');
             const loaded = await initMediaPipe();
             if (!loaded) {
                 // MediaPipe unavailable — fall back to server-side liveness
@@ -455,8 +514,17 @@ async function startFaceVerify(sessionCode) {
                         }
                     } else {
                         matchCount = 0;
+                        // Show context-aware debug info
+                        let debugInfo = `pose: ${poseResult.pose}`;
+                        if (challenge.action === 'smile') {
+                            debugInfo = `smile: ${poseResult.smileRatio}`;
+                        } else if (challenge.action === 'blink') {
+                            debugInfo = `EAR: ${poseResult.ear}`;
+                        } else {
+                            debugInfo = `pose: ${poseResult.pose} | yaw: ${poseResult.yaw}`;
+                        }
                         _showChallengeOverlay(
-                            `👉 ${challenge.label}\nDetected: ${poseResult.pose} | yaw: ${poseResult.yaw}`
+                            `${challenge.label}\nDetected: ${debugInfo}`
                         );
                     }
                 } else {
@@ -639,6 +707,7 @@ function resetScanner() {
     cameraBtn.textContent = 'Open Camera';
     cameraBtn.disabled = false;
     currentQrToken = null;
+    qrProcessing = false;   // Reset guard so user can scan again
 
     const qrReader = document.getElementById('qrReader');
     if (qrReader) qrReader.innerHTML = '';
