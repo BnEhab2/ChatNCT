@@ -408,8 +408,8 @@ def _auto_close_sessions():
             cur = conn.cursor()
             cur.execute("""
                 UPDATE attendance_sessions SET is_active = 0
-                WHERE is_active = 1 AND expires_at < %s
-            """, (datetime.now().isoformat(),))
+                WHERE is_active = 1 AND expires_at < NOW()
+            """)
             closed = cur.rowcount
             conn.commit()
             release_connection(conn)
@@ -466,7 +466,7 @@ def create_session():
         return _error("COURSE_REQUIRED")
 
     code = _generate_code()
-    now = datetime.now()
+    now = datetime.utcnow()
     expires = now + timedelta(minutes=duration)
 
     conn = get_connection()
@@ -516,12 +516,13 @@ def get_qr_token(code):
             return _error("SESSION_NOT_FOUND")
 
         session = dict(row)
-        now = datetime.now()
+        now = datetime.utcnow()
 
         if not session["is_active"]:
             return _error("SESSION_CLOSED")
 
-        if now > datetime.fromisoformat(str(session["expires_at"]).replace("+00:00", "")):
+        expires_str = str(session["expires_at"]).replace("+00:00", "")
+        if now > datetime.fromisoformat(expires_str):
             return _error("SESSION_EXPIRED")
 
         token_data = _generate_qr_token(session["session_id"])
@@ -549,7 +550,7 @@ def check_session(code):
             return _error("SESSION_NOT_FOUND")
 
         session = dict(row)
-        now = datetime.now()
+        now = datetime.utcnow()
         expires_str = str(session["expires_at"]).replace("+00:00", "")
         expires = datetime.fromisoformat(expires_str)
         is_expired = now > expires
@@ -572,12 +573,17 @@ def check_session(code):
 # ── Feature 4: API: Get Liveness Challenges ───────────────────────────
 @app.route("/api/attendance/challenges", methods=["GET"])
 def get_challenges():
-    """Return a single random liveness challenge for fast verification."""
+    """Return 2 random liveness challenges for verification."""
     pool = [
-        {"action": "left", "label": "Look Left"},
-        {"action": "right", "label": "Look Right"},
+        {"action": "left",   "label": "👈 Look Left"},
+        {"action": "right",  "label": "👉 Look Right"},
+        {"action": "center", "label": "😐 Look Straight"},
+        {"action": "up",     "label": "👆 Look Up"},
+        {"action": "down",   "label": "👇 Look Down"},
+        {"action": "smile",  "label": "😊 Smile"},
+        {"action": "blink",  "label": "😑 Blink"},
     ]
-    selected = [random.choice(pool)]
+    selected = random.sample(pool, 2)
     return jsonify({"status": "success", "challenges": selected})
 
 
@@ -743,10 +749,10 @@ def verify_attendance():
             return _error("SESSION_NOT_FOUND")
 
         session = dict(session)
-        now = datetime.now()
+        now = datetime.utcnow()
         expires_str = str(session["expires_at"]).replace("+00:00", "")
         print(f"[VERIFY] Session found: is_active={session['is_active']}, "
-              f"expires_at={expires_str}, now={now}")
+              f"expires_at={expires_str}, now_utc={now}")
         if now > datetime.fromisoformat(expires_str):
             return _error("SESSION_EXPIRED")
 
