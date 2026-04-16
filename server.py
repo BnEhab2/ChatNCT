@@ -4,9 +4,13 @@ import asyncio
 import json
 import traceback
 import threading
+import warnings
 import requests as http_requests
 from datetime import datetime
 from dotenv import load_dotenv
+
+# Suppress urllib3 SSL warnings (we use self-signed certs for local dev)
+warnings.filterwarnings("ignore", message="Unverified HTTPS request")
 
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS

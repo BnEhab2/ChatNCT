@@ -23,6 +23,12 @@ import sys
 import os
 import time
 import socket
+import warnings
+
+# Suppress the noisy "InsecureRequestWarning" from urllib3.
+# This happens because our attendance server uses a self-signed SSL certificate.
+# The warning is harmless but floods the terminal.
+warnings.filterwarnings("ignore", message="Unverified HTTPS request")
 
 
 def get_lan_ip():
