@@ -4,12 +4,13 @@ from google.adk.models.lite_llm import LiteLlm
 from .search_tools import search_data
 from dotenv import load_dotenv
 
-# Try to find the root .env file
-_DIR = os.path.dirname(__file__)
-for _p in [os.path.join(_DIR, "..", "..", "..", "..", "..", ".env"), os.path.join(_DIR, ".env")]:
-    if os.path.exists(_p):
-        load_dotenv(_p)
-load_dotenv()
+# Load .env from project root
+_ROOT_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", ".."))
+_env_path = os.path.join(_ROOT_DIR, ".env")
+if os.path.exists(_env_path):
+    load_dotenv(_env_path)
+else:
+    load_dotenv()
 
 llm = LiteLlm(
     model="gpt-4o-mini",

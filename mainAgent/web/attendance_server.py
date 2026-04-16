@@ -17,13 +17,13 @@ import requests as http_requests
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables from project root
 _WEB_DIR = os.path.dirname(__file__)           # mainAgent/web
 _MAIN_AGENT_DIR = os.path.dirname(_WEB_DIR)     # mainAgent
 _ROOT_DIR = os.path.dirname(_MAIN_AGENT_DIR)    # project root
-for _p in [os.path.join(_ROOT_DIR, ".env"), os.path.join(_MAIN_AGENT_DIR, ".env")]:
-    if os.path.exists(_p):
-        load_dotenv(_p)
+_env_path = os.path.join(_ROOT_DIR, ".env")
+if os.path.exists(_env_path):
+    load_dotenv(_env_path)
 
 # Import database module from mainAgent.db
 sys.path.insert(0, _ROOT_DIR)
@@ -575,13 +575,13 @@ def check_session(code):
 def get_challenges():
     """Return 2 random liveness challenges for verification."""
     pool = [
-        {"action": "left",   "label": "👈 Look Left"},
-        {"action": "right",  "label": "👉 Look Right"},
-        {"action": "center", "label": "😐 Look Straight"},
-        {"action": "up",     "label": "👆 Look Up"},
-        {"action": "down",   "label": "👇 Look Down"},
-        {"action": "smile",  "label": "😊 Smile"},
-        {"action": "blink",  "label": "😑 Blink"},
+        {"action": "left",   "label": "<-- Look Left"},
+        {"action": "right",  "label": "--> Look Right"},
+        {"action": "center", "label": "|  Look Straight"},
+        {"action": "up",     "label": "^  Look Up"},
+        {"action": "down",   "label": "v  Look Down"},
+        {"action": "smile",  "label": ":) Smile"},
+        {"action": "blink",  "label": "-- Blink"},
     ]
     selected = random.sample(pool, 2)
     return jsonify({"status": "success", "challenges": selected})
