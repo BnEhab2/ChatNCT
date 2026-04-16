@@ -30,6 +30,12 @@ sys.path.insert(0, _ROOT_DIR)
 from mainAgent.db.database import get_connection, release_connection
 from mainAgent.web.face_verifier import FaceVerifier
 
+# [DEBUG LAYER] Import debug flag and logger.
+# To remove: delete these 3 lines and all 'if DEBUG_FACE_PIPELINE:' blocks below.
+from mainAgent.web.face_verifier import DEBUG_FACE_PIPELINE
+if DEBUG_FACE_PIPELINE:
+    from mainAgent.web.face_debug_logger import debug_logger
+
 # Initialize FaceVerifier once at startup
 face_verifier = FaceVerifier()
 
@@ -112,11 +118,25 @@ def _generate_code(length: int = 6) -> str:
 
 
 def _decode_base64_image(data_url: str) -> np.ndarray:
+    # [DEBUG] Save a snippet of the raw base64 input
+    if DEBUG_FACE_PIPELINE:
+        snippet = data_url[:200] if len(data_url) > 200 else data_url
+        debug_logger.save_text("step_01_raw_base64",
+                               f"length: {len(data_url)}\nfirst_200_chars:\n{snippet}")
+
     if "," in data_url:
         data_url = data_url.split(",", 1)[1]
     img_bytes = base64.b64decode(data_url)
     arr = np.frombuffer(img_bytes, dtype=np.uint8)
-    return cv2.imdecode(arr, cv2.IMREAD_COLOR)
+    frame = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+
+    # [DEBUG] Save the decoded frame + grayscale version
+    if DEBUG_FACE_PIPELINE:
+        debug_logger.save_image("step_02_decoded_frame", frame)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        debug_logger.save_image("step_02_decoded_frame_gray", gray)
+
+    return frame
 
 
 # ── Supabase Photo Download ───────────────────────────────────────────
@@ -335,16 +355,29 @@ def _verify_multi_frame(images_data: list, photo_path: str) -> dict:
         return {"verified": False, "message": "Could not decode enough frames.", "avg_confidence": 0}
 
     # Check for static image (Feature 3: reject static)
-    if _is_static_image(frames):
+    is_static = _is_static_image(frames)
+    if is_static:
         return {"verified": False, "message": "Static image detected.", "avg_confidence": 0, "static": True}
+
+    # [DEBUG] Save individual frames into subfolders
+    if DEBUG_FACE_PIPELINE:
+        for idx, fr in enumerate(frames[:3]):
+            debug_logger.save_image(f"decoded_frame", fr, subfolder=f"frame_{idx+1}")
 
     # Verify each frame
     distances = []
-    for frame in frames:
+    for i, frame in enumerate(frames):
         try:
             result = face_verifier.verifyIdentity(frame, photo_path)
             if result.get("distance") is not None:
                 distances.append(result["distance"])
+                # [DEBUG] Save per-frame distance
+                if DEBUG_FACE_PIPELINE and i < 3:
+                    debug_logger.save_text(
+                        f"per_frame_distance",
+                        f"distance: {result['distance']:.6f}\nverified: {result.get('verified')}",
+                        subfolder=f"frame_{i+1}"
+                    )
         except Exception:
             continue
 
@@ -352,10 +385,21 @@ def _verify_multi_frame(images_data: list, photo_path: str) -> dict:
         return {"verified": False, "message": "Face not detected in enough frames.", "avg_confidence": 0}
 
     avg_distance = sum(distances) / len(distances)
-    # Cosine distance: lower = better. Facenet threshold ≈ 0.4
-    # Map to confidence: confidence = 1 - distance
     avg_confidence = round(1.0 - avg_distance, 4)
     verified = avg_confidence >= 0.7
+
+    # [DEBUG] Save multi-frame summary
+    if DEBUG_FACE_PIPELINE:
+        summary = (
+            f"frames_total: {len(frames)}\n"
+            f"frames_with_face: {len(distances)}\n"
+            f"distances: {[round(d, 6) for d in distances]}\n"
+            f"avg_distance: {avg_distance:.6f}\n"
+            f"avg_confidence: {avg_confidence:.4f}\n"
+            f"verified: {verified}\n"
+            f"static_image: {is_static}\n"
+        )
+        debug_logger.save_text("multi_frame_summary", summary)
 
     return {
         "verified": verified,
@@ -575,8 +619,8 @@ def check_session(code):
 def get_challenges():
     """Return 2 random liveness challenges for verification."""
     pool = [
-        {"action": "left",   "label": "<-- Look Left"},
-        {"action": "right",  "label": "--> Look Right"},
+        {"action": "left",   "label": "--> Look Right"},
+        {"action": "right",  "label": "<-- Look Left"},
         {"action": "center", "label": "|  Look Straight"},
         {"action": "up",     "label": "^  Look Up"},
         {"action": "down",   "label": "v  Look Down"},
@@ -649,6 +693,14 @@ def check_identity():
         if not photo_path:
             return _error("FACE_NO_PHOTO")
 
+        # [DEBUG] Start debug session BEFORE decoding so all steps go in the right folder
+        if DEBUG_FACE_PIPELINE:
+            global _pose_frame_counter
+            _pose_frame_counter = 0  # Reset liveness frame counter for new attempt
+            debug_logger.current_subfolder = None  # Identity phase saves to root folder
+            debug_logger.start_session(student_code)
+            debug_logger.save_registered_photo(photo_path)
+
         try:
             captured = _decode_base64_image(image_data)
         except Exception as e:
@@ -668,6 +720,16 @@ def check_identity():
         fb = verification.get("faceBox")
         face_box_list = [int(v) for v in fb] if fb is not None else None
 
+        # [DEBUG] Save frame with face bounding box drawn on it
+        if DEBUG_FACE_PIPELINE and face_box_list:
+            box_frame = captured.copy()
+            x, y, w, h = face_box_list
+            cv2.rectangle(box_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            label = f"dist={verification.get('distance', 0):.3f}"
+            cv2.putText(box_frame, label, (x, y - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+            debug_logger.save_image("step_10_face_box_overlay", box_frame)
+
         return jsonify({
             "status": "success",
             "verified": verification.get("verified", False),
@@ -678,12 +740,17 @@ def check_identity():
     finally:
         release_connection(conn)
 
+# Counter for liveness frames (reset in check_identity via start_session)
+_pose_frame_counter = 0
+
 # ── API: Check Head Pose (Web Liveness Loop Phase 2) ──────────────────
 @app.route("/api/attendance/check_pose", methods=["POST"])
 def check_pose():
+    global _pose_frame_counter
     data = request.get_json()
     image_data = data.get("image", "")
     face_box = data.get("faceBox", None)
+    expected_action = data.get("expected", "")  # e.g. "left", "right", "up"
 
     if not image_data or not face_box or len(face_box) != 4:
         return jsonify({"status": "error", "message": "Missing image or faceBox"}), 400
@@ -693,8 +760,67 @@ def check_pose():
     except Exception as e:
         return jsonify({"status": "error", "message": f"Decode error: {str(e)}"}), 400
 
+    # [DEBUG] Set up subfolder BEFORE calling getHeadPose so landmarks save to the right place
+    if DEBUG_FACE_PIPELINE:
+        _pose_frame_counter += 1
+        subfolder = f"liveness_frame_{_pose_frame_counter:03d}"
+        debug_logger.current_subfolder = subfolder
+        debug_logger.save_image("raw_frame", captured, subfolder=subfolder)
+
     pose = face_verifier.getHeadPose(captured, face_box)
-    
+
+    # [DEBUG] Save annotated liveness frame with pose info
+    if DEBUG_FACE_PIPELINE:
+
+        # Save annotated frame with face box + pose label
+        annotated = captured.copy()
+        x, y, w, h = [int(v) for v in face_box]
+        detected_pose = pose.get("pose", "unknown")
+        yaw_val = pose.get("yaw", 0)
+        pitch_val = pose.get("pitch", 0)
+
+        # Draw face bounding box
+        color = (0, 255, 0) if detected_pose != "unknown" else (0, 0, 255)
+        cv2.rectangle(annotated, (x, y), (x + w, y + h), color, 2)
+
+        # Draw pose direction arrow on the frame
+        cx, cy = x + w // 2, y + h // 2
+        arrow_len = 60
+        if detected_pose == "left":
+            cv2.arrowedLine(annotated, (cx, cy), (cx - arrow_len, cy), (255, 0, 0), 3)
+        elif detected_pose == "right":
+            cv2.arrowedLine(annotated, (cx, cy), (cx + arrow_len, cy), (255, 0, 0), 3)
+        elif detected_pose == "up":
+            cv2.arrowedLine(annotated, (cx, cy), (cx, cy - arrow_len), (255, 0, 0), 3)
+        elif detected_pose == "down":
+            cv2.arrowedLine(annotated, (cx, cy), (cx, cy + arrow_len), (255, 0, 0), 3)
+        else:
+            cv2.circle(annotated, (cx, cy), 8, (0, 255, 0), -1)
+
+        # Write pose text on the image
+        label = f"Pose: {detected_pose} | Yaw: {yaw_val:.1f} | Pitch: {pitch_val:.1f}"
+        cv2.putText(annotated, label, (10, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+        if expected_action:
+            cv2.putText(annotated, f"Expected: {expected_action}", (10, 60),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
+            match = "MATCH" if detected_pose == expected_action else "NO MATCH"
+            match_color = (0, 255, 0) if detected_pose == expected_action else (0, 0, 255)
+            cv2.putText(annotated, match, (10, 90),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, match_color, 2)
+
+        debug_logger.save_image("annotated_pose", annotated, subfolder=subfolder)
+
+        # Save pose data as text
+        debug_logger.save_text("pose_result", (
+            f"frame: {_pose_frame_counter}\n"
+            f"detected_pose: {detected_pose}\n"
+            f"expected_action: {expected_action}\n"
+            f"yaw: {yaw_val}\n"
+            f"pitch: {pitch_val}\n"
+            f"debug: {pose.get('debug', '')}\n"
+        ), subfolder=subfolder)
+
     return jsonify({
         "status": "success",
         "pose": pose.get("pose", "unknown"),
@@ -798,6 +924,11 @@ def verify_attendance():
             return _error("FACE_NO_PHOTO")
 
         # ── 4) Face Verification ─────────────────────────────────────
+        # [DEBUG] Start debug session for this verification attempt
+        if DEBUG_FACE_PIPELINE:
+            debug_logger.start_session(student_code, session_code=session_code)
+            debug_logger.save_registered_photo(photo_path)
+
         # Feature 3: Multi-frame verification
         if images_data and len(images_data) >= 3:
             result = _verify_multi_frame(images_data, photo_path)

@@ -19,6 +19,11 @@ Performance Optimizations:
     in memory, so only the live frame needs processing each time (~2x faster).
   - Large images are automatically downscaled to 640px max before processing.
   - Models are pre-loaded at startup ("warm-up") so the first request is fast.
+
+[DEBUG LAYER]
+  Set DEBUG_FACE_PIPELINE = True to log every pipeline step to debug_logs/.
+  Set it to False (default) for zero overhead.
+  To fully remove: delete all 'if DEBUG_FACE_PIPELINE:' blocks and the import.
 """
 
 import os
@@ -28,6 +33,17 @@ import math
 import time
 import threading
 from deepface import DeepFace
+
+# ── Debug Flag ─────────────────────────────────────────────────────────
+# Set to True to save pipeline artifacts to debug_logs/ folder.
+# Set to False for production (zero overhead — just a few bool checks).
+DEBUG_FACE_PIPELINE = False
+
+if DEBUG_FACE_PIPELINE:
+    try:
+        from mainAgent.web.face_debug_logger import debug_logger
+    except ImportError:
+        DEBUG_FACE_PIPELINE = False  # Logger file missing — disable gracefully
 
 # Try to import MediaPipe for head pose detection (liveness checks).
 # If it's not installed, we fall back to a simpler position-based method.
@@ -211,7 +227,15 @@ class FaceVerifier:
         norm_b = np.linalg.norm(b)
         if norm_a == 0 or norm_b == 0:
             return 1.0
-        return 1.0 - (dot_product / (norm_a * norm_b))
+        distance = 1.0 - (dot_product / (norm_a * norm_b))
+
+        # [DEBUG] Save cosine distance computation details
+        if DEBUG_FACE_PIPELINE:
+            debug_logger.save_cosine_details(
+                float(dot_product), float(norm_a), float(norm_b), float(distance)
+            )
+
+        return distance
 
     # ══════════════════════════════════════════════════════════════
     # STAGE 1: IDENTITY VERIFICATION
@@ -257,6 +281,13 @@ class FaceVerifier:
         # Shrink the live frame if it's too large (saves processing time)
         liveFrame = _downscale(liveFrame)
 
+        # [DEBUG] Save the downscaled live frame + registered photo
+        if DEBUG_FACE_PIPELINE:
+            debug_logger.save_image("step_04_downscaled_live_frame", liveFrame)
+            reg_img = cv2.imread(registeredImagePath)
+            if reg_img is not None:
+                debug_logger.save_image("step_03_registered_photo", reg_img)
+
         try:
             t0 = time.time()
 
@@ -276,6 +307,11 @@ class FaceVerifier:
             live_data = live_result[0]
             live_emb = np.array(live_data["embedding"])
 
+            # [DEBUG] Save both embeddings
+            if DEBUG_FACE_PIPELINE:
+                debug_logger.save_array("step_05_live_embedding", live_emb)
+                debug_logger.save_array("step_06_registered_embedding", registered_emb)
+
             # Extract the bounding box of the detected face (for UI overlay)
             facial_area = live_data.get("facial_area", {})
             if facial_area:
@@ -285,6 +321,12 @@ class FaceVerifier:
                 h = facial_area.get("h", 0)
                 if w > 0 and h > 0:
                     result["faceBox"] = [int(x), int(y), int(w), int(h)]
+
+                    # [DEBUG] Save the cropped face region that the model compared
+                    if DEBUG_FACE_PIPELINE:
+                        face_crop = liveFrame[int(y):int(y+h), int(x):int(x+w)]
+                        if face_crop.size > 0:
+                            debug_logger.save_image("step_04b_detected_face_crop", face_crop)
 
             # Compare the two face embeddings
             distance = float(self._cosine_distance(registered_emb, live_emb))
@@ -301,6 +343,19 @@ class FaceVerifier:
                 result["message"] = f"Identity mismatch (distance={distance:.3f})."
 
             print(f"[PERF] verifyIdentity took {elapsed:.3f}s (represent) | distance={distance:.3f}")
+
+            # [DEBUG] Save decision summary and embedding plot
+            if DEBUG_FACE_PIPELINE:
+                debug_logger.save_json("step_08_decision", {
+                    "verified": result["verified"],
+                    "distance": result["distance"],
+                    "threshold": self.VERIFY_THRESHOLD,
+                    "message": result["message"],
+                    "faceBox": result["faceBox"],
+                    "elapsed_represent_s": round(elapsed, 4),
+                    "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                })
+                debug_logger.plot_embeddings(live_emb, registered_emb, distance)
 
         except ValueError as e:
             # DeepFace raises ValueError when no face is found in the image
@@ -376,6 +431,42 @@ class FaceVerifier:
             return {"pose": "unknown", "yaw": 0, "pitch": 0, "debug": "no_landmarks"}
 
         lm = result.face_landmarks[0]
+
+        # [DEBUG] Draw all 468 landmarks + labeled key points + connections
+        if DEBUG_FACE_PIPELINE:
+            debug_frame = frame.copy()
+            fh, fw = debug_frame.shape[:2]
+
+            # Draw all 468 landmarks as small green dots
+            for p in lm:
+                cx, cy = int(p.x * fw), int(p.y * fh)
+                cv2.circle(debug_frame, (cx, cy), 1, (0, 255, 0), -1)
+
+            # Key landmarks with labels and larger circles
+            key_points = {
+                1: ("Nose", (0, 0, 255)),       # Red
+                33: ("L-Eye", (255, 0, 0)),      # Blue
+                263: ("R-Eye", (255, 0, 0)),      # Blue
+                10: ("Forehead", (0, 255, 255)),  # Yellow
+                152: ("Chin", (0, 255, 255)),     # Yellow
+            }
+            point_coords = {}
+            for idx, (name, color) in key_points.items():
+                px, py = int(lm[idx].x * fw), int(lm[idx].y * fh)
+                point_coords[idx] = (px, py)
+                cv2.circle(debug_frame, (px, py), 5, color, -1)
+                cv2.putText(debug_frame, name, (px + 8, py - 5),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
+
+            # Draw lines connecting key landmarks
+            if all(k in point_coords for k in [33, 263, 1, 10, 152]):
+                cv2.line(debug_frame, point_coords[33], point_coords[263], (255, 255, 0), 1)  # Eye-to-eye
+                cv2.line(debug_frame, point_coords[10], point_coords[152], (0, 200, 200), 1)  # Forehead-to-chin
+                cv2.line(debug_frame, point_coords[33], point_coords[1], (200, 200, 0), 1)    # L-Eye to nose
+                cv2.line(debug_frame, point_coords[263], point_coords[1], (200, 200, 0), 1)   # R-Eye to nose
+
+            debug_logger.save_image("step_landmarks_overlay", debug_frame,
+                                     subfolder=debug_logger.current_subfolder)
 
         # Get key facial landmark positions (values are normalized 0.0 to 1.0)
         nose = lm[1]           # Nose tip
