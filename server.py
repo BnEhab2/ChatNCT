@@ -30,6 +30,11 @@ from mainAgent.db.database import (
 app = Flask(__name__, static_folder="frontend", static_url_path="")
 CORS(app)
 
+# Suppress verbose request logs (GET /img/Logo.png, etc.)
+import logging
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
+
 # ── Run Migrations on Startup ─────────────────────────────────────────
 try:
     run_migrations()
@@ -331,7 +336,35 @@ def generate_code():
         return jsonify({"status": "error", "message": f"Agent error: {str(e)}"}), 500
 
 
-# ── Auth (Supabase Auth) ──────────────────────────────────────────────
+# ── Auth (Auto-Sync with Supabase Auth) ───────────────────────────────
+def _ensure_auth_user(email, password, role, name, student_code):
+    """Auto-register a user in Supabase Auth if not already registered."""
+    supabase_url = os.getenv("SUPABASE_URL")
+    service_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    try:
+        http_requests.post(
+            f"{supabase_url}/auth/v1/admin/users",
+            headers={
+                "apikey": service_key,
+                "Authorization": f"Bearer {service_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "email": email,
+                "password": password,
+                "email_confirm": True,
+                "user_metadata": {
+                    "role": role,
+                    "name": name,
+                    "student_code": student_code,
+                },
+            },
+            timeout=10,
+        )
+    except Exception:
+        pass
+
+
 @app.route("/api/auth/login", methods=["POST"])
 def login():
     data = request.get_json()
@@ -341,10 +374,54 @@ def login():
     if not username or not password:
         return jsonify({"status": "error", "message": "Username and password required."}), 400
 
+    # Step 1: Verify credentials from database
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        role = "student"
+        display_name = username
+        student_code = username
+
+        # Check students table
+        cur.execute(
+            "SELECT id, name, student_code, password FROM students WHERE student_code = %s",
+            (username,)
+        )
+        row = cur.fetchone()
+
+        if row:
+            student = dict(row)
+            if student["password"] != password:
+                return jsonify({"status": "error", "message": "Wrong password."}), 401
+            role = "student"
+            display_name = student["name"] or username
+            student_code = student["student_code"]
+        else:
+            # Check instructors table
+            cur.execute(
+                "SELECT id, name, password FROM instructors WHERE name = %s",
+                (username,)
+            )
+            row = cur.fetchone()
+            if row:
+                instructor = dict(row)
+                if instructor["password"] != password:
+                    return jsonify({"status": "error", "message": "Wrong password."}), 401
+                role = "instructor"
+                display_name = instructor["name"]
+                student_code = str(instructor["id"])
+            else:
+                return jsonify({"status": "error", "message": "User not found."}), 401
+    finally:
+        release_connection(conn)
+
+    # Step 2: Auto-register in Supabase Auth if not already
+    email = f"{username}@nct.edu"
+    _ensure_auth_user(email, password, role, display_name, student_code)
+
+    # Step 3: Login via Supabase Auth for JWT tokens
     supabase_url = os.getenv("SUPABASE_URL")
     supabase_key = os.getenv("SUPABASE_ANON_KEY")
-
-    email = username if "@" in username else f"{username}@nct.edu"
 
     try:
         auth_res = http_requests.post(
@@ -357,40 +434,21 @@ def login():
             timeout=10,
         )
         auth_data = auth_res.json()
+        access_token = auth_data.get("access_token", "")
+        refresh_token = auth_data.get("refresh_token", "")
+    except Exception:
+        access_token = ""
+        refresh_token = ""
 
-        if auth_res.status_code == 200 and auth_data.get("access_token"):
-            user_meta = auth_data.get("user", {}).get("user_metadata", {})
-            display_name = user_meta.get("name", username)
-            role = user_meta.get("role", "student")
-
-            try:
-                conn = get_connection()
-                cur = conn.cursor()
-                student_code = user_meta.get("student_code", username)
-                cur.execute("SELECT name FROM students WHERE student_code = %s", (student_code,))
-                row = cur.fetchone()
-                if row:
-                    display_name = row[0]
-                release_connection(conn)
-            except Exception:
-                pass
-
-            return jsonify({
-                "status": "success",
-                "is_admin": role.lower() == "admin",
-                "username": display_name,
-                "role": role,
-                "access_token": auth_data["access_token"],
-                "refresh_token": auth_data.get("refresh_token", ""),
-                "user_id": student_code,
-            })
-        else:
-            msg = auth_data.get("error_description") or auth_data.get("msg") or "Invalid credentials"
-            return jsonify({"status": "error", "message": msg}), 401
-
-    except Exception as e:
-        traceback.print_exc()
-        return jsonify({"status": "error", "message": f"Auth error: {str(e)}"}), 500
+    return jsonify({
+        "status": "success",
+        "is_admin": role in ("instructor", "admin"),
+        "username": display_name,
+        "role": role,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "user_id": student_code,
+    })
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -583,14 +641,14 @@ if __name__ == "__main__":
     lan_ip = get_lan_ip()
     protocol = "https" if ssl_ctx else "http"
 
-    print("\n" + "=" * 60)
-    print(" ChatNCT Server (Unified App)")
-    print("=" * 60)
-    print(f"  Local:      {protocol}://localhost:5000/")
-    print(f"  Network:    {protocol}://{lan_ip}:5000/")
-    print("=" * 60)
-    print("[WARNING]  To test from mobile camera, you MUST open the Network link")
-    print("   on your mobile and accept the 'Not Secure' warning.")
-    print("=" * 60 + "\n")
+    # print("\n" + "=" * 60)
+    # print(" ChatNCT Server (Unified App)")
+    # print("=" * 60)
+    # print(f"  Local:      {protocol}://localhost:5000/")
+    # print(f"  Network:    {protocol}://{lan_ip}:5000/")
+    # print("=" * 60)
+    # print("[WARNING]  To test from mobile camera, you MUST open the Network link")
+    # print("   on your mobile and accept the 'Not Secure' warning.")
+    # print("=" * 60 + "\n")
 
     app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False, ssl_context=ssl_ctx)

@@ -389,7 +389,7 @@ async function startFaceVerify(sessionCode) {
         // PHASE 1: IDENTITY CHECK (server-side, but fast with cached embedding)
         // ═══════════════════════════════════════════════════════
         statusText.textContent = 'Verifying identity...';
-        _showChallengeOverlay('🔍 Verifying identity...\nLook at the camera');
+        _showChallengeOverlay('Verifying identity...\nLook at the camera');
 
         let identityPassed = false;
         let faceBox = null;
@@ -484,7 +484,7 @@ async function startFaceVerify(sessionCode) {
             const REQUIRED_MATCHES = 3;  // Need 3 consecutive frames matching
             const startTime = Date.now();
 
-            _showChallengeOverlay(`👉 ${challenge.label}`);
+            _showChallengeOverlay(`>> ${challenge.label}`);
 
             while (!matched) {
                 if (!currentStream) return;
@@ -506,10 +506,10 @@ async function startFaceVerify(sessionCode) {
                         matchCount++;
                         if (matchCount >= REQUIRED_MATCHES) {
                             matched = true;
-                            _showChallengeOverlay(`✅ ${challenge.label} — Passed!`);
+                            _showChallengeOverlay(`[DONE] ${challenge.label} — Passed!`);
                         } else {
                             _showChallengeOverlay(
-                                `👉 ${challenge.label}  ✓ Hold... (${matchCount}/${REQUIRED_MATCHES})`
+                                `>> ${challenge.label}  Hold... (${matchCount}/${REQUIRED_MATCHES})`
                             );
                         }
                     } else {
@@ -529,7 +529,7 @@ async function startFaceVerify(sessionCode) {
                     }
                 } else {
                     matchCount = 0;
-                    _showChallengeOverlay(`👉 ${challenge.label}\n(No face detected — look at camera)`);
+                    _showChallengeOverlay(`>> ${challenge.label}\n(No face detected — look at camera)`);
                 }
             }
 
@@ -628,7 +628,7 @@ async function _recordAttendance(sessionCode, studentId, imageFrame, livenessPas
         const data = await response.json();
 
         if (data.status === 'success') {
-            showResult('success', `✅ Attendance recorded!\nStudent: ${data.student_name || studentId}`);
+            showResult('success', `Attendance recorded!\nStudent: ${data.student_name || studentId}`);
         } else {
             showResult('error', `${data.message || 'Verification failed'}\n${data.code || ''}`);
         }
@@ -683,12 +683,15 @@ function stopCamera() {
 
 // ── Result Display ────────────────────────────────────────
 function showResult(type, message) {
-    const icon = type === 'success' ? '✅' : '❌';
+    // Use Font Awesome icons instead of emoji
+    const iconClass = type === 'success' ? 'fas fa-check-circle' : 'fas fa-times-circle';
     const color = type === 'success' ? '#22c55e' : '#ef4444';
     if (resultCard) {
         resultCard.innerHTML = `
             <div style="text-align:center; padding:20px;">
-                <div style="font-size:48px; margin-bottom:15px;">${icon}</div>
+                <div style="font-size:56px; margin-bottom:15px; color:${color};">
+                    <i class="${iconClass}"></i>
+                </div>
                 <p style="color:${color}; font-size:18px; font-weight:600; white-space:pre-line;">${message}</p>
                 <button onclick="resetScanner()" class="camera-btn" style="width:auto; margin-top:20px; padding:12px 30px;">
                     <i class="fas fa-redo"></i> Scan Again

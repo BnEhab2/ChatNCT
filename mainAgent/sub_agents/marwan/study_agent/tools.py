@@ -45,31 +45,29 @@ TERM_VARIATIONS = {
 def load_materials(materials_dir: str = "materials") -> Dict[str, str]:
     """
     Load all lecture materials from the materials directory.
+    Called lazily on first search, not at startup.
     """
     global materials
+    if materials:
+        return materials  # Already loaded
     materials = {}
     
-    # Get the directory where this file is located
     base_dir = os.path.dirname(os.path.abspath(__file__))
     materials_path = os.path.join(base_dir, materials_dir)
     
-    # Check if materials directory exists
     if not os.path.exists(materials_path):
-        print(f"Warning: Materials directory '{materials_path}' not found!")
         return materials
     
-    # Load all .txt files (sorted for consistent order)
     for file in sorted(os.listdir(materials_path)):
         if file.endswith(".txt"):
             file_path = os.path.join(materials_path, file)
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
                     materials[file] = f.read()
-                    print(f"[OK] Loaded: {file}")
             except Exception as e:
                 print(f"[ERROR] Error loading {file}: {e}")
     
-    print(f"\n Total materials loaded: {len(materials)}")
+    print(f"[OK] {len(materials)} study materials loaded.")
     return materials
 
 
@@ -130,20 +128,11 @@ def expand_query(keywords: List[str]) -> List[str]:
 def search_material(query: str) -> dict:
     """
     Intelligent search through loaded materials.
-    
-    Features:
-    1. Keyword extraction (removes common words)
-    2. Query expansion (adds synonyms and variations)
-    3. Multi-level matching (filename, exact, partial, semantic)
-    4. Relevance scoring
-    5. Returns full content for better responses
-    
-    Args:
-        query (str): The search query from the user.
-    
-    Returns:
-        dict: Dictionary containing search results with file, content, and relevance score.
     """
+    # Lazy load materials on first search
+    if not materials:
+        load_materials()
+    
     results = []
     
     # Extract important keywords
@@ -296,13 +285,5 @@ def get_available_subjects() -> list:
     return sorted(list(subjects))
 
 
-# Auto-load materials when module is imported
-print("\n" + "="*60)
-print(" Loading materials...")
-print("="*60)
-load_materials()
-subjects = get_available_subjects()
-print(f"\n Available subjects ({len(subjects)}):")
-for subject in subjects:
-    print(f"   • {subject}")
-print("="*60)
+# Materials are loaded lazily on first use (not at import time)
+# This speeds up server startup significantly.

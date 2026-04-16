@@ -1,18 +1,40 @@
-
-
 // ══════════════════════════════════════════════════════════════
-// ChatNCT — Instructor Panel (QR Generation + Session Mgmt)
+// instructor.js - Instructor Panel Logic
+//
+// This page is only accessible to instructors and admins.
+// It provides tools for managing attendance sessions:
+//
+//   1. START SESSION: Create a new attendance session for a course.
+//      This generates a unique session code and QR code.
+//
+//   2. QR CODE GENERATION: A QR code is displayed that students scan
+//      with their phones. The QR code automatically refreshes every
+//      5 seconds with a new one-time token (prevents screenshots).
+//
+//   3. LIVE ATTENDANCE REPORT: Shows a real-time table of students
+//      who have successfully verified their identity and marked
+//      attendance. Updates every 5 seconds.
+//
+//   4. EXPORT: Download the QR code as an image, or export the
+//      attendance report as a CSV file.
+//
+//   5. CLOSE SESSION: End the attendance session so no more
+//      students can mark attendance.
 // ══════════════════════════════════════════════════════════════
 
+// ── Access Control ─────────────────────────────────────────
+// Students shouldn't be on this page - redirect them to chat
 if (getRole() === 'student') {
     window.location.href = 'chat.html';
 }
 
-let currentSessionCode = null;
-let reportInterval = null;
-let qrRefreshInterval = null;
-let currentReportData = [];
+// ── State Variables ────────────────────────────────────────
+let currentSessionCode = null;    // The active session's unique code (e.g. "A7B3X9")
+let reportInterval = null;        // Timer ID for polling attendance report
+let qrRefreshInterval = null;     // Timer ID for rotating QR tokens
+let currentReportData = [];       // Stores latest report data for CSV export
 
+// ── DOM Element References ─────────────────────────────────
 const courseSelect = document.getElementById('courseSelect');
 const startBtn = document.getElementById('startSessionBtn');
 const closeBtn = document.getElementById('closeSessionBtn');
@@ -23,37 +45,46 @@ const attendanceTable = document.getElementById('attendanceTable');
 const attendanceBody = document.getElementById('attendanceBody');
 const sessionStatus = document.getElementById('sessionStatus');
 
-// ── Load Courses ───────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════
+// LOAD COURSES
+//
+// Fetches the list of courses from the server and populates
+// the dropdown menu. The instructor picks a course before
+// starting an attendance session.
+// ══════════════════════════════════════════════════════════════
+
 async function loadCourses() {
     try {
         const response = await fetch(`${API_BASE}/api/courses`);
         const data = await response.json();
-        if (Array.isArray(data)) {
-            data.forEach(course => {
-                const option = document.createElement('option');
-                option.value = course.course_id || course.id;
-                const cName = course.course_name || course.name;
-                const codePrint = course.course_code ? `${course.course_code} — ` : "";
-                option.textContent = `${codePrint}${cName}`;
-                courseSelect.appendChild(option);
-            });
-        } else if (data.courses) {
-            data.courses.forEach(course => {
-                const option = document.createElement('option');
-                option.value = course.course_id || course.id;
-                const cName = course.course_name || course.name;
-                const codePrint = course.course_code ? `${course.course_code} — ` : "";
-                option.textContent = `${codePrint}${cName}`;
-                courseSelect.appendChild(option);
-            });
-        }
+
+        // The API might return courses as an array or inside an object
+        const courses = Array.isArray(data) ? data : (data.courses || []);
+
+        courses.forEach(course => {
+            const option = document.createElement('option');
+            option.value = course.course_id || course.id;
+            const cName = course.course_name || course.name;
+            const codePrint = course.course_code ? `${course.course_code} — ` : "";
+            option.textContent = `${codePrint}${cName}`;
+            courseSelect.appendChild(option);
+        });
     } catch (err) {
         console.error('Failed to load courses:', err);
-        showNotification('Cannot load courses — is the attendance server running?', 'error');
+        showNotification('Cannot load courses - is the attendance server running?', 'error');
     }
 }
 
-// ── Start Session ──────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════
+// START ATTENDANCE SESSION
+//
+// Creates a new session on the server for the selected course.
+// The server returns a unique session code, which is used to
+// generate a QR code that students scan.
+// ══════════════════════════════════════════════════════════════
+
 startBtn.addEventListener('click', async () => {
     const courseId = courseSelect.value;
     if (!courseId) {
@@ -76,8 +107,8 @@ startBtn.addEventListener('click', async () => {
             currentSessionCode = data.code || data.session_code;
             showSessionActive(currentSessionCode, courseSelect.options[courseSelect.selectedIndex].text);
             generateQRCode(currentSessionCode);
-            startReportPolling();
-            showNotification('Session started! ', 'success');
+            startReportPolling();       // Start live attendance updates
+            showNotification('Session started!', 'success');
         } else {
             showNotification(data.message || 'Failed to create session', 'error');
         }
@@ -90,19 +121,34 @@ startBtn.addEventListener('click', async () => {
     }
 });
 
-// ── Generate QR Code (Feature 2: Rotating every 5s) ───────
+
+// ══════════════════════════════════════════════════════════════
+// QR CODE GENERATION (Rotating Tokens)
+//
+// The QR code contains a URL like:
+//   https://localhost:5000/attendance.html?code=A7B3X9&token=abc123&t=1234567
+//
+// The token changes every 5 seconds to prevent:
+//   - Screenshots being shared (old token = invalid)
+//   - Re-scanning from a saved photo
+//
+// Students scan the QR code, which opens the attendance page
+// with the session code and token pre-filled.
+// ══════════════════════════════════════════════════════════════
+
 function generateQRCode(code) {
-    // Initial render
-    _renderQR(code, '', 0);
-    // Start rotating QR tokens every 5 seconds
-    startQRRefresh(code);
+    _renderQR(code, '', 0);          // Show QR immediately (no token yet)
+    startQRRefresh(code);            // Start rotating tokens every 5 seconds
 }
 
 function _renderQR(code, token, timestamp) {
+    // Build the URL that will be encoded in the QR code
     let qrContent = `${window.location.origin}/attendance.html?code=${code}`;
     if (token) {
         qrContent += `&token=${token}&t=${timestamp}`;
     }
+
+    // Create a white background container and generate the QR code
     qrDisplay.innerHTML = '<div id="qrWrapper" style="background:#ffffff; padding:15px; border-radius:10px; display:inline-block;"></div>';
     const qrWrapper = document.getElementById('qrWrapper');
     new QRCode(qrWrapper, {
@@ -111,14 +157,14 @@ function _renderQR(code, token, timestamp) {
         height: 250,
         colorDark: "#000000",
         colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.L
+        correctLevel: QRCode.CorrectLevel.L   // Low error correction = smaller QR
     });
 }
 
 function startQRRefresh(code) {
-    stopQRRefresh();
-    _fetchAndRenderQR(code);
-    qrRefreshInterval = setInterval(() => _fetchAndRenderQR(code), 5000);
+    stopQRRefresh();   // Stop any existing timer
+    _fetchAndRenderQR(code);                                        // Fetch token immediately
+    qrRefreshInterval = setInterval(() => _fetchAndRenderQR(code), 5000);  // Then every 5 seconds
 }
 
 function stopQRRefresh() {
@@ -129,13 +175,13 @@ function stopQRRefresh() {
 }
 
 async function _fetchAndRenderQR(code) {
+    // Request a fresh one-time token from the server
     try {
         const res = await fetch(`${API_BASE}/api/session/${code}/qr-token`);
         const data = await res.json();
         if (data.status === 'success' && data.token) {
             _renderQR(code, data.token, data.timestamp);
         } else if (data.code === 'SESSION_CLOSED' || data.code === 'SESSION_EXPIRED') {
-            // Session ended — stop refreshing and notify
             stopQRRefresh();
             showNotification('Session has ended. QR code is no longer valid.', 'error');
         }
@@ -144,7 +190,9 @@ async function _fetchAndRenderQR(code) {
     }
 }
 
-// ── Show Session Active ────────────────────────────────────
+
+// ── Show Session Active UI ─────────────────────────────────
+// Updates the UI to show that a session is currently running.
 function showSessionActive(code, courseName) {
     sessionInfo.style.display = 'block';
     sessionStatus.innerHTML = `
@@ -157,23 +205,33 @@ function showSessionActive(code, courseName) {
     `;
     closeBtn.style.display = 'flex';
     downloadBtn.style.display = 'flex';
-    courseSelect.disabled = true;
-    startBtn.style.display = 'none';
+    courseSelect.disabled = true;       // Lock course selection during active session
+    startBtn.style.display = 'none';   // Hide start button
 }
 
-// ── Close Session ──────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════
+// CLOSE SESSION
+//
+// Ends the attendance session. After closing:
+//   - No more students can mark attendance
+//   - QR code stops refreshing
+//   - Report polling stops
+//   - UI resets to allow starting a new session
+// ══════════════════════════════════════════════════════════════
+
 closeBtn.addEventListener('click', async () => {
     if (!currentSessionCode) return;
 
     closeBtn.disabled = true;
     try {
         await fetch(`${API_BASE}/api/session/${currentSessionCode}/close`, { method: 'POST' });
-        showNotification('Session closed ', 'success');
+        showNotification('Session closed', 'success');
     } catch (err) {
         console.error('Close session error:', err);
     }
 
-    // Reset UI
+    // Reset all state and UI back to initial
     stopReportPolling();
     stopQRRefresh();
     currentSessionCode = null;
@@ -187,7 +245,8 @@ closeBtn.addEventListener('click', async () => {
     closeBtn.disabled = false;
 });
 
-// ── Download QR ────────────────────────────────────────────
+
+// ── Download QR Code as Image ──────────────────────────────
 downloadBtn.addEventListener('click', () => {
     const canvas = qrDisplay.querySelector('canvas');
     if (canvas) {
@@ -195,32 +254,40 @@ downloadBtn.addEventListener('click', () => {
         link.download = `attendance-qr-${currentSessionCode}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
-        showNotification('QR Code downloaded! ', 'success');
+        showNotification('QR Code downloaded!', 'success');
     }
 });
 
-// ── Download CSV ───────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════
+// CSV EXPORT
+//
+// Exports the current attendance report as a CSV file.
+// Includes UTF-8 BOM marker so Excel correctly displays
+// Arabic characters and special text.
+// ══════════════════════════════════════════════════════════════
+
 const downloadCsvBtn = document.getElementById('downloadCsvBtn');
 if (downloadCsvBtn) {
     downloadCsvBtn.addEventListener('click', () => {
         if (!currentReportData || currentReportData.length === 0) {
             return showNotification('No attendance data available to export.', 'error');
         }
-        
-        // Add UTF-8 BOM for Excel to properly display Arabic/special chars
-        let csvContent = "\uFEFF"; 
-        csvContent += "Index,Student ID,Student Name,Time,Status\n";
-        
+
+        // UTF-8 BOM (Byte Order Mark) tells Excel to use UTF-8 encoding
+        let csvContent = "\uFEFF";
+        csvContent += "Index,Student ID,Student Name,Time\n";
+
         currentReportData.forEach((record, index) => {
             const studentId = record.student_code || record.student_id;
             const studentName = record.student_name ? `"${record.student_name}"` : "—";
             const time = record.time || record.timestamp || record.created_at || "—";
-            // Strip commas from time and name to prevent CSV breaks just in case
-            const safeTime = `"${time.replace(/"/g, '""')}"`;
-            
-            csvContent += `${index + 1},${studentId},${studentName},${safeTime},Present\n`;
+            const safeTime = `"${time.replace(/"/g, '""')}"`;  // Escape quotes in CSV
+
+            csvContent += `${index + 1},${studentId},${studentName},${safeTime}\n`;
         });
-        
+
+        // Create a downloadable file and trigger the download
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -229,15 +296,23 @@ if (downloadCsvBtn) {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
-        showNotification('CSV Report downloaded! ', 'success');
+
+        showNotification('CSV Report downloaded!', 'success');
     });
 }
 
-// ── Live Report Polling ────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════
+// LIVE ATTENDANCE REPORT
+//
+// Polls the server every 5 seconds to get the latest list of
+// students who have marked attendance. Updates the table in
+// real-time so the instructor can see who's present.
+// ══════════════════════════════════════════════════════════════
+
 function startReportPolling() {
-    fetchReport();
-    reportInterval = setInterval(fetchReport, 5000);
+    fetchReport();                              // Fetch immediately
+    reportInterval = setInterval(fetchReport, 5000);  // Then every 5 seconds
 }
 
 function stopReportPolling() {
@@ -254,9 +329,14 @@ async function fetchReport() {
         const data = await response.json();
 
         if (data.attendance && data.attendance.length > 0) {
+            // Save for CSV export
             currentReportData = data.attendance;
+
+            // Show the attendance table
             attendanceTable.style.display = 'block';
             attendanceBody.innerHTML = '';
+
+            // Add a row for each student who marked attendance
             data.attendance.forEach((record, index) => {
                 const row = document.createElement('tr');
                 const studentId = record.student_code || record.student_id;
@@ -266,12 +346,11 @@ async function fetchReport() {
                     <td>${studentId}</td>
                     <td>${record.student_name || '—'}</td>
                     <td>${timeStr}</td>
-                    <td><span style="color:#22c55e;"></span></td>
                 `;
                 attendanceBody.appendChild(row);
             });
 
-            // Update counter
+            // Update the student count badge
             const counter = document.getElementById('attendanceCount');
             if (counter) counter.textContent = data.attendance.length;
         }
@@ -280,5 +359,7 @@ async function fetchReport() {
     }
 }
 
-// ── Init ───────────────────────────────────────────────────
+
+// ── Page Initialization ────────────────────────────────────
+// Load the list of courses when the page finishes loading
 document.addEventListener('DOMContentLoaded', loadCourses);
