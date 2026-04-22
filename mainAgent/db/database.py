@@ -84,7 +84,7 @@ _MIGRATIONS = """
 -- Chat sessions: Each conversation a student starts with the AI
 CREATE TABLE IF NOT EXISTS chat_sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    student_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    student_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     title TEXT NOT NULL DEFAULT 'New Chat',
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -140,7 +140,7 @@ CREATE TABLE IF NOT EXISTS device_bindings (
 CREATE INDEX IF NOT EXISTS idx_attendance_student_session ON attendance(student_id, session_id);
 CREATE INDEX IF NOT EXISTS idx_attendance_sessions_code ON attendance_sessions(session_code);
 CREATE INDEX IF NOT EXISTS idx_attendance_sessions_active ON attendance_sessions(is_active, course_id);
-CREATE INDEX IF NOT EXISTS idx_students_id ON students(id);
+CREATE INDEX IF NOT EXISTS idx_profiles_id ON profiles(id);
 """
 
 

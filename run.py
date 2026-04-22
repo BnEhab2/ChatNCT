@@ -71,8 +71,6 @@ def main():
          "app.run(host='0.0.0.0', port=5001, debug=False, ssl_context=ssl_ctx)"
         ],
         cwd=project_dir,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
     )
 
     # Give the attendance server 2 seconds to start up
