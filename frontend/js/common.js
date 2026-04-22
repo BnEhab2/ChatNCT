@@ -108,9 +108,10 @@ function getAuthHeaders() {
 
 function checkAuth() {
     // Verify the user is logged in. If not, redirect to login page.
+    // First check localStorage (fast), Supabase session is verified by requireAuth() on page load
     const username = localStorage.getItem('chatnct_username');
-    const token = localStorage.getItem('chatnct_access_token');
-    if (!username || !token) {
+    const role = localStorage.getItem('chatnct_role');
+    if (!username || !role) {
         logout();
         return false;
     }
@@ -118,15 +119,20 @@ function checkAuth() {
 }
 
 function logout() {
-    // Clear all stored user data and redirect to login page
-    localStorage.removeItem('chatnct_username');
-    localStorage.removeItem('chatnct_is_admin');
-    localStorage.removeItem('chatnct_role');
-    localStorage.removeItem('chatnct_skip_dashboard');
-    localStorage.removeItem('chatnct_access_token');
-    localStorage.removeItem('chatnct_refresh_token');
-    localStorage.removeItem('chatnct_user_id');
-    window.location.href = 'index.html';
+    // Clear all stored user data and sign out from Supabase
+    if (typeof authSignOut === 'function') {
+        authSignOut(); // This clears localStorage + redirects
+    } else {
+        // Fallback if supabase-client.js hasn't loaded yet
+        localStorage.removeItem('chatnct_username');
+        localStorage.removeItem('chatnct_is_admin');
+        localStorage.removeItem('chatnct_role');
+        localStorage.removeItem('chatnct_skip_dashboard');
+        localStorage.removeItem('chatnct_access_token');
+        localStorage.removeItem('chatnct_refresh_token');
+        localStorage.removeItem('chatnct_user_id');
+        window.location.href = 'index.html';
+    }
 }
 
 

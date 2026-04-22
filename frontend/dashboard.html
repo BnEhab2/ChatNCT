@@ -139,8 +139,16 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-client.js"></script>
     <script src="js/common.js"></script>
     <script>
+        // ── Auth Guard: Redirect to login if no session ────────
+        (async () => {
+            const auth = await requireAuth();
+            if (!auth) return; // requireAuth redirects if no session
+        })();
+
         document.addEventListener('DOMContentLoaded', () => {
             const greetingEl = document.getElementById('greetingText');
             if (greetingEl) {

@@ -1,0 +1,30 @@
+name: Sync to Hugging Face Space
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  sync-to-hf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitHub repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git lfs install
+          # Configure git
+          git config user.email "minadiaa@nct.edu"
+          git config user.name "Mina Diaa"
+
+          # Add HF remote
+          git remote add hf https://minadiaa:$HF_TOKEN@huggingface.co/spaces/minadiaa/ChatNct
+
+          # Force push to HF (mirror the main branch)
+          git push hf main --force

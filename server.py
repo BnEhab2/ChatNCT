@@ -34,6 +34,18 @@ from mainAgent.db.database import (
 app = Flask(__name__, static_folder="frontend", static_url_path="")
 CORS(app)
 
+# Disable caching for static files during development
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+
+@app.after_request
+def add_no_cache_headers(response):
+    """Prevent browsers from caching JS/HTML files during development."""
+    if response.content_type and ('javascript' in response.content_type or 'html' in response.content_type):
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    return response
+
 # Suppress verbose request logs (GET /img/Logo.png, etc.)
 import logging
 log = logging.getLogger('werkzeug')
@@ -75,10 +87,15 @@ def run_async(coro):
 async def _run_agent(user_id: str, message: str) -> str:
     """Send a message to the root agent and collect the response."""
     if user_id not in user_sessions:
-        session = await session_service.create_session(
+        session_result = session_service.create_session(
             app_name=APP_NAME,
             user_id=user_id,
         )
+        import inspect
+        if inspect.iscoroutine(session_result):
+            session = await session_result
+        else:
+            session = session_result
         user_sessions[user_id] = session.id
 
     session_id = user_sessions[user_id]
@@ -107,11 +124,11 @@ async def _run_agent(user_id: str, message: str) -> str:
 # ══════════════════════════════════════════════════════════════════════
 
 def _resolve_student_uuid(user_id: str) -> str:
-    """Look up a student's UUID from their student_code. Returns None if not found."""
+    """Look up a student's UUID from their student_code in the profiles table. Returns None if not found."""
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT id FROM students WHERE student_code = %s", (user_id,))
+        cur.execute("SELECT id FROM profiles WHERE student_code = %s", (user_id,))
         row = cur.fetchone()
         if row:
             return str(row["id"])
@@ -186,7 +203,12 @@ def chat():
         })
     except Exception as e:
         traceback.print_exc()
-        return jsonify({"status": "error", "code": "AGENT_ERROR", "message": f"Agent error: {str(e)}"}), 500
+        return jsonify({
+            "status": "error",
+            "code": "AGENT_ERROR",
+            "message": f"Agent error: {str(e)}",
+            "traceback": traceback.format_exc()
+        }), 500
 
 
 # ── Feature 1: Chat Sessions CRUD ─────────────────────────────────────
@@ -340,90 +362,18 @@ def generate_code():
         return jsonify({"status": "error", "message": f"Agent error: {str(e)}"}), 500
 
 
-# ── Auth (Auto-Sync with Supabase Auth) ───────────────────────────────
-def _ensure_auth_user(email, password, role, name, student_code):
-    """Auto-register a user in Supabase Auth if not already registered."""
-    supabase_url = os.getenv("SUPABASE_URL")
-    service_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    try:
-        http_requests.post(
-            f"{supabase_url}/auth/v1/admin/users",
-            headers={
-                "apikey": service_key,
-                "Authorization": f"Bearer {service_key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "email": email,
-                "password": password,
-                "email_confirm": True,
-                "user_metadata": {
-                    "role": role,
-                    "name": name,
-                    "student_code": student_code,
-                },
-            },
-            timeout=10,
-        )
-    except Exception:
-        pass
-
-
+# ── Auth (Supabase Auth — server-side validation) ─────────────────────
 @app.route("/api/auth/login", methods=["POST"])
 def login():
+    """Validate user credentials via Supabase Auth and return profile info."""
     data = request.get_json()
-    username = data.get("username", "").strip()
+    email = data.get("email", "").strip()
     password = data.get("password", "")
 
-    if not username or not password:
-        return jsonify({"status": "error", "message": "Username and password required."}), 400
+    if not email or not password:
+        return jsonify({"status": "error", "message": "Email and password required."}), 400
 
-    # Step 1: Verify credentials from database
-    conn = get_connection()
-    try:
-        cur = conn.cursor()
-        role = "student"
-        display_name = username
-        student_code = username
-
-        # Check students table
-        cur.execute(
-            "SELECT id, name, student_code, password FROM students WHERE student_code = %s",
-            (username,)
-        )
-        row = cur.fetchone()
-
-        if row:
-            student = dict(row)
-            if student["password"] != password:
-                return jsonify({"status": "error", "message": "Wrong password."}), 401
-            role = "student"
-            display_name = student["name"] or username
-            student_code = student["student_code"]
-        else:
-            # Check instructors table
-            cur.execute(
-                "SELECT id, name, password FROM instructors WHERE name = %s",
-                (username,)
-            )
-            row = cur.fetchone()
-            if row:
-                instructor = dict(row)
-                if instructor["password"] != password:
-                    return jsonify({"status": "error", "message": "Wrong password."}), 401
-                role = "instructor"
-                display_name = instructor["name"]
-                student_code = str(instructor["id"])
-            else:
-                return jsonify({"status": "error", "message": "User not found."}), 401
-    finally:
-        release_connection(conn)
-
-    # Step 2: Auto-register in Supabase Auth if not already
-    email = f"{username}@nct.edu"
-    _ensure_auth_user(email, password, role, display_name, student_code)
-
-    # Step 3: Login via Supabase Auth for JWT tokens
+    # Authenticate via Supabase Auth
     supabase_url = os.getenv("SUPABASE_URL")
     supabase_key = os.getenv("SUPABASE_ANON_KEY")
 
@@ -438,11 +388,36 @@ def login():
             timeout=10,
         )
         auth_data = auth_res.json()
+
+        if auth_res.status_code != 200:
+            error_msg = auth_data.get("error_description") or auth_data.get("msg") or "Invalid credentials."
+            return jsonify({"status": "error", "message": error_msg}), 401
+
         access_token = auth_data.get("access_token", "")
         refresh_token = auth_data.get("refresh_token", "")
-    except Exception:
-        access_token = ""
-        refresh_token = ""
+        user_id = auth_data.get("user", {}).get("id", "")
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Auth service error: {str(e)}"}), 500
+
+    # Fetch profile from unified profiles table
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id, name, role, status, student_code FROM profiles WHERE id = %s",
+            (user_id,)
+        )
+        row = cur.fetchone()
+
+        if not row:
+            return jsonify({"status": "error", "message": "Profile not found."}), 404
+
+        profile = dict(row)
+        role = profile["role"]
+        display_name = profile["name"]
+        student_code = profile.get("student_code", "")
+    finally:
+        release_connection(conn)
 
     return jsonify({
         "status": "success",
@@ -451,7 +426,7 @@ def login():
         "role": role,
         "access_token": access_token,
         "refresh_token": refresh_token,
-        "user_id": student_code,
+        "user_id": student_code or str(user_id),
     })
 
 
@@ -466,9 +441,9 @@ def get_courses():
         cur = conn.cursor()
         cur.execute("""
             SELECT c.id AS course_id, c.course_code, c.name AS course_name,
-                   i.id AS instructor_id, i.name AS instructor_name
+                   c.instructor_id, p.name AS instructor_name
             FROM courses c
-            LEFT JOIN instructors i ON c.instructor_id = i.id
+            LEFT JOIN profiles p ON c.instructor_id = p.id
             ORDER BY c.course_code
         """)
         rows = [dict(r) for r in cur.fetchall()]

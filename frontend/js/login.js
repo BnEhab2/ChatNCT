@@ -130,18 +130,41 @@ scrollIndicator?.addEventListener('click', () => navigateToSection(1));
 
 
 // ══════════════════════════════════════════════════════════════
-// LOGIN FORM SUBMISSION
+// AUTO-REDIRECT IF ALREADY LOGGED IN
+//
+// If the user already has an active Supabase session,
+// skip the login page and go directly to the dashboard.
+// ══════════════════════════════════════════════════════════════
+
+(async () => {
+    try {
+        const session = await getAuthSession();
+        if (session) {
+            const profile = await fetchProfile(session.user.id);
+            if (profile && profile.status === 'active') {
+                redirectByRole(profile.role);
+                return;
+            }
+        }
+    } catch (e) {
+        // Ignore errors — just show the login page
+    }
+})();
+
+
+// ══════════════════════════════════════════════════════════════
+// LOGIN FORM SUBMISSION (Supabase Auth)
 //
 // When the user submits their email and password:
-// 1. Send credentials to /api/auth/login
-// 2. If successful, store the auth token + user info in localStorage
-// 3. Redirect to the dashboard
+// 1. Authenticate via Supabase signInWithPassword
+// 2. Check profile status (pending/blocked/active)
+// 3. If active, store user info and redirect by role
 // ══════════════════════════════════════════════════════════════
 
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();  // Prevent default form submission (page reload)
 
-    const username = document.getElementById('username').value.trim();
+    const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     const btn = document.getElementById('submitBtn');
     const errorMsg = document.getElementById('errorMessage');
@@ -153,45 +176,24 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     errorMsg.textContent = '';
 
     try {
-        // Send login request to the server
-        const response = await fetch(`${API_BASE}/api/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
-        });
-        const data = await response.json();
+        const result = await authSignIn(email, password);
 
-        if (data.status === 'success') {
-            // Save all user data to browser's localStorage
-            // This data persists even after closing the browser tab
-            localStorage.setItem('chatnct_username', data.username);
-            localStorage.setItem('chatnct_is_admin', data.is_admin ? 'true' : 'false');
-            localStorage.setItem('chatnct_role', data.role || 'student');
-            localStorage.setItem('chatnct_access_token', data.access_token);
-            if (data.refresh_token) localStorage.setItem('chatnct_refresh_token', data.refresh_token);
-            if (data.user_id) localStorage.setItem('chatnct_user_id', data.user_id);
-
+        if (result.success) {
             // Show welcome notification
-            const role = (data.role || 'student').toLowerCase();
-            showNotification(data.is_admin ? 'Welcome, Admin! ' : `Welcome back, ${data.username}!`);
+            const name = result.profile.name || email;
+            const isAdmin = result.profile.role === 'admin';
+            showNotification(isAdmin ? 'Welcome, Admin! 🎉' : `Welcome back, ${name}!`);
 
-            // Redirect to dashboard after a brief delay (so notification is seen)
+            // Redirect after a brief delay (so notification is seen)
             setTimeout(() => {
-                if (role === 'instructor' || role === 'admin') {
-                    localStorage.setItem('chatnct_skip_dashboard', 'true');
-                    window.location.href = 'dashboard.html';
-                } else {
-                    localStorage.removeItem('chatnct_skip_dashboard');
-                    window.location.href = 'dashboard.html';
-                }
+                redirectByRole(result.profile.role);
             }, 800);
         } else {
-            // Show error message from server
-            errorMsg.textContent = data.message || 'Login failed. Please try again.';
+            errorMsg.textContent = result.error || 'Login failed. Please try again.';
         }
     } catch (err) {
         console.error('Login error:', err);
-        errorMsg.textContent = 'Connection error to: ' + (API_BASE || 'localhost') + '. Make sure the server is running.';
+        errorMsg.textContent = 'Error: ' + (err.message || err.toString());
     } finally {
         // Reset button state regardless of success/failure
         btn.innerText = originalText;

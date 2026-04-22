@@ -484,9 +484,9 @@ def list_courses():
         cur = conn.cursor()
         cur.execute("""
             SELECT c.id AS course_id, c.course_code, c.name AS course_name,
-                   i.id AS instructor_id, i.name AS instructor_name
+                   c.instructor_id, p.name AS instructor_name
             FROM courses c
-            LEFT JOIN instructors i ON c.instructor_id = i.id
+            LEFT JOIN profiles p ON c.instructor_id = p.id
             ORDER BY c.course_code
         """)
         rows = [dict(r) for r in cur.fetchall()]
@@ -582,10 +582,10 @@ def check_session(code):
     try:
         cur = conn.cursor()
         cur.execute("""
-            SELECT s.*, c.course_code, c.name AS course_name, i.name AS instructor_name
+            SELECT s.*, c.course_code, c.name AS course_name, p.name AS instructor_name
             FROM attendance_sessions s
             JOIN courses c ON s.course_id = c.id
-            LEFT JOIN instructors i ON s.instructor_id = i.id
+            LEFT JOIN profiles p ON s.instructor_id = p.id
             WHERE s.session_code = %s
         """, (code,))
         row = cur.fetchone()
@@ -650,7 +650,7 @@ def prepare_verification():
     try:
         cur = conn.cursor()
         cur.execute(
-            "SELECT student_code FROM students WHERE student_code = %s OR id::text = %s",
+            "SELECT student_code FROM profiles WHERE student_code = %s OR id::text = %s",
             (student_id, student_id)
         )
         student = cur.fetchone()
@@ -683,7 +683,7 @@ def check_identity():
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT student_code FROM students WHERE student_code = %s OR id::text = %s", (student_id, student_id))
+        cur.execute("SELECT student_code FROM profiles WHERE student_code = %s OR id::text = %s", (student_id, student_id))
         student = cur.fetchone()
         if not student:
             return _error("STUDENT_NOT_FOUND")
@@ -896,7 +896,7 @@ def verify_attendance():
                 return _error(err_code)
 
         # ── 2) Get student info ──────────────────────────────────────
-        cur.execute("SELECT id AS db_student_id, name, student_code FROM students WHERE student_code = %s OR id::text = %s", (student_id, student_id))
+        cur.execute("SELECT id AS db_student_id, name, student_code FROM profiles WHERE student_code = %s OR id::text = %s", (student_id, student_id))
         student = cur.fetchone()
         if not student:
             return _error("STUDENT_NOT_FOUND")
@@ -1000,7 +1000,7 @@ def session_report(code):
             SELECT a.id AS attendance_id, a.student_id, s.student_code, s.name AS student_name,
                    a.date, a.status, a.verified_by, a.notes, a.created_at
             FROM attendance a
-            JOIN students s ON a.student_id = s.id
+            JOIN profiles s ON a.student_id = s.id
             WHERE a.session_id = %s
             ORDER BY a.created_at
         """, (session["session_id"],))
