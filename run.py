@@ -68,7 +68,7 @@ def main():
          "cert_path, key_path = generate_self_signed_cert(cert_dir); "
          "ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); "
          "ssl_ctx.load_cert_chain(cert_path, key_path); "
-         "app.run(host='0.0.0.0', port=5001, debug=False, ssl_context=ssl_ctx)"
+         "app.run(host='0.0.0.0', port=5001, debug=True, ssl_context=ssl_ctx)"
         ],
         cwd=project_dir,
     )
