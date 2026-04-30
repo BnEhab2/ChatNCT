@@ -24,6 +24,7 @@
 
 // API endpoint for the chat service
 const API_URL = `${API_BASE}/api/chat`;
+const STREAM_API_URL = `${API_BASE}/api/chat/stream`;
 
 // State variables
 let isWaiting = false;                 // True while waiting for bot response (prevents double-send)
@@ -121,6 +122,7 @@ function addMessage(text, sender, isLoading = false) {
 
     // Create the message container
     const wrapper = document.createElement('div');
+    wrapper.id = `message-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     wrapper.className = `message-wrapper ${sender}`;
     if (isLoading) wrapper.id = `loading-${Date.now()}`;
 
@@ -155,6 +157,68 @@ function addMessage(text, sender, isLoading = false) {
     // Auto-scroll to the bottom of the chat
     chatMessages.scrollTop = chatMessages.scrollHeight;
     return wrapper.id;
+}
+
+function updateBotMessage(messageId, text) {
+    const wrapper = document.getElementById(messageId);
+    const bubble = wrapper?.querySelector('.message-bubble.bot');
+    if (!bubble) return;
+
+    bubble.innerHTML = marked.parse(text || '');
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function createTypewriter(messageId) {
+    let targetText = '';
+    let visibleText = '';
+    let timer = null;
+    let isFinishing = false;
+    let resolveDone = null;
+
+    const donePromise = new Promise(resolve => { resolveDone = resolve; });
+
+    function step() {
+        timer = null;
+        if (visibleText.length >= targetText.length) {
+            if (isFinishing && resolveDone) resolveDone();
+            return;
+        }
+
+        const remaining = targetText.length - visibleText.length;
+        const chunkSize = remaining > 160 ? 5 : remaining > 60 ? 3 : 2;
+        visibleText = targetText.slice(0, visibleText.length + chunkSize);
+        updateBotMessage(messageId, visibleText);
+
+        timer = setTimeout(step, 14);
+    }
+
+    function schedule() {
+        if (!timer) timer = setTimeout(step, 10);
+    }
+
+    return {
+        append(text) {
+            if (!text) return;
+            targetText += text;
+            schedule();
+        },
+        finish() {
+            isFinishing = true;
+            schedule();
+            return donePromise;
+        },
+        flush() {
+            targetText = visibleText = targetText;
+            updateBotMessage(messageId, visibleText);
+            if (timer) clearTimeout(timer);
+            timer = null;
+            isFinishing = true;
+            if (resolveDone) resolveDone();
+        },
+        getText() {
+            return targetText;
+        }
+    };
 }
 
 
@@ -210,12 +274,56 @@ async function sendToBackend(message) {
     }
 }
 
+async function sendToBackendStream(message, { onMeta, onDelta } = {}) {
+    const response = await fetch(STREAM_API_URL, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+            message: message,
+            user_id: getUserId(),
+            session_id: currentChatSessionId,
+        })
+    });
+
+    if (!response.ok || !response.body) {
+        throw new Error(`HTTP ${response.status}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullText = '';
+
+    while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+            if (!line.trim()) continue;
+            const event = JSON.parse(line);
+
+            if (event.type === 'meta' && event.session_id) {
+                currentChatSessionId = event.session_id;
+                if (onMeta) onMeta(event);
+            } else if (event.type === 'delta') {
+                fullText += event.text || '';
+                if (onDelta) onDelta(event.text || '');
+            } else if (event.type === 'error') {
+                throw new Error(event.message || 'Stream error');
+            }
+        }
+    }
+
+    return fullText;
+}
+
 async function sendMessage() {
     const message = messageInput ? messageInput.value.trim() : '';
     if (!message || isWaiting) return;  // Don't send empty messages or while waiting
-
-    // Small delay to ensure UI is ready
-    await new Promise(resolve => setTimeout(resolve, 100));
 
     // Show user's message in the chat
     addMessage(message, 'user');
@@ -234,14 +342,69 @@ async function sendMessage() {
     );
 
     try {
-        // Send message to AI and get response
-        const botReply = await sendToBackend(message);
-        document.getElementById(loadingId)?.remove();  // Remove typing animation
-        addMessage(botReply, 'bot');                    // Show bot's response
+        let botMessageId = null;
+        let typewriter = null;
+        let receivedAnyChunk = false;
+
+        const ensureBotMessage = () => {
+            if (!botMessageId) {
+                document.getElementById(loadingId)?.remove();
+                botMessageId = addMessage('', 'bot');
+                document.getElementById(botMessageId)?.querySelector('.message-bubble.bot')?.classList.add('typing-active');
+                typewriter = createTypewriter(botMessageId);
+            }
+        };
+
+        try {
+            const streamedText = await sendToBackendStream(message, {
+                onDelta: (text) => {
+                    receivedAnyChunk = true;
+                    ensureBotMessage();
+                    typewriter.append(text);
+                }
+            });
+
+            if (!receivedAnyChunk && streamedText) {
+                ensureBotMessage();
+                typewriter.append(streamedText);
+            }
+
+            if (!botMessageId) {
+                ensureBotMessage();
+                typewriter.append("Connection error - no response received");
+            }
+
+            await typewriter.finish();
+            document.getElementById(botMessageId)?.querySelector('.message-bubble.bot')?.classList.remove('typing-active');
+        } catch (streamError) {
+            console.warn('Stream fallback:', streamError);
+            document.getElementById(loadingId)?.remove();
+
+            // If streaming failed before delivering text, use the old JSON endpoint.
+            if (!receivedAnyChunk) {
+                const botReply = await sendToBackend(message);
+                botMessageId = addMessage('', 'bot');
+                typewriter = createTypewriter(botMessageId);
+                document.getElementById(botMessageId)?.querySelector('.message-bubble.bot')?.classList.add('typing-active');
+                typewriter.append(botReply);
+                await typewriter.finish();
+                document.getElementById(botMessageId)?.querySelector('.message-bubble.bot')?.classList.remove('typing-active');
+            } else {
+                ensureBotMessage();
+                typewriter.append("\n\nConnection interrupted.");
+                await typewriter.finish();
+                document.getElementById(botMessageId)?.querySelector('.message-bubble.bot')?.classList.remove('typing-active');
+            }
+        }
     } catch (error) {
         console.error('Error:', error);
         document.getElementById(loadingId)?.remove();
-        addMessage("Connection error occurred", 'bot');
+        const botMessageId = addMessage('', 'bot');
+        document.getElementById(botMessageId)?.querySelector('.message-bubble.bot')?.classList.add('typing-active');
+        const typewriter = createTypewriter(botMessageId);
+        typewriter.append("Connection error occurred");
+        await typewriter.finish();
+        document.getElementById(botMessageId)?.querySelector('.message-bubble.bot')?.classList.remove('typing-active');
     }
 
     // Unlock input
@@ -293,7 +456,19 @@ style.textContent = `
     .typing-dot:nth-child(2){animation-delay:.2s}
     .typing-dot:nth-child(3){animation-delay:.4s}
     .typing-dot:nth-child(4){animation-delay:.6s}
+    .message-bubble.bot.typing-active::after {
+        content: '';
+        display: inline-block;
+        width: 7px;
+        height: 1.15em;
+        margin-inline-start: 3px;
+        background: rgba(221,216,253,.75);
+        vertical-align: -0.18em;
+        animation: caretBlink .9s steps(1) infinite;
+    }
+    .message-bubble.bot.typing-active:empty::after { display: none; }
     @keyframes blink{0%,100%{opacity:.2}20%{opacity:1}}
+    @keyframes caretBlink{50%{opacity:0}}
 `;
 if (document.head) document.head.appendChild(style);
 
