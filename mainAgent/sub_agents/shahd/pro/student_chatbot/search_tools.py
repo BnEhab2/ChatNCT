@@ -1,85 +1,82 @@
-#search_tools.py
+"""
+Keyword-based search for student affairs data.
+Uses the same shared local search engine as Marwan's study_agent.
+"""
+
 import os
-import pickle
-import faiss
-import numpy as np
-from openai import OpenAI
-from .utils import load_data
+from typing import Dict, List
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-folder = os.path.join(os.path.dirname(__file__), "data")
-emb_file = os.path.join(folder, "data_embeddings.pkl")
-index_file = os.path.join(folder, "data_index.faiss")
-data_file = os.path.join(folder, "data.pkl")
+from mainAgent.sub_agents.rag_search import load_text_documents, search_documents
 
 
-data = load_data(folder)
+# Global list to store loaded paragraphs (lazy loaded)
+_documents: List[Dict[str, str]] = []
 
-if len(data) == 0:
-    raise ValueError("No data found.")
+# Arabic stop words
+STOP_WORDS_AR = {
+    'في', 'من', 'على', 'إلى', 'الى', 'عن', 'مع', 'هل', 'ما', 'هو', 'هي',
+    'هذا', 'هذه', 'ذلك', 'تلك', 'التي', 'الذي', 'الذين', 'اللتي', 'اللذين',
+    'كان', 'كانت', 'يكون', 'تكون', 'أن', 'ان', 'إن', 'لا', 'لم', 'لن',
+    'قد', 'بين', 'حتى', 'أو', 'او', 'ثم', 'اي', 'أي', 'كل', 'بعض',
+    'كيف', 'أين', 'اين', 'متى', 'كم', 'لماذا', 'ليه', 'ازاي', 'فين',
+    'يا', 'و', 'ف', 'ب', 'ل', 'ده', 'دي', 'دا', 'مش', 'مين',
+    'عاوز', 'عايز', 'عايزه', 'عاوزه', 'ممكن', 'لو', 'سمحت',
+    'انا', 'أنا', 'انت', 'احنا', 'احنة', 'اللي', 'بتاع', 'بتاعت',
+    'the', 'a', 'an', 'is', 'are', 'was', 'were', 'what', 'how', 'when',
+    'where', 'who', 'which', 'can', 'do', 'does', 'i', 'me', 'my',
+    'want', 'need', 'please', 'tell', 'about',
+}
+
+# Term variations / synonyms (Arabic + transliterated)
+TERM_VARIATIONS = {
+    'مصروفات': ['مصروفات', 'مصاريف', 'رسوم', 'تكلفة', 'فلوس', 'مصاريف الدراسة', 'fees'],
+    'تقديم': ['تقديم', 'تسجيل', 'التحاق', 'قبول', 'admission', 'apply'],
+    'تحويل': ['تحويل', 'نقل', 'transfer'],
+    'أوراق': ['أوراق', 'اوراق', 'مستندات', 'وثائق', 'ورق', 'documents', 'papers'],
+    'تخصصات': ['تخصصات', 'أقسام', 'اقسام', 'برامج', 'كليات', 'departments', 'majors'],
+    'جدول': ['جدول', 'جداول', 'جدوال', 'مواعيد', 'schedule', 'timetable'],
+    'تدريب': ['تدريب', 'تدريبات', 'training', 'internship'],
+    'منح': ['منح', 'إعفاء', 'اعفاء', 'تخفيض', 'تقسيط', 'scholarship'],
+    'مكان': ['مكان', 'موقع', 'عنوان', 'فين', 'أين', 'اين', 'location', 'address'],
+    'شؤون': ['شؤون', 'شئون', 'شوون', 'student affairs'],
+    'دراسة': ['دراسة', 'دراسية', 'محاضرات', 'study', 'lectures'],
+    'دبلوم': ['دبلوم', 'دبلومة', 'diploma'],
+    'ماجستير': ['ماجستير', 'دراسات عليا', 'master', 'postgrad'],
+    'امتحان': ['امتحان', 'امتحانات', 'اختبار', 'اختبارات', 'قدرات', 'exam', 'test'],
+    'ثانوية': ['ثانوية', 'ثانوي', 'secondary', 'high school'],
+    'فني': ['فني', 'فنية', 'دبلومات', 'صنايع', 'technical'],
+    'تخرج': ['تخرج', 'شهادة', 'graduation', 'certificate', 'degree'],
+}
 
 
-if os.path.exists(emb_file) and os.path.exists(index_file) and os.path.exists(data_file):
-    print("Loading saved embeddings and index...")
-    with open(emb_file, "rb") as f:
-        embeddings_matrix = pickle.load(f)
-    index = faiss.read_index(index_file)
-    with open(data_file, "rb") as f:
-        data = pickle.load(f)
-else:
+def _load_paragraphs() -> List[str]:
+    """Lazy load paragraphs from data files on first search."""
+    global _documents
+    if _documents:
+        return [doc["content"] for doc in _documents]
 
-    embeddings = []
-
-    for line in data:
-
-        response = client.embeddings.create(
-            input=line,
-            model="text-embedding-3-small"
-        )
-
-        embeddings.append(response.data[0].embedding)
-
-    embeddings_matrix = np.array(embeddings).astype("float32")
-
-    d = embeddings_matrix.shape[1]
-    index = faiss.IndexFlatL2(d)
-    index.add(embeddings_matrix)
-
-    with open(emb_file, "wb") as f:
-        pickle.dump(embeddings_matrix, f)
-
-    faiss.write_index(index, index_file)
-
-    with open(data_file, "wb") as f:
-        pickle.dump(data, f)
+    folder = os.path.join(os.path.dirname(__file__), "data")
+    _documents = load_text_documents(folder, split_paragraphs=True)
+    print(f"[OK] {len(_documents)} student affairs paragraphs loaded.")
+    return [doc["content"] for doc in _documents]
 
 
-stop_words = {"اي","ما","متى","كم","هل","كيف","أين"}
+def search_data(query: str) -> dict:
+    """
+    Search student affairs paragraphs with the shared keyword search engine.
+    """
+    _load_paragraphs()
+    if not _documents:
+        return {"results": [], "message": "لا توجد بيانات محملة."}
 
-def search_data(query: str):
-
-    query_words = [w.lower() for w in query.split() if w.lower() not in stop_words]
-
-    if len(query_words) == 0:
-        return "يرجى توضيح السؤال."
-
-    query_response = client.embeddings.create(
-        input=query,
-        model="text-embedding-3-small"
+    return search_documents(
+        query=query,
+        documents=_documents,
+        term_variations=TERM_VARIATIONS,
+        stop_words=STOP_WORDS_AR,
+        min_keyword_length=2,
+        top_k=5,
     )
 
-    query_emb = np.array([query_response.data[0].embedding]).astype("float32")
 
-    D, I = index.search(query_emb, k=3)
-
-    for idx in I[0]:
-
-        answer = data[idx]
-
-        match_count = sum(1 for w in query_words if w in answer.lower())
-
-        if match_count >= 1:
-            return answer
-
-    return "عذراً، يرجى التواصل مع شؤون الطلبة."
+# Paragraphs are loaded lazily on first use to keep startup fast.

@@ -8,8 +8,8 @@ The agent uses GPT-4o-mini as its language model and has 5 specialized
 "sub-agents" that handle different types of requests:
 
   - prompt_wizard    : Helps write professional AI prompts (CO-STAR framework)
-  - study_agent      : Summarizes lectures and creates quizzes (uses RAG)
-  - student_chatbot  : Answers questions about student affairs (uses FAISS)
+  - study_agent      : Summarizes lectures and creates quizzes (uses local search)
+  - student_chatbot  : Answers questions about student affairs (uses local search)
   - vibe_coder_agent : Generates code and builds projects (powered by Gemini)
   - search_agent     : Answers general knowledge questions (uses Google Search)
 

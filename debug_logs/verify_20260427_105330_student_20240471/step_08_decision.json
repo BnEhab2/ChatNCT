@@ -1,0 +1,14 @@
+{
+  "verified": false,
+  "distance": 0.7536323923499068,
+  "threshold": 0.55,
+  "message": "Identity mismatch (distance=0.754).",
+  "faceBox": [
+    144,
+    244,
+    211,
+    211
+  ],
+  "elapsed_represent_s": 0.352,
+  "timestamp": "2026-04-27 10:53:30"
+}

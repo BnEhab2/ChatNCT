@@ -8,11 +8,12 @@ import warnings
 import requests as http_requests
 from datetime import datetime
 from dotenv import load_dotenv
+from queue import Queue
 
 # Suppress urllib3 SSL warnings (we use self-signed certs for local dev)
 warnings.filterwarnings("ignore", message="Unverified HTTPS request")
 
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, Response, request, jsonify, send_from_directory, stream_with_context
 from flask_cors import CORS
 
 # Load environment variables
@@ -120,6 +121,42 @@ async def _run_agent(user_id: str, message: str) -> str:
 
 
 # ══════════════════════════════════════════════════════════════════════
+async def _stream_agent(user_id: str, message: str, queue: Queue) -> str:
+    """Send agent text parts to a queue as they arrive."""
+    if user_id not in user_sessions:
+        session_result = session_service.create_session(
+            app_name=APP_NAME,
+            user_id=user_id,
+        )
+        import inspect
+        if inspect.iscoroutine(session_result):
+            session = await session_result
+        else:
+            session = session_result
+        user_sessions[user_id] = session.id
+
+    session_id = user_sessions[user_id]
+
+    content = types.Content(
+        role="user",
+        parts=[types.Part.from_text(text=message)],
+    )
+
+    response_parts = []
+    async for event in runner.run_async(
+        user_id=user_id,
+        session_id=session_id,
+        new_message=content,
+    ):
+        if event.content and event.content.parts:
+            for part in event.content.parts:
+                if part.text:
+                    response_parts.append(part.text)
+                    queue.put({"type": "delta", "text": part.text})
+
+    return "\n".join(response_parts) if response_parts else "عذرًا، مفيش رد متاح دلوقتي."
+
+
 # HELPERS
 # ══════════════════════════════════════════════════════════════════════
 
@@ -138,6 +175,35 @@ def _resolve_student_uuid(user_id: str) -> str:
 
 
 # ══════════════════════════════════════════════════════════════════════
+def _create_chat_session(user_id: str, message: str) -> str:
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        title = message[:50] + ("..." if len(message) > 50 else "")
+        cur.execute(
+            "INSERT INTO chat_sessions (student_id, title) VALUES (%s, %s) RETURNING id",
+            (user_id, title)
+        )
+        chat_session_id = str(cur.fetchone()[0])
+        conn.commit()
+        return chat_session_id
+    finally:
+        release_connection(conn)
+
+
+def _save_chat_message(chat_session_id: str, role: str, content: str) -> None:
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO chat_messages (session_id, role, content) VALUES (%s, %s, %s)",
+            (chat_session_id, role, content)
+        )
+        conn.commit()
+    finally:
+        release_connection(conn)
+
+
 # API ENDPOINTS
 # ══════════════════════════════════════════════════════════════════════
 
@@ -156,45 +222,16 @@ def chat():
     try:
         # Create chat session if not provided
         if not chat_session_id:
-            conn = get_connection()
-            try:
-                cur = conn.cursor()
-                title = message[:50] + ("..." if len(message) > 50 else "")
-                cur.execute(
-                    "INSERT INTO chat_sessions (student_id, title) VALUES (%s, %s) RETURNING id",
-                    (user_id, title)
-                )
-                chat_session_id = str(cur.fetchone()[0])
-                conn.commit()
-            finally:
-                release_connection(conn)
+            chat_session_id = _create_chat_session(user_id, message)
 
         # Save user message
-        conn = get_connection()
-        try:
-            cur = conn.cursor()
-            cur.execute(
-                "INSERT INTO chat_messages (session_id, role, content) VALUES (%s, 'user', %s)",
-                (chat_session_id, message)
-            )
-            conn.commit()
-        finally:
-            release_connection(conn)
+        _save_chat_message(chat_session_id, "user", message)
 
         # Get agent response
         response = run_async(_run_agent(user_id, message))
 
         # Save bot response
-        conn = get_connection()
-        try:
-            cur = conn.cursor()
-            cur.execute(
-                "INSERT INTO chat_messages (session_id, role, content) VALUES (%s, 'bot', %s)",
-                (chat_session_id, response)
-            )
-            conn.commit()
-        finally:
-            release_connection(conn)
+        _save_chat_message(chat_session_id, "bot", response)
 
         return jsonify({
             "status": "success",
@@ -212,6 +249,69 @@ def chat():
 
 
 # ── Feature 1: Chat Sessions CRUD ─────────────────────────────────────
+@app.route("/api/chat/stream", methods=["POST"])
+def chat_stream():
+    """Stream agent text parts as newline-delimited JSON for a faster chat feel."""
+    data = request.get_json()
+    message = data.get("message", "").strip()
+    user_id = data.get("user_id", "default_user")
+    chat_session_id = data.get("session_id", None)
+
+    if not message:
+        return jsonify({"status": "error", "code": "MISSING_MESSAGE", "message": "Message is required."}), 400
+
+    try:
+        if not chat_session_id:
+            chat_session_id = _create_chat_session(user_id, message)
+        _save_chat_message(chat_session_id, "user", message)
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({
+            "status": "error",
+            "code": "DB_ERROR",
+            "message": f"Database error: {str(e)}",
+        }), 500
+
+    def encode_event(payload):
+        return json.dumps(payload, ensure_ascii=False) + "\n"
+
+    @stream_with_context
+    def generate():
+        queue = Queue()
+        yield encode_event({"type": "meta", "session_id": chat_session_id})
+
+        async def run_and_finish():
+            try:
+                response_text = await _stream_agent(user_id, message, queue)
+                if not response_text:
+                    response_text = "عذرًا، مفيش رد متاح دلوقتي."
+                _save_chat_message(chat_session_id, "bot", response_text)
+                queue.put({"type": "done"})
+            except Exception as exc:
+                traceback.print_exc()
+                queue.put({"type": "error", "message": f"Agent error: {str(exc)}"})
+
+        future = asyncio.run_coroutine_threadsafe(run_and_finish(), _loop)
+        try:
+            while True:
+                item = queue.get()
+                yield encode_event(item)
+                if item.get("type") in {"done", "error"}:
+                    break
+        finally:
+            if not future.done():
+                future.cancel()
+
+    return Response(
+        generate(),
+        mimetype="application/x-ndjson",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
 @app.route("/api/chat/sessions", methods=["GET"])
 def list_chat_sessions():
     """List chat sessions for a user with pagination."""

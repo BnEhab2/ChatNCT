@@ -1,0 +1,6 @@
+frame: 2
+detected_pose: down
+expected_action: 
+yaw: -0.8
+pitch: 10.1
+debug: ok
