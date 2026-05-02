@@ -1,6 +1,0 @@
-frame: 6
-detected_pose: center
-expected_action: 
-yaw: -2.3
-pitch: 2.7
-debug: ok
