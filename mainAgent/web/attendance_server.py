@@ -41,6 +41,16 @@ face_verifier = FaceVerifier()
 
 app = Flask(__name__)
 
+
+def _debug_finalize_report(metadata=None):
+    if not DEBUG_FACE_PIPELINE:
+        return None
+    try:
+        return debug_logger.build_full_report(metadata or {})
+    except Exception as exc:
+        print(f"[DEBUG-LOG] Failed to build FULL_REPORT.html: {exc}")
+        return None
+
 # ── Supabase Storage Config ────────────────────────────────────────────
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
@@ -390,6 +400,10 @@ def _verify_multi_frame(images_data: list, photo_path: str) -> dict:
 
     # [DEBUG] Save multi-frame summary
     if DEBUG_FACE_PIPELINE:
+        debug_logger.plot_multi_frame_distances(
+            distances,
+            threshold=face_verifier.VERIFY_THRESHOLD,
+        )
         summary = (
             f"frames_total: {len(frames)}\n"
             f"frames_with_face: {len(distances)}\n"
@@ -423,6 +437,17 @@ def _is_static_image(frames: list) -> bool:
         diffs.append(np.mean(diff))
 
     avg_diff = sum(diffs) / len(diffs)
+    if DEBUG_FACE_PIPELINE:
+        debug_logger.save_text(
+            "step_12_motion_diffs",
+            (
+                f"pair_diffs: {[round(val, 6) for val in diffs]}\n"
+                f"avg_diff: {avg_diff:.6f}\n"
+                f"static_threshold: 2.0\n"
+                f"is_static: {avg_diff < 2.0}\n"
+            ),
+        )
+        debug_logger.plot_motion_diffs(diffs, static_threshold=2.0)
     # If average pixel difference is < 2, it's likely the same static image
     return avg_diff < 2.0
 
@@ -730,6 +755,14 @@ def check_identity():
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
             debug_logger.save_image("step_10_face_box_overlay", box_frame)
 
+        if DEBUG_FACE_PIPELINE:
+            _debug_finalize_report({
+                "verdict": "IDENTITY VERIFIED" if verification.get("verified", False) else "IDENTITY FAILED",
+                "verified": verification.get("verified", False),
+                "distance": round(float(verification.get("distance", 0.0)), 4),
+                "threshold": face_verifier.VERIFY_THRESHOLD,
+            })
+
         return jsonify({
             "status": "success",
             "verified": verification.get("verified", False),
@@ -820,6 +853,13 @@ def check_pose():
             f"pitch: {pitch_val}\n"
             f"debug: {pose.get('debug', '')}\n"
         ), subfolder=subfolder)
+
+        _debug_finalize_report({
+            "verdict": "LIVENESS FRAME CHECK",
+            "verified": detected_pose == expected_action if expected_action else detected_pose != "unknown",
+            "distance": "N/A",
+            "threshold": "N/A",
+        })
 
     return jsonify({
         "status": "success",
@@ -933,8 +973,22 @@ def verify_attendance():
         if images_data and len(images_data) >= 3:
             result = _verify_multi_frame(images_data, photo_path)
             if result.get("static"):
+                if DEBUG_FACE_PIPELINE:
+                    _debug_finalize_report({
+                        "verdict": "STATIC IMAGE DETECTED",
+                        "verified": False,
+                        "distance": result.get("avg_distance", "N/A"),
+                        "threshold": face_verifier.VERIFY_THRESHOLD,
+                    })
                 return _error("FACE_STATIC_IMAGE")
             if not result["verified"]:
+                if DEBUG_FACE_PIPELINE:
+                    _debug_finalize_report({
+                        "verdict": "LOW CONFIDENCE",
+                        "verified": False,
+                        "distance": result.get("avg_distance", "N/A"),
+                        "threshold": face_verifier.VERIFY_THRESHOLD,
+                    })
                 return _error("FACE_LOW_CONFIDENCE", {
                     "avg_confidence": result.get("avg_confidence", 0),
                     "frames_checked": result.get("frames_checked", 0),
@@ -953,8 +1007,23 @@ def verify_attendance():
                 distance = round(verification["distance"], 4)
                 verified = verification["verified"]
                 if not verified:
+                    if DEBUG_FACE_PIPELINE:
+                        _debug_finalize_report({
+                            "verdict": "FACE VERIFY FAILED",
+                            "verified": False,
+                            "distance": distance,
+                            "threshold": face_verifier.VERIFY_THRESHOLD,
+                        })
                     return _error("FACE_VERIFY_FAILED", {"distance": distance})
             except Exception as e:
+                if DEBUG_FACE_PIPELINE:
+                    debug_logger.save_text("step_error", f"verify_attendance exception:\n{str(e)}")
+                    _debug_finalize_report({
+                        "verdict": "FACE VERIFY ERROR",
+                        "verified": False,
+                        "distance": "N/A",
+                        "threshold": face_verifier.VERIFY_THRESHOLD,
+                    })
                 return _error("FACE_VERIFY_ERROR", {"detail": str(e)})
 
         # ── 5) Record attendance ─────────────────────────────────────
@@ -968,6 +1037,14 @@ def verify_attendance():
             VALUES (%s, %s, %s, %s, 'Present', 'face', %s)
         """, (db_student_id, session["course_id"], sid, today, notes))
         conn.commit()
+
+        if DEBUG_FACE_PIPELINE:
+            _debug_finalize_report({
+                "verdict": "ATTENDANCE VERIFIED",
+                "verified": True,
+                "distance": round(float(distance), 4) if isinstance(distance, (int, float)) else distance,
+                "threshold": face_verifier.VERIFY_THRESHOLD,
+            })
 
         return jsonify({
             "status": "success",
@@ -1055,10 +1132,10 @@ if __name__ == "__main__":
 
     print(f"\n Face + QR Attendance Server (HTTPS)")
     print("=" * 55)
-    print(f"  Local:      https://localhost:5000/")
-    print(f"  Network:    https://{LAN_IP}:5000/")
+    print(f"  Local:      https://localhost:5001/")
+    print(f"  Network:    https://{LAN_IP}:5001/")
     print("=" * 55)
 
     ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ssl_ctx.load_cert_chain(cert_path, key_path)
-    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=ssl_ctx, use_reloader=False)
+    app.run(host="0.0.0.0", port=5001, debug=True, ssl_context=ssl_ctx, use_reloader=False)

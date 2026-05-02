@@ -10,5 +10,5 @@ university.db
 mainAgent/sub_agents/Mixxx/vibe_coder/.env
 
 # PHP Backend Files
-php_backend/
+debug_logs
 gradproject_schema.sql
