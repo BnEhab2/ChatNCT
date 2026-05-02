@@ -18,12 +18,16 @@ $pass = $input['password'] ?? '';
 if (!$user || !$pass) { echo json_encode(['status'=>'error','message'=>'Username and password required.']); exit; }
 
 try {
-    $db = getDB();
+    // $conn is available from database.php
+    global $conn;
 
     // Check students
-    $s = $db->prepare('SELECT id, name, student_code, password FROM students WHERE student_code = ?');
-    $s->execute([$user]);
-    $row = $s->fetch();
+    $stmt = $conn->prepare('SELECT id, name, student_code, password FROM students WHERE student_code = ?');
+    $stmt->bind_param("s", $user);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    
     if ($row) {
         if ($row['password'] !== $pass) { echo json_encode(['status'=>'error','message'=>'Wrong password.']); exit; }
         echo json_encode(['status'=>'success','username'=>$row['name']?:$user,'role'=>'student','is_admin'=>false,'user_id'=>$row['student_code'],'access_token'=>bin2hex(random_bytes(16))]);
@@ -31,9 +35,12 @@ try {
     }
 
     // Check instructors
-    $s = $db->prepare('SELECT id, name, password FROM instructors WHERE name = ?');
-    $s->execute([$user]);
-    $row = $s->fetch();
+    $stmt = $conn->prepare('SELECT id, name, password FROM instructors WHERE name = ?');
+    $stmt->bind_param("s", $user);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    
     if ($row) {
         if ($row['password'] !== $pass) { echo json_encode(['status'=>'error','message'=>'Wrong password.']); exit; }
         echo json_encode(['status'=>'success','username'=>$row['name'],'role'=>'instructor','is_admin'=>true,'user_id'=>(string)$row['id'],'access_token'=>bin2hex(random_bytes(16))]);
@@ -41,6 +48,6 @@ try {
     }
 
     echo json_encode(['status'=>'error','message'=>'User not found.']);
-} catch (PDOException $e) {
+} catch (Exception $e) {
     echo json_encode(['status'=>'error','message'=>'DB error: '.$e->getMessage()]);
 }
