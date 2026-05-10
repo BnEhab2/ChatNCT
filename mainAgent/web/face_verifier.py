@@ -37,7 +37,7 @@ from deepface import DeepFace
 # ── Debug Flag ─────────────────────────────────────────────────────────
 # Set to True to save pipeline artifacts to debug_logs/ folder.
 # Set to False for production (zero overhead — just a few bool checks).
-DEBUG_FACE_PIPELINE = False
+DEBUG_FACE_PIPELINE = os.getenv("DEBUG_FACE_PIPELINE", "1").strip().lower() in {"1", "true", "yes", "on"}
 
 if DEBUG_FACE_PIPELINE:
     try:
@@ -232,7 +232,7 @@ class FaceVerifier:
         # [DEBUG] Save cosine distance computation details
         if DEBUG_FACE_PIPELINE:
             debug_logger.save_cosine_details(
-                float(dot_product), float(norm_a), float(norm_b), float(distance)
+                float(dot_product), float(norm_a), float(norm_b), float(distance), threshold=FaceVerifier.VERIFY_THRESHOLD
             )
 
         return distance

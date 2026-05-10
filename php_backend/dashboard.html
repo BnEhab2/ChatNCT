@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatNCT - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Poetsen+One&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            min-height:100vh; display:flex; flex-direction:column; align-items:center;
+            justify-content:center; gap:20px;
+            background:linear-gradient(135deg, #1a173a 0%, #2d2760 50%, #1a173a 100%);
+            font-family:'Montserrat',sans-serif; color:#fff; padding:20px;
+        }
+        .robot { width:140px; filter:drop-shadow(0 0 25px rgba(124,102,227,0.6)); }
+        h1 { font-family:'Poetsen One',cursive; font-size:clamp(24px,4vw,34px); color:#e0d8fe; text-align:center; }
+        .desc {
+            max-width:550px; text-align:center; font-size:14px; color:#b0a9ff;
+            line-height:1.7; background:rgba(28,26,74,0.6); padding:18px 22px;
+            border-radius:16px; border:1px solid rgba(124,102,227,0.3);
+        }
+        .actions { display:flex; flex-wrap:wrap; gap:14px; justify-content:center; }
+        .card {
+            width:120px; height:110px; background:rgba(28,26,74,0.8);
+            border:1px solid rgba(124,102,227,0.3); border-radius:16px;
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            gap:10px; cursor:pointer; transition:0.3s; text-decoration:none; color:#e0d8fe;
+        }
+        .card:hover { transform:translateY(-5px); border-color:#7c66e3; box-shadow:0 10px 25px rgba(124,102,227,0.3); }
+        .card .icon { font-size:28px; }
+        .card span { font-size:13px; font-weight:600; }
+        .topbar {
+            position:fixed; top:0; left:0; right:0; padding:12px 20px;
+            display:flex; justify-content:space-between; align-items:center;
+            background:rgba(28,26,74,0.9); border-bottom:1px solid rgba(124,102,227,0.2);
+        }
+        .topbar img { height:30px; }
+        .logout {
+            background:none; border:1px solid rgba(255,255,255,0.2); color:#d1d1f7;
+            padding:6px 14px; border-radius:8px; cursor:pointer; font-family:inherit;
+            font-size:12px; transition:0.3s;
+        }
+        .logout:hover { background:rgba(255,255,255,0.1); }
+        .badge {
+            position:fixed; top:12px; right:120px; background:linear-gradient(135deg,#4F5B93,#8892BF);
+            padding:5px 12px; border-radius:8px; font-size:11px; font-weight:600;
+            letter-spacing:1px; display:flex; align-items:center; gap:6px; z-index:10;
+        }
+        .badge::before { content:''; width:7px; height:7px; border-radius:50%; background:#4ade80; box-shadow:0 0 6px #4ade80; }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <img src="../frontend/img/Logo.png" alt="ChatNCT">
+        <div class="badge">PHP + MySQL</div>
+        <button class="logout" onclick="logout()">Logout</button>
+    </div>
+
+    <img src="../frontend/img/Head of Charcter.png" alt="ChatNCT" class="robot">
+    <h1 id="greeting">Welcome!</h1>
+    <p class="desc">
+        <strong>ChatNCT</strong> — AI-Powered University Assistant.
+        Smart chat, face-recognition attendance, prompt generation, and more.
+    </p>
+
+    <div class="actions" id="actions">
+        <a class="card" href="../frontend/chat.html?view=chat">
+            <span class="icon">💬</span><span>AI Chat</span>
+        </a>
+        <a class="card" href="../frontend/attendance.html" data-role="student">
+            <span class="icon">📋</span><span>Attendance</span>
+        </a>
+        <a class="card" href="../frontend/instructor.html" data-role="instructor,admin">
+            <span class="icon">🎓</span><span>Instructor</span>
+        </a>
+        <a class="card" href="../frontend/prompt.html">
+            <span class="icon">✨</span><span>Prompt Gen</span>
+        </a>
+    </div>
+
+    <script>
+    // Auth check
+    const user = localStorage.getItem('chatnct_username');
+    if (!user) window.location.href = 'index.html';
+
+    // Greeting
+    const h = new Date().getHours();
+    const greet = h>=5 && h<12 ? 'Good Morning' : h<17 ? 'Good Afternoon' : 'Good Evening';
+    document.getElementById('greeting').textContent = greet + ', ' + (user || 'Guest') + '!';
+
+    // Role-based visibility
+    const role = (localStorage.getItem('chatnct_role') || 'student').toLowerCase();
+    document.querySelectorAll('[data-role]').forEach(el => {
+        const allowed = el.dataset.role.split(',').map(r => r.trim());
+        if (!allowed.includes(role) && !allowed.includes('all')) el.style.display = 'none';
+    });
+
+    function logout() {
+        ['chatnct_username','chatnct_role','chatnct_is_admin','chatnct_access_token','chatnct_user_id','chatnct_backend'].forEach(k => localStorage.removeItem(k));
+        window.location.href = 'index.html';
+    }
+    </script>
+</body>
+</html>

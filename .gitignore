@@ -8,3 +8,7 @@ node_modules/
 university.db
 *.rar
 mainAgent/sub_agents/Mixxx/vibe_coder/.env
+
+# PHP Backend Files
+debug_logs
+gradproject_schema.sql
