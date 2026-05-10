@@ -3,7 +3,8 @@ name: Sync to Hugging Face Space
 on:
   push:
     branches: [main]
-
+  workflow_dispatch:
+  
 jobs:
   sync-to-hf:
     runs-on: ubuntu-latest
