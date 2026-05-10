@@ -24,7 +24,7 @@ jobs:
           git config user.name "Mina Diaa"
 
           # Add HF remote
-          git remote add hf https://minadiaa:$HF_TOKEN@huggingface.co/spaces/minadiaa/ChatNct
+          git remote add hf https://miza22:$HF_TOKEN@huggingface.co/spaces/miza22/ChatNCT
 
           # Force push to HF (mirror the main branch)
           git push hf main --force
