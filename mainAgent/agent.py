@@ -33,8 +33,9 @@ import os
 # LiteLlm is a wrapper that lets us use different AI models (OpenAI, Gemini, etc.)
 # We're using GPT-4o-mini here for a good balance of speed and quality.
 llm = LiteLlm(
-    model="gpt-4o-mini",
-    api_key=os.getenv("OPENAI_API_KEY"),
+    model="openrouter/openai/gpt-4o-mini",
+    api_key=os.getenv("OPENROUTER_API_KEY"),
+    api_base="https://openrouter.ai/api/v1",
 )
 
 # ── Main Agent Definition ─────────────────────────────────────────────

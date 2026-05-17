@@ -1,73 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <script>(function(){var t=localStorage.getItem('chatnct_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+    <script>(function () { var t = localStorage.getItem('chatnct_theme') || 'dark'; document.documentElement.setAttribute('data-theme', t); })();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ChatNCT - Dashboard</title>
     <meta name="description" content="ChatNCT AI Assistant Dashboard">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cairo:wght@400;500;600;700&family=Poetsen+One&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Zain:wght@200;300;400;700;800;900&family=Poetsen+One&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/common.css?v=2">
     <style>
         .main-container {
-            width: 100%; max-width: 1400px; margin: 0 auto;
-            padding: 90px 20px 0; position: relative; z-index: 10;
-            height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 90px 20px 0;
+            position: relative;
+            z-index: 10;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
+
         .dashboard-container {
-            display: flex; flex-direction: column; align-items: center;
-            justify-content: center; flex: 1; text-align: center; overflow-y: hidden;
-            animation: fadeIn 0.5s ease; padding-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            text-align: center;
+            overflow-y: hidden;
+            animation: fadeIn 0.5s ease;
+            padding-bottom: 20px;
         }
-        .robot-character { width: 170px; height: 170px; margin-bottom: 5px; animation: floatRobot 3s infinite ease-in-out; }
-        .robot-character img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 30px rgba(124,102,227,0.6)); }
-        
+
+        .robot-character {
+            width: var(--img-robot-dashboard);
+            height: var(--img-robot-dashboard);
+            margin-bottom: 5px;
+            animation: floatRobot 3s infinite ease-in-out;
+        }
+
+        .robot-character img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 30px rgba(124, 102, 227, 0.6));
+        }
+
         .greeting-text {
-            font-family: 'Poetsen One', cursive; font-size: clamp(26px, 4vw, 36px);
-            color: #e0d8fe; margin-bottom: 12px;
-            text-shadow: 0 0 30px rgba(124,102,227,0.5); line-height: 1.2;
+            font-family: 'Poetsen One', cursive;
+            font-size: clamp(26px, 4vw, 36px);
+            color: #e0d8fe;
+            margin-bottom: 12px;
+            text-shadow: 0 0 30px rgba(124, 102, 227, 0.5);
+            line-height: 1.3;
         }
+
         .dashboard-description {
             font-size: clamp(14px, 1.8vw, 17px);
-            color: #b0a9ff; margin-bottom: 25px;
-            max-width: 650px; line-height: 1.6;
-            background: rgba(28,26,74,0.6); padding: 18px 25px;
-            border-radius: 20px; border: 1px solid rgba(124,102,227,0.3);
+            color: #b0a9ff;
+            margin-bottom: 25px;
+            max-width: 650px;
+            line-height: 1.8;
+            background: rgba(28, 26, 74, 0.6);
+            padding: 18px 25px;
+            border-radius: 20px;
+            border: 1px solid rgba(124, 102, 227, 0.3);
+            backdrop-filter: blur(10px);
+            font-family: 'Zain', sans-serif;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .action-card {
+            width: 125px;
+            height: 125px;
+            background: var(--panel-bg);
+            border: 2px solid var(--panel-border);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
             backdrop-filter: blur(10px);
         }
 
-        .quick-actions { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
-        .action-card {
-            width: 125px; height: 125px; background: var(--panel-bg);
-            border: 2px solid var(--panel-border); border-radius: 20px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 12px; cursor: pointer; transition: all 0.3s ease; backdrop-filter: blur(10px);
+        .action-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(124, 102, 227, 0.4);
+            border-color: #7c66e3;
         }
-        .action-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(124,102,227,0.4); border-color: #7c66e3; }
-        .action-card i { font-size: 32px; color: #e0d8fe; margin-bottom: 0px; }
-        .action-card img { width: 45px; height: 45px; object-fit: contain; filter: brightness(0) invert(1); }
-        .action-card span { color: #e0d8fe; font-size: 14px; font-weight: 600; text-align: center; }
+
+        .action-card i {
+            font-size: 32px;
+            color: #e0d8fe;
+            margin-bottom: 0px;
+        }
+
+        .action-card img {
+            width: var(--img-action-card);
+            height: var(--img-action-card);
+            object-fit: contain;
+            filter: brightness(0) invert(1);
+        }
+
+        .action-card span {
+            color: #e0d8fe;
+            font-size: 14px;
+            font-weight: 700;
+            text-align: center;
+            font-family: 'Zain', sans-serif;
+        }
 
         @media (max-width: 768px) {
-            .quick-actions { gap: 12px; }
-            .action-card { width: 105px; height: 105px; border-radius: 18px; gap: 8px; }
-            .action-card i { font-size: 26px; }
-            .action-card img { width: 35px; height: 35px; }
-            .action-card span { font-size: 12px; }
-            .robot-character { width: 130px; height: 130px; }
+            .quick-actions {
+                gap: 12px;
+            }
+
+            .action-card {
+                width: 105px;
+                height: 105px;
+                border-radius: 18px;
+                gap: 8px;
+            }
+
+            .action-card i {
+                font-size: 26px;
+            }
+
+            .action-card img {
+                width: var(--img-action-card-mob);
+                height: var(--img-action-card-mob);
+            }
+
+            .action-card span {
+                font-size: 12px;
+            }
+
+            .robot-character {
+                width: var(--img-robot-dashboard-mob);
+                height: var(--img-robot-dashboard-mob);
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-logo"><img src="img/Logo.png" alt="ChatNCT"></div>
-            <button class="sidebar-close" id="sidebarClose" aria-label="Close menu"><i class="fas fa-times"></i></button>
+            <div class="sidebar-logo"><img src="img/Logo.svg" alt="ChatNCT"></div>
+            <button class="sidebar-close" id="sidebarClose" aria-label="Close menu"><i
+                    class="fas fa-times"></i></button>
         </div>
         <div class="sidebar-menu">
             <div class="menu-item active" onclick="navigateTo('dashboard')">
@@ -110,29 +211,46 @@
             <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
                 <span></span><span></span><span></span>
             </button>
-            <div class="chat-robot-icon"><img src="img/Character.png" alt="ChatNCT Robot"></div>
+            <div class="chat-robot-icon"><img src="img/Character.svg" alt="ChatNCT Robot"></div>
             <div class="chat-status"><span class="status-dot online"></span><span>ChatNCT is ready to help</span></div>
         </div>
-        <div class="header-logo"><img src="img/Logo.png" alt="ChatNCT"></div>
+        <div class="header-logo"><img src="img/Logo.svg" alt="ChatNCT"></div>
     </nav>
 
     <div class="animated-bg">
-        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
-        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
-        <div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div>
-        <div class="glow-orb"></div><div class="glow-orb"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="glow-orb"></div>
+        <div class="glow-orb"></div>
     </div>
 
     <div class="main-container">
         <div class="dashboard-container">
-            <div class="robot-character"><img src="img/Head of Charcter.png" alt="ChatNCT Robot"></div>
-            <h1 class="greeting-text" id="greetingText">Welcome!</h1>
+            <div class="robot-character"><img src="img/Head of Charcter.svg" alt="ChatNCT Robot"></div>
+            <h1 class="greeting-text" id="greetingText">Hello, User!</h1>
             <p class="dashboard-description">
-                <strong>ChatNCT</strong> is your intelligent AI University Assistant. It has no direct relation to a simple chat box — it is a smart supervisor that explains concepts, quizzes you on your courses, generates professional prompts via CO-STAR framework, and automates face-recognition smart attendance. Choose your destination below.
+                <strong>ChatNCT</strong> is your intelligent AI University Assistant. It has no direct relation to a
+                simple chat box — it is a smart supervisor that explains concepts, quizzes you on your courses,
+                generates professional prompts via CO-STAR framework, and automates face-recognition smart attendance.
+                Choose your destination below.
             </p>
+            <script>
+                const username = localStorage.getItem('chatnct_username') || 'User';
+                document.getElementById('userNameDisplay').innerText = username;
+                const greeting = document.getElementById('greetingText');
+                if (greeting) greeting.innerText = 'Hello, ' + username + '!';
+            </script>
             <div class="quick-actions">
                 <div class="action-card" onclick="navigateTo('chat')">
-                    <i class="fas fa-comments"></i><span>AI Chat</span>
+                    <i class="far fa-comments"></i><span>AI Chat</span>
                 </div>
                 <div class="action-card" data-card-role="student" onclick="navigateTo('attendance')">
                     <img src="img/Groups.png" alt="Attendance"><span>Attendance</span>
@@ -171,4 +289,5 @@
         });
     </script>
 </body>
+
 </html>

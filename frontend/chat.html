@@ -8,12 +8,12 @@
     <meta name="description" content="ChatNCT AI Assistant — Chat with Jennifer, your university AI helper.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cairo:wght@400;500;600;700&family=Poetsen+One&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Zain:wght@200;300;400;700;800;900&family=Poetsen+One&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/common.css?v=2">
     <style>
         /* ── Main Container ─────────────────────────────────── */
         .main-container {
@@ -47,8 +47,8 @@
 
         .message-bubble {
             padding: 14px 20px; border-radius: 25px;
-            font-family: 'Cairo', 'Inter', sans-serif;
-            font-size: 16px; line-height: 1.75;
+            font-family: 'Zain', sans-serif;
+            font-size: 16px; line-height: 1.8;
             word-wrap: break-word; overflow-wrap: break-word; white-space: normal;
         }
         .message-bubble[dir="rtl"] { text-align: right; }
@@ -59,7 +59,7 @@
         .message-bubble.bot {
             background: none; color: #ddd8fd;
             border-bottom-left-radius: 5px; padding: 8px 12px;
-            font-size: 17px; line-height: 1.75;
+            font-size: 16px; line-height: 1.8;
         }
         /* User: keep bubble */
         .message-bubble.user { background: var(--message-user); color: #ffffff; border-bottom-right-radius: 5px; }
@@ -104,14 +104,14 @@
             display: flex; justify-content: space-between; align-items: center;
             padding: 5px 12px; background: rgba(124,102,227,0.08);
             border-bottom: 1px solid rgba(124,102,227,0.08);
-            font-family: 'Montserrat', sans-serif; font-size: 11px;
-            color: #8a7cc8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+            font-family: 'Zain', sans-serif; font-size: 11px;
+            color: #8a7cc8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
         }
         .copy-code-btn {
             display: flex; align-items: center; gap: 4px;
             background: rgba(124,102,227,0.1); border: 1px solid rgba(124,102,227,0.2);
             color: #a99cf0; padding: 3px 8px; border-radius: 5px;
-            cursor: pointer; font-size: 11px; font-family: 'Montserrat', sans-serif;
+            cursor: pointer; font-size: 11px; font-family: 'Zain', sans-serif;
             transition: all 0.2s ease;
         }
         .copy-code-btn:hover { background: rgba(124,102,227,0.25); color: #e0d8fe; }
@@ -140,9 +140,9 @@
 
         .message-input {
             flex: 1; background: none; border: none; color: #fff;
-            font-family: 'Cairo', 'Inter', sans-serif; font-size: 16px;
+            font-family: 'Zain', sans-serif; font-size: 16px;
             resize: none; outline: none; max-height: 200px;
-            overflow-y: hidden; line-height: 1.6; padding: 8px 0;
+            overflow-y: hidden; line-height: 1.7; padding: 8px 0;
         }
         .message-input::placeholder { color: rgba(255,255,255,0.4); }
 
@@ -185,12 +185,8 @@
         .popup-item:hover { background: rgba(124,102,227,0.2); }
         .popup-item i { color: #b0a9ff; width: 20px; font-size: 16px; }
 
-        /* ── Chat Page Logo (bigger on desktop) ────────────── */
-        .header-logo img { height: 55px; }
-
         /* ── Responsive ─────────────────────────────────────── */
         @media (max-width: 768px) {
-            .header-logo img { height: 36px; }
             .message-wrapper.user { max-width: 85%; }
             .message-bubble { padding: 14px 20px; font-size: 17px; }
         }
@@ -235,7 +231,7 @@
 
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-logo"><img src="img/Logo.png" alt="ChatNCT"></div>
+            <div class="sidebar-logo"><img src="img/Logo.svg" alt="ChatNCT"></div>
             <button class="sidebar-close" id="sidebarClose" aria-label="Close menu"><i class="fas fa-times"></i></button>
         </div>
         <div class="sidebar-menu">
@@ -284,10 +280,10 @@
             <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
                 <span></span><span></span><span></span>
             </button>
-            <div class="chat-robot-icon"><img src="img/Character.png" alt="ChatNCT Robot"></div>
+            <div class="chat-robot-icon"><img src="img/Character.svg" alt="ChatNCT Robot"></div>
             <div class="chat-status"><span class="status-dot online"></span><span>ChatNCT is ready to help</span></div>
         </div>
-        <div class="header-logo"><img src="img/Logo.png" alt="ChatNCT"></div>
+        <div class="header-logo"><img src="img/Logo.svg" alt="ChatNCT"></div>
     </nav>
 
     <div class="animated-bg">

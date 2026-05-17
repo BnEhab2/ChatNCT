@@ -3,10 +3,11 @@ from google.adk.models.lite_llm import LiteLlm
 from .tools import search_material
 import os
 
-# Configure LiteLLM with OpenAI
+# Configure LiteLLM with OpenRouter
 llm = LiteLlm(
-    model="gpt-4o-mini",
-    api_key=os.getenv("OPENAI_API_KEY"),
+    model="openrouter/openai/gpt-4o-mini",
+    api_key=os.getenv("OPENROUTER_API_KEY"),
+    api_base="https://openrouter.ai/api/v1",
 )
 
 # Create the root agent

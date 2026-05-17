@@ -3,9 +3,10 @@ from google.adk.models.lite_llm import LiteLlm
 import os
 
 gpt_model = LiteLlm(
-    model="gpt-4o-mini", 
-    api_key=os.getenv("OPENAI_API_KEY"),
-    temperature=0.1 
+    model="openrouter/openai/gpt-4o-mini",
+    api_key=os.getenv("OPENROUTER_API_KEY"),
+    api_base="https://openrouter.ai/api/v1",
+    temperature=0.1
 )
 
 root_agent = Agent(

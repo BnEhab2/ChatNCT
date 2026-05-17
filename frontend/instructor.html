@@ -8,10 +8,10 @@
     <meta name="description" content="ChatNCT Instructor Panel — Manage attendance sessions with QR codes.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;600&family=Poetsen+One&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Zain:wght@200;300;400;700;800;900&family=Poetsen+One&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/common.css?v=2">
     <style>
         body { overflow: auto; }
         .main-container {
@@ -37,8 +37,8 @@
             padding: 30px; animation: fadeInUp 0.6s ease;
         }
         .card-title {
-            color: #e0d8fe; font-family: 'Montserrat', sans-serif;
-            font-size: 20px; font-weight: 700; margin-bottom: 20px;
+            color: #e0d8fe; font-family: 'Zain', sans-serif;
+            font-size: 20px; font-weight: 800; margin-bottom: 20px;
             display: flex; align-items: center; gap: 10px;
         }
         .card-title i { color: #7c66e3; font-size: 22px; }
@@ -48,7 +48,7 @@
             width: 100%; padding: 14px 20px; border-radius: 15px;
             border: 2px solid rgba(124,102,227,0.4);
             background: rgba(62,58,131,0.8); color: #fff;
-            font-family: 'Montserrat', sans-serif; font-size: 16px;
+            font-family: 'Zain', sans-serif; font-size: 16px;
             outline: none; margin-bottom: 20px; cursor: pointer;
             transition: all 0.3s ease; appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23b0a9ff' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
@@ -62,8 +62,8 @@
             width: 100%; padding: 14px 24px; border-radius: 20px;
             border: 2px solid rgba(124,102,227,0.6);
             background: linear-gradient(135deg, rgba(124,102,227,0.3), rgba(92,78,179,0.3));
-            color: #e0d8fe; font-family: 'Montserrat', sans-serif;
-            font-size: 16px; font-weight: 700; cursor: pointer;
+            color: #e0d8fe; font-family: 'Zain', sans-serif;
+            font-size: 16px; font-weight: 800; cursor: pointer;
             transition: all 0.3s ease; display: flex; align-items: center;
             justify-content: center; gap: 10px; margin-bottom: 10px;
         }
@@ -131,7 +131,7 @@
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-logo"><img src="img/Logo.png" alt="ChatNCT"></div>
+            <div class="sidebar-logo"><img src="img/Logo.svg" alt="ChatNCT"></div>
             <button class="sidebar-close" id="sidebarClose"><i class="fas fa-times"></i></button>
         </div>
         <div class="sidebar-menu">
@@ -160,7 +160,7 @@
 
     <nav class="navbar">
         <button class="menu-toggle" id="menuToggle"><span></span><span></span><span></span></button>
-        <div class="header-logo"><img src="img/Logo.png" alt="ChatNCT"></div>
+        <div class="header-logo"><img src="img/Logo.svg" alt="ChatNCT"></div>
     </nav>
 
     <div class="animated-bg">
