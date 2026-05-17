@@ -13,8 +13,9 @@ else:
     load_dotenv()
 
 llm = LiteLlm(
-    model="gpt-4o-mini",
-    api_key=os.getenv("OPENAI_API_KEY")
+    model="openrouter/openai/gpt-4o-mini",
+    api_key=os.getenv("OPENROUTER_API_KEY"),
+    api_base="https://openrouter.ai/api/v1",
 )
 
 root_agent = LlmAgent(
