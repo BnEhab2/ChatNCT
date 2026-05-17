@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>(function(){var t=localStorage.getItem('chatnct_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ChatNCT - Student Attendance</title>
     <meta name="description" content="ChatNCT Student Attendance — Scan QR code and verify face to record attendance.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;600&family=Poetsen+One&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cairo:wght@400;500;600;700&family=Poetsen+One&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <link rel="stylesheet" href="css/common.css">
@@ -139,6 +140,13 @@
                 <div class="user-avatar" id="userAvatar">G</div>
                 <div class="user-name" id="userNameDisplay">Guest</div>
             </div>
+            <button class="theme-toggle-btn" onclick="toggleTheme()" id="themeToggleBtn" aria-label="Toggle theme">
+                <span class="toggle-label">
+                    <span class="theme-icon">☀️</span>
+                    <span class="theme-label-text">Light Mode</span>
+                </span>
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            </button>
             <a href="#" class="sidebar-login" onclick="logout(); return false;"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
         </div>
     </div>

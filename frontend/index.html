@@ -8,9 +8,12 @@
     <meta name="description" content="ChatNCT — AI-Powered University Assistant. Login to access chat, attendance, and more.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;600&family=Poetsen+One&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cairo:wght@400;500;600;700&family=Poetsen+One&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
+        /* ── Theme init before paint ── */
+        html[data-theme="light"] { background: #f0eeff; }
+
+        :root, [data-theme="dark"] {
             --bg-dark: #1a173a;
             --card-bg: rgba(28, 26, 74, 0.95);
             --input-bg: rgba(62, 58, 131, 0.8);
@@ -19,13 +22,26 @@
             --accent-purple: #5c4eb3;
             --submit-btn: #4c429c;
         }
+        [data-theme="light"] {
+            --bg-dark: #f0eeff;
+            --card-bg: rgba(255,255,255,0.97);
+            --input-bg: rgba(230,225,255,0.85);
+            --text-primary: #1a173a;
+            --text-secondary: #5c4eb3;
+            --accent-purple: #7c66e3;
+            --submit-btn: #7c66e3;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { font-size: 16px; height: 100%; overflow: hidden; }
         body {
             height: 100vh; height: 100dvh;
             background: var(--bg-dark); color: var(--text-primary);
             overflow: hidden; width: 100%; max-width: 100vw;
-            font-family: 'Montserrat', sans-serif;
+            font-family: 'Inter', 'Montserrat', sans-serif;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+        [data-theme="light"] body {
+            background: linear-gradient(135deg, #f0eeff 0%, #e8e2ff 50%, #ede8ff 100%);
         }
         .scroll-container {
             height: 100vh; height: 100dvh;
@@ -84,10 +100,11 @@
         @keyframes logoGlow {0%,100%{filter:drop-shadow(0 0 30px rgba(124,102,227,0.8));}50%{filter:drop-shadow(0 0 50px rgba(124,102,227,1));}}
 
         .intro-tagline {
-            font-family:'Montserrat',sans-serif; font-size:clamp(14px,2vw,18px);
+            font-size: clamp(14px,2vw,18px);
             color:#b0a9ff; opacity:0.9; margin-top:clamp(80px,15vh,120px);
             z-index:10; animation:fadeInUp 1s ease 0.3s both;
             text-align:center; padding:0 20px; transition:opacity 0.1s ease;
+            letter-spacing: 0.01em;
         }
         .scroll-indicator {
             position:fixed; bottom:40px!important; left:50%!important;
@@ -98,7 +115,7 @@
         .scroll-track { width:2px; height:60px; background:rgba(221,216,253,0.3); border-radius:2px; position:relative; }
         .scroll-ball { position:absolute; top:0; left:50%; transform:translateX(-50%); width:10px; height:10px; background:#ddd8fd; border-radius:50%; animation:scrollUpDown 2s infinite ease-in-out; }
         @keyframes scrollUpDown {0%,100%{top:0;opacity:0.4;}50%{top:calc(100% - 10px);opacity:1;}}
-        .scroll-text { font-family:'Montserrat',sans-serif; font-size:11px; color:#b0a9ff; letter-spacing:3px; text-transform:uppercase; }
+        .scroll-text { font-size:11px; color:#b0a9ff; letter-spacing:3px; text-transform:uppercase; }
         @keyframes fadeInUp { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
 
         .container {
@@ -120,6 +137,7 @@
             font-size:clamp(28px,5.5vw,52px); font-weight:800; line-height:1.1;
             text-shadow:-5px 2px 2px rgba(221,216,253,0.3); word-break:break-word;
             opacity:0; transform:translateY(30px);
+            letter-spacing: -0.01em;
         }
         .welcome-text.visible { opacity:1; transform:translateY(0); transition:opacity 0.3s ease, transform 0.3s ease; }
 
@@ -133,9 +151,10 @@
         }
         .login-card.visible { opacity:1; transform:translateY(0); transition:opacity 0.3s ease, transform 0.3s ease; }
         .login-card h2 {
-            color:#e0d8fe; font-family:'Montserrat',sans-serif;
+            color:#e0d8fe;
             font-size:clamp(32px,5.5vw,56px); margin-bottom:clamp(25px,4vh,45px);
             text-align:center; position:relative;
+            font-weight: 700; letter-spacing: -0.02em; line-height: 1.1;
         }
         .login-card h2::after { display:none; }
         .in-underline { position:relative; display:inline-block; }
@@ -145,29 +164,32 @@
         }
         .form-group { margin-bottom:clamp(18px,3vh,28px); }
         .form-group label {
-            display:block; margin-bottom:10px; font-family:'Montserrat',sans-serif;
-            font-size:clamp(15px,1.8vw,18px); font-weight:600; color:#d1d1f7;
+            display:block; margin-bottom:10px;
+            font-size:clamp(14px,1.6vw,16px); font-weight:600;
+            color:#d1d1f7; letter-spacing: 0.02em;
         }
         .form-group input {
             width:100%; padding:clamp(14px,2.5vh,18px) clamp(20px,3vw,28px);
             border-radius:clamp(12px,2.5vw,22px); border:none;
             background:var(--input-bg); color:#fff;
-            font-family:'Montserrat',sans-serif; font-size:clamp(15px,1.8vw,18px);
+            font-size:clamp(15px,1.8vw,17px);
             outline:none; transition:0.3s; min-height:55px;
+            letter-spacing: 0.01em;
         }
         .form-group input::placeholder { color:rgba(255,255,255,0.4); }
         .form-group input:focus { background:#4a45a3; box-shadow:0 0 0 2px var(--accent-purple); }
         .forget-pass { text-align:right; margin-top:-12px; margin-bottom:clamp(20px,3.5vh,35px); }
-        .forget-pass a { color:#d1d1f7; text-decoration:none; font-family:'Montserrat',sans-serif; font-size:clamp(13px,1.4vw,15px); opacity:0.8; }
+        .forget-pass a { color:#d1d1f7; text-decoration:none; font-size:clamp(13px,1.4vw,14px); opacity:0.8; font-weight:500; }
         .forget-pass a:hover { opacity:1; text-decoration:underline; }
 
         .submit-btn {
             width:80%; display:block; margin:0 auto;
             padding:clamp(14px,2.5vh,18px); border-radius:clamp(22px,4vw,30px);
             border:none; background:var(--submit-btn); color:white;
-            font-family:'Montserrat',sans-serif; font-size:clamp(18px,3vw,28px);
-            font-weight:bold; cursor:pointer; transition:0.3s;
+            font-size:clamp(16px,2.5vw,22px);
+            font-weight:700; cursor:pointer; transition:0.3s;
             box-shadow:0 5px 15px rgba(0,0,0,0.2); min-height:55px;
+            letter-spacing: 0.03em;
         }
         .submit-btn:hover { background:#5d53b8; transform:translateY(-2px); box-shadow:0 8px 20px rgba(0,0,0,0.3); }
         .submit-btn:active { transform:translateY(0); }
@@ -175,13 +197,64 @@
 
         .sign-in-text {
             text-align:center; margin-top:clamp(18px,3vh,25px);
-            font-family:'Montserrat',sans-serif; font-size:clamp(13px,1.4vw,15px);
-            color:#d1d1f7; font-weight:500;
+            font-size:clamp(13px,1.4vw,14px);
+            color:#d1d1f7; font-weight:400; opacity:0.85;
         }
         .error-message {
             color:#ff6b6b; font-size:14px; text-align:center;
             margin-top:10px; min-height:20px; font-weight:500;
+            letter-spacing: 0.01em;
         }
+
+        /* ── Light Mode Overrides (Login Page) ─────────── */
+        [data-theme="light"] .section { background: linear-gradient(135deg,#f0eeff,#e8e2ff) !important; }
+        [data-theme="light"] .login-card {
+            background: rgba(255,255,255,0.93) !important;
+            border-color: rgba(124,102,227,0.25) !important;
+            box-shadow: 0 25px 60px rgba(92,78,179,0.14) !important;
+        }
+        [data-theme="light"] .login-card h2 { color: #1e1852 !important; }
+        [data-theme="light"] .form-group label { color: #2d2460 !important; font-weight: 600; }
+        [data-theme="light"] .form-group input {
+            background: rgba(237,232,255,0.9) !important;
+            color: #1a173a !important;
+            border-color: rgba(124,102,227,0.3) !important;
+        }
+        [data-theme="light"] .form-group input::placeholder { color: rgba(45,36,96,0.4) !important; }
+        [data-theme="light"] .form-group input:focus {
+            background: rgba(220,213,255,0.95) !important;
+            box-shadow: 0 0 0 3px rgba(124,102,227,0.15) !important;
+        }
+        [data-theme="light"] .submit-btn {
+            background: linear-gradient(135deg,#7c66e3,#5c4eb3) !important;
+            color: #fff !important;
+            box-shadow: 0 6px 20px rgba(124,102,227,0.35) !important;
+        }
+        [data-theme="light"] .submit-btn:hover { background: linear-gradient(135deg,#6b56d6,#4c3ea6) !important; }
+        [data-theme="light"] .welcome-text { color: #1e1852 !important; text-shadow: -3px 2px 6px rgba(92,78,179,0.18) !important; }
+        [data-theme="light"] .intro-tagline { color: #4a3f9a !important; }
+        [data-theme="light"] .forget-pass a { color: #5c4eb3 !important; }
+        [data-theme="light"] .sign-in-text  { color: #3a2f80 !important; }
+        [data-theme="light"] .scroll-text   { color: #5c4eb3 !important; }
+        [data-theme="light"] .scroll-ball   { background: #7c66e3 !important; }
+        [data-theme="light"] .scroll-track  { background: rgba(124,102,227,0.2) !important; }
+        [data-theme="light"] .particle      { background: radial-gradient(circle, rgba(124,102,227,0.2) 0%, transparent 70%); }
+        [data-theme="light"] .in-underline::after { background: #7c66e3 !important; }
+        [data-theme="light"] .error-message { color: #c0392b !important; }
+
+
+        /* Theme toggle button on login page */
+        .login-theme-btn {
+            position: fixed; top: 20px; right: 20px; z-index: 1001;
+            width: 44px; height: 44px; border-radius: 12px;
+            background: rgba(124,102,227,0.2); border: 1px solid rgba(124,102,227,0.4);
+            color: #b0a9ff; font-size: 20px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s ease; backdrop-filter: blur(10px);
+        }
+        .login-theme-btn:hover { background: rgba(124,102,227,0.35); transform: scale(1.1); }
+        [data-theme="light"] .login-theme-btn { background: rgba(124,102,227,0.1); color: #5c4eb3; border-color: rgba(124,102,227,0.3); }
+        @media(max-width:480px){.login-theme-btn{top:12px;right:12px;width:38px;height:38px;font-size:18px;}}
 
         @media(max-width:900px){.container{flex-direction:column;gap:25px;margin-left:0;}.brand-section{order:1;width:100%;}.login-card{order:2;width:min(450px,90vw);}.robot-container{width:min(280px,50vw);}.welcome-text{font-size:clamp(26px,5vw,42px);}.morph-logo{width:clamp(120px,30vw,220px);}.intro-tagline{margin-top:clamp(60px,12vh,100px);}}
         @media(max-width:768px){.login-card{padding:clamp(22px,4vh,35px) clamp(18px,3vw,28px);}.robot-container{width:min(180px,50vw);}.welcome-text{font-size:clamp(20px,4vw,30px);}.submit-btn{width:85%;}.intro-tagline{margin-top:clamp(50px,10vh,90px);}}
@@ -192,6 +265,14 @@
     </style>
 </head>
 <body>
+    <!-- Inline theme init to prevent flash -->
+    <script>(function(){var t=localStorage.getItem('chatnct_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+
+    <!-- Theme Toggle Button (fixed, top-right) -->
+    <button class="login-theme-btn" id="loginThemeBtn" onclick="loginToggleTheme()" aria-label="Toggle theme" title="Toggle Light/Dark Mode">
+        <span id="loginThemeIcon">☀️</span>
+    </button>
+
     <div class="scroll-container" id="scrollContainer">
         <!-- SECTION 1: INTRO -->
         <section class="section" id="section-intro">
@@ -247,5 +328,23 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-client.js?v=4"></script>
     <script src="js/login.js?v=4"></script>
+    <script>
+        // Theme toggle for login page
+        function loginToggleTheme() {
+            var current = document.documentElement.getAttribute('data-theme') || 'dark';
+            var next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('chatnct_theme', next);
+            var icon = document.getElementById('loginThemeIcon');
+            if (icon) icon.textContent = next === 'light' ? '🌙' : '☀️';
+        }
+        // Sync icon on load
+        (function(){
+            var t = localStorage.getItem('chatnct_theme') || 'dark';
+            var icon = document.getElementById('loginThemeIcon');
+            if (icon) icon.textContent = t === 'light' ? '🌙' : '☀️';
+        })();
+    </script>
 </body>
 </html>
+

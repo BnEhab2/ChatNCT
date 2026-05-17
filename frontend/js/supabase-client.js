@@ -144,6 +144,7 @@ async function authSignOut() {
     localStorage.removeItem('chatnct_access_token');
     localStorage.removeItem('chatnct_refresh_token');
     localStorage.removeItem('chatnct_user_id');
+    localStorage.removeItem('chatnct_backend');
     window.location.href = 'index.html';
 }
 
@@ -213,6 +214,24 @@ function onAuthStateChange(callback) {
 // ══════════════════════════════════════════════════════════════
 
 async function requireAuth() {
+    // Check if the user logged in using a custom backend (PHP or Python)
+    const backend = localStorage.getItem('chatnct_backend');
+    if (backend === 'php' || backend === 'python') {
+        const token = localStorage.getItem('chatnct_access_token');
+        if (!token) {
+            window.location.href = 'index.html';
+            return null;
+        }
+        // Return a mock session and profile for the custom backend
+        const session = { access_token: token, user: { id: localStorage.getItem('chatnct_user_id') } };
+        const profile = { 
+            name: localStorage.getItem('chatnct_username'), 
+            role: localStorage.getItem('chatnct_role'),
+            student_code: localStorage.getItem('chatnct_user_id')
+        };
+        return { session, profile };
+    }
+
     const session = await getAuthSession();
     if (!session) {
         window.location.href = 'index.html';
@@ -259,6 +278,10 @@ function redirectByRole(role) {
 
 onAuthStateChange((event, session) => {
     if (event === 'SIGNED_OUT') {
+        // Ignore Supabase sign-out event if using a custom backend
+        const backend = localStorage.getItem('chatnct_backend');
+        if (backend === 'php' || backend === 'python') return;
+
         // Don't redirect if already on login/register page
         const currentPage = window.location.pathname.split('/').pop();
         if (currentPage !== 'index.html' && currentPage !== '') {

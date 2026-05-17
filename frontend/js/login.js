@@ -14,7 +14,10 @@
 // ══════════════════════════════════════════════════════════════
 
 // API base URL (empty = same server)
-const API_BASE = '';
+let API_BASE = '';
+if (localStorage.getItem('chatnct_backend') === 'php') {
+    API_BASE = '../php_backend/api/proxy.php?path=';
+}
 
 // ── DOM Element References ─────────────────────────────────
 // Grab references to all the elements we'll animate and interact with
