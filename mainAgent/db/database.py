@@ -136,6 +136,34 @@ CREATE TABLE IF NOT EXISTS device_bindings (
     UNIQUE(student_id, session_id)
 );
 
+-- Lectures: Maps each attendance_session to a lecture with title/topic
+-- This allows the academic_analyzer to tell students what each session was about.
+CREATE TABLE IF NOT EXISTS lectures (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id INTEGER NOT NULL REFERENCES attendance_sessions(session_id) ON DELETE CASCADE,
+    course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    lecture_number INTEGER NOT NULL,
+    title TEXT NOT NULL DEFAULT 'Untitled Lecture',
+    topic TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE(session_id)
+);
+CREATE INDEX IF NOT EXISTS idx_lectures_course ON lectures(course_id, lecture_number);
+CREATE INDEX IF NOT EXISTS idx_lectures_session ON lectures(session_id);
+
+-- Lecture Summaries: Stores content summaries for each lecture
+-- Used by the academic_analyzer to help students catch up on missed lectures.
+CREATE TABLE IF NOT EXISTS lecture_summaries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    lecture_id UUID NOT NULL REFERENCES lectures(id) ON DELETE CASCADE,
+    summary_text TEXT NOT NULL,
+    key_points TEXT[],
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE(lecture_id)
+);
+CREATE INDEX IF NOT EXISTS idx_lecture_summaries_lecture ON lecture_summaries(lecture_id);
+
 -- Speed up lookups on existing tables (attendance & students)
 CREATE INDEX IF NOT EXISTS idx_attendance_student_session ON attendance(student_id, session_id);
 CREATE INDEX IF NOT EXISTS idx_attendance_sessions_code ON attendance_sessions(session_code);

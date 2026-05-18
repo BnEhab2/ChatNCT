@@ -84,6 +84,30 @@ def run_async(coro):
     return future.result(timeout=120)
 
 
+def _resolve_student_code(user_id: str) -> str:
+    """Resolve student_code from profiles table given user_id (which could be student_code or UUID)."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        # 1. Check if user_id is already the student_code
+        cur.execute("SELECT student_code FROM profiles WHERE student_code = %s", (user_id,))
+        row = cur.fetchone()
+        if row:
+            return str(row["student_code"])
+        
+        # 2. Check if user_id is the database UUID (id)
+        cur.execute("SELECT student_code FROM profiles WHERE id::text = %s", (user_id,))
+        row = cur.fetchone()
+        if row:
+            return str(row["student_code"])
+            
+        return user_id
+    except Exception:
+        return user_id
+    finally:
+        release_connection(conn)
+
+
 # ── Helper: Run agent ──────────────────────────────────────────────────
 async def _run_agent(user_id: str, message: str) -> str:
     """Send a message to the root agent and collect the response."""
@@ -101,9 +125,12 @@ async def _run_agent(user_id: str, message: str) -> str:
 
     session_id = user_sessions[user_id]
 
+    resolved_code = _resolve_student_code(user_id)
+    contextual_message = f"[STUDENT_CODE: {resolved_code}]\n{message}"
+
     content = types.Content(
         role="user",
-        parts=[types.Part.from_text(text=message)],
+        parts=[types.Part.from_text(text=contextual_message)],
     )
 
     response_parts = []
@@ -137,9 +164,12 @@ async def _stream_agent(user_id: str, message: str, queue: Queue) -> str:
 
     session_id = user_sessions[user_id]
 
+    resolved_code = _resolve_student_code(user_id)
+    contextual_message = f"[STUDENT_CODE: {resolved_code}]\n{message}"
+
     content = types.Content(
         role="user",
-        parts=[types.Part.from_text(text=message)],
+        parts=[types.Part.from_text(text=contextual_message)],
     )
 
     response_parts = []

@@ -1,0 +1,424 @@
+"""
+tools.py - Academic Analyzer Secure Tools
+
+Four secure tools for the academic_analyzer agent:
+  1. get_student_attendance_summary  — Overall attendance % per course + warnings
+  2. get_course_session_log          — Detailed per-lecture log (present/absent)
+  3. get_missed_lectures             — List of lectures the student missed
+  4. get_missed_lecture_summaries    — Summaries/key-points of missed lectures
+
+Security:
+  - Every tool receives `student_code` injected by the server.
+  - No raw SQL is exposed to the LLM; all queries are parameterized.
+  - Tools refuse empty/invalid student codes immediately.
+"""
+
+from mainAgent.db.database import get_connection, release_connection
+import traceback
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# INTERNAL HELPERS
+# ═══════════════════════════════════════════════════════════════════════
+
+def _validate_student_code(student_code: str) -> dict | None:
+    """Return an error dict if the code is missing/invalid, else None."""
+    if not student_code or not str(student_code).strip():
+        return {"status": "error", "message": "⚠️ مفيش كود طالب متاح. تأكد إنك مسجّل دخول."}
+    return None
+
+
+def _resolve_student(cur, student_code: str) -> tuple | None:
+    """Resolve (student_id, student_name) from student_code. Returns None if not found."""
+    cur.execute("SELECT id, name FROM profiles WHERE student_code = %s", (str(student_code).strip(),))
+    return cur.fetchone()
+
+
+def _resolve_course(cur, course_code_or_name: str):
+    """Resolve course row from a code or name substring. Returns None if not found."""
+    pattern = f"%{course_code_or_name}%"
+    cur.execute(
+        "SELECT id, name, course_code FROM courses WHERE course_code ILIKE %s OR name ILIKE %s LIMIT 1",
+        (pattern, pattern),
+    )
+    return cur.fetchone()
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# TOOL 1: ATTENDANCE SUMMARY
+# ═══════════════════════════════════════════════════════════════════════
+
+def get_student_attendance_summary(student_code: str) -> dict:
+    """Retrieve a summary of the student's attendance in all courses.
+
+    Shows attendance rate, absent count, and warning status per course.
+    A warning fires when attendance drops below 75%.
+
+    Args:
+        student_code: The student's academic code (e.g. '20220101').
+
+    Returns:
+        A dict with 'status' ('success' or 'error') and 'data' containing attendance details.
+    """
+    err = _validate_student_code(student_code)
+    if err:
+        return err
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+
+        # 1. Resolve student
+        student = _resolve_student(cur, student_code)
+        if not student:
+            return {"status": "error", "message": f"مفيش طالب بالكود ده: {student_code}"}
+
+        student_id = student["id"]
+        student_name = student["name"]
+
+        # 2. Get attendance rates per course
+        cur.execute("""
+            SELECT 
+                c.id AS course_id,
+                c.course_code,
+                c.name AS course_name,
+                COALESCE(s_count.total, 0) AS total_sessions,
+                COALESCE(a_count.attended, 0) AS attended_sessions
+            FROM courses c
+            LEFT JOIN (
+                SELECT course_id, COUNT(*) AS total 
+                FROM attendance_sessions 
+                GROUP BY course_id
+            ) s_count ON s_count.course_id = c.id
+            LEFT JOIN (
+                SELECT s.course_id, COUNT(a.id) AS attended
+                FROM attendance a
+                JOIN attendance_sessions s ON a.session_id = s.session_id
+                WHERE a.student_id = %s
+                GROUP BY s.course_id
+            ) a_count ON a_count.course_id = c.id
+            ORDER BY c.course_code
+        """, (student_id,))
+
+        rows = cur.fetchall()
+        courses_data = []
+
+        for r in rows:
+            total = int(r["total_sessions"])
+            attended = int(r["attended_sessions"])
+            absent = max(0, total - attended)
+            rate = (attended / total * 100) if total > 0 else 100.0
+
+            # Warning logic: university typical warning threshold is < 75%
+            warning_active = (rate < 75.0) and (total > 0)
+
+            # Calculate remaining allowed absences before deprivation
+            max_allowed_absent = int(total * 0.25)  # 25% of total
+            remaining_absences = max(0, max_allowed_absent - absent)
+
+            courses_data.append({
+                "course_code": r["course_code"],
+                "course_name": r["course_name"],
+                "total_lectures": total,
+                "attended": attended,
+                "absent": absent,
+                "attendance_rate": f"{rate:.1f}%",
+                "warning": warning_active,
+                "remaining_absences_before_deprivation": remaining_absences,
+            })
+
+        return {
+            "status": "success",
+            "student_name": student_name,
+            "student_code": student_code,
+            "courses": courses_data,
+        }
+
+    except Exception as e:
+        traceback.print_exc()
+        return {"status": "error", "message": str(e)}
+    finally:
+        release_connection(conn)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# TOOL 2: COURSE SESSION LOG
+# ═══════════════════════════════════════════════════════════════════════
+
+def get_course_session_log(student_code: str, course_code_or_name: str) -> dict:
+    """Get the detailed log of every lecture/session for a specific course,
+    showing whether the student was Present or Absent.
+
+    Args:
+        student_code: The student's academic code (e.g. '20220101').
+        course_code_or_name: The course code (e.g. 'CS101') or name (e.g. 'C++').
+
+    Returns:
+        A dict with 'status' and the log of lectures.
+    """
+    err = _validate_student_code(student_code)
+    if err:
+        return err
+    if not course_code_or_name:
+        return {"status": "error", "message": "لازم تحدد المادة."}
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+
+        # 1. Resolve student
+        student = _resolve_student(cur, student_code)
+        if not student:
+            return {"status": "error", "message": "مفيش طالب بالكود ده."}
+        student_id = student["id"]
+
+        # 2. Resolve course
+        course = _resolve_course(cur, course_code_or_name)
+        if not course:
+            return {"status": "error", "message": f"مفيش مادة اسمها أو كودها '{course_code_or_name}'."}
+        course_id = course["id"]
+
+        # 3. Fetch all sessions + optional lecture info + attendance
+        cur.execute("""
+            SELECT 
+                s.session_id,
+                s.session_code,
+                s.created_at,
+                l.title AS lecture_title,
+                l.topic AS lecture_topic,
+                l.lecture_number,
+                a.id AS attendance_id,
+                a.created_at AS attended_at
+            FROM attendance_sessions s
+            LEFT JOIN lectures l ON l.session_id = s.session_id
+            LEFT JOIN attendance a ON a.session_id = s.session_id AND a.student_id = %s
+            WHERE s.course_id = %s
+            ORDER BY s.created_at ASC
+        """, (student_id, course_id))
+
+        rows = cur.fetchall()
+        sessions = []
+        for idx, r in enumerate(rows, start=1):
+            attended = r["attendance_id"] is not None
+            sessions.append({
+                "lecture_number": r["lecture_number"] or idx,
+                "lecture_title": r["lecture_title"] or f"Lecture {idx}",
+                "lecture_topic": r["lecture_topic"],
+                "session_code": r["session_code"],
+                "date": str(r["created_at"]),
+                "status": "✅ Present" if attended else "❌ Absent",
+                "attended_at": str(r["attended_at"]) if r["attended_at"] else None,
+            })
+
+        return {
+            "status": "success",
+            "course_name": course["name"],
+            "course_code": course["course_code"],
+            "sessions": sessions,
+        }
+
+    except Exception as e:
+        traceback.print_exc()
+        return {"status": "error", "message": str(e)}
+    finally:
+        release_connection(conn)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# TOOL 3: MISSED LECTURES
+# ═══════════════════════════════════════════════════════════════════════
+
+def get_missed_lectures(student_code: str, course_code_or_name: str = "") -> dict:
+    """Get the list of lectures a student missed (was absent from).
+
+    If course_code_or_name is provided, only shows missed lectures for that course.
+    If empty, shows missed lectures across ALL courses.
+
+    Args:
+        student_code: The student's academic code (e.g. '20220101').
+        course_code_or_name: Optional — course code or name to filter by.
+
+    Returns:
+        A dict with missed lectures grouped by course.
+    """
+    err = _validate_student_code(student_code)
+    if err:
+        return err
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+
+        # 1. Resolve student
+        student = _resolve_student(cur, student_code)
+        if not student:
+            return {"status": "error", "message": "مفيش طالب بالكود ده."}
+        student_id = student["id"]
+
+        # 2. Build course filter
+        course_filter = ""
+        params = [student_id]
+
+        if course_code_or_name:
+            course = _resolve_course(cur, course_code_or_name)
+            if not course:
+                return {"status": "error", "message": f"مفيش مادة اسمها أو كودها '{course_code_or_name}'."}
+            course_filter = "AND s.course_id = %s"
+            params.append(course["id"])
+
+        # 3. Find sessions where the student has NO attendance record
+        cur.execute(f"""
+            SELECT 
+                c.course_code,
+                c.name AS course_name,
+                s.session_id,
+                s.created_at AS session_date,
+                l.lecture_number,
+                l.title AS lecture_title,
+                l.topic AS lecture_topic
+            FROM attendance_sessions s
+            JOIN courses c ON c.id = s.course_id
+            LEFT JOIN lectures l ON l.session_id = s.session_id
+            LEFT JOIN attendance a ON a.session_id = s.session_id AND a.student_id = %s
+            WHERE a.id IS NULL
+            {course_filter}
+            ORDER BY c.course_code, s.created_at ASC
+        """, params)
+
+        rows = cur.fetchall()
+
+        # Group by course
+        missed_by_course = {}
+        for r in rows:
+            key = r["course_code"]
+            if key not in missed_by_course:
+                missed_by_course[key] = {
+                    "course_code": r["course_code"],
+                    "course_name": r["course_name"],
+                    "missed_lectures": [],
+                }
+            missed_by_course[key]["missed_lectures"].append({
+                "lecture_number": r["lecture_number"] or "—",
+                "lecture_title": r["lecture_title"] or "بدون عنوان",
+                "lecture_topic": r["lecture_topic"],
+                "date": str(r["session_date"]),
+            })
+
+        return {
+            "status": "success",
+            "student_name": student["name"],
+            "total_missed": len(rows),
+            "courses": list(missed_by_course.values()),
+        }
+
+    except Exception as e:
+        traceback.print_exc()
+        return {"status": "error", "message": str(e)}
+    finally:
+        release_connection(conn)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# TOOL 4: MISSED LECTURE SUMMARIES
+# ═══════════════════════════════════════════════════════════════════════
+
+def get_missed_lecture_summaries(student_code: str, course_code_or_name: str = "") -> dict:
+    """Get summaries and key points of lectures the student missed.
+
+    Helps students catch up by showing what was covered in their absent lectures.
+    If course_code_or_name is provided, filters to that course only.
+
+    Args:
+        student_code: The student's academic code (e.g. '20220101').
+        course_code_or_name: Optional — course code or name to filter by.
+
+    Returns:
+        A dict with missed lecture summaries grouped by course.
+    """
+    err = _validate_student_code(student_code)
+    if err:
+        return err
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+
+        # 1. Resolve student
+        student = _resolve_student(cur, student_code)
+        if not student:
+            return {"status": "error", "message": "مفيش طالب بالكود ده."}
+        student_id = student["id"]
+
+        # 2. Build course filter
+        course_filter = ""
+        params = [student_id]
+
+        if course_code_or_name:
+            course = _resolve_course(cur, course_code_or_name)
+            if not course:
+                return {"status": "error", "message": f"مفيش مادة اسمها أو كودها '{course_code_or_name}'."}
+            course_filter = "AND s.course_id = %s"
+            params.append(course["id"])
+
+        # 3. Get missed lectures that HAVE summaries
+        cur.execute(f"""
+            SELECT 
+                c.course_code,
+                c.name AS course_name,
+                l.lecture_number,
+                l.title AS lecture_title,
+                l.topic AS lecture_topic,
+                s.created_at AS session_date,
+                ls.summary_text,
+                ls.key_points
+            FROM attendance_sessions s
+            JOIN courses c ON c.id = s.course_id
+            JOIN lectures l ON l.session_id = s.session_id
+            LEFT JOIN lecture_summaries ls ON ls.lecture_id = l.id
+            LEFT JOIN attendance a ON a.session_id = s.session_id AND a.student_id = %s
+            WHERE a.id IS NULL
+            {course_filter}
+            ORDER BY c.course_code, l.lecture_number ASC
+        """, params)
+
+        rows = cur.fetchall()
+
+        # Group by course
+        summaries_by_course = {}
+        no_summary_count = 0
+
+        for r in rows:
+            key = r["course_code"]
+            if key not in summaries_by_course:
+                summaries_by_course[key] = {
+                    "course_code": r["course_code"],
+                    "course_name": r["course_name"],
+                    "lectures": [],
+                }
+
+            has_summary = r["summary_text"] is not None
+            if not has_summary:
+                no_summary_count += 1
+
+            summaries_by_course[key]["lectures"].append({
+                "lecture_number": r["lecture_number"],
+                "lecture_title": r["lecture_title"] or "بدون عنوان",
+                "lecture_topic": r["lecture_topic"],
+                "date": str(r["session_date"]),
+                "summary": r["summary_text"] or "❌ مفيش ملخص متاح للمحاضرة دي لسه.",
+                "key_points": list(r["key_points"]) if r["key_points"] else [],
+            })
+
+        return {
+            "status": "success",
+            "student_name": student["name"],
+            "total_missed_with_summaries": len(rows) - no_summary_count,
+            "total_missed_without_summaries": no_summary_count,
+            "courses": list(summaries_by_course.values()),
+        }
+
+    except Exception as e:
+        traceback.print_exc()
+        return {"status": "error", "message": str(e)}
+    finally:
+        release_connection(conn)

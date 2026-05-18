@@ -28,6 +28,8 @@ pinned: false
   * Writing and explaining code
   * Answering academic and administrative questions
   * Generating prompts using CoSTAR methodology
+  * **Tracking attendance & warning about deprivation limits** (Academic Analyzer)
+  * **Providing summaries and key points for missed lectures**
 * Q&A system for student affairs
 * Attendance system:
 
@@ -62,17 +64,19 @@ pinned: false
 
 ## Database Design
 
-The system is built on a structured relational database including:
+The system is built on a structured relational database (hosted on Supabase) including:
 
-* users
-* students
-* instructors
+* profiles
 * courses
-* enrollment
 * attendance
 * attendance_sessions
-* messages
-* sessions
+* chat_sessions
+* chat_messages
+* lectures
+* lecture_summaries
+* qr_tokens
+* rate_limits
+* device_bindings
 
 ---
 

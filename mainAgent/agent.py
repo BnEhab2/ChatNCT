@@ -27,6 +27,7 @@ from .sub_agents.marwan.study_agent.agent import root_agent as study_agent
 from .sub_agents.Mixxx.search_agent.agent import root_agent as search_agent
 from .sub_agents.shahd.pro.student_chatbot.agent import root_agent as student_chatbot
 from .sub_agents.Mixxx.vibe_coder.agent import vibe_coder_agent
+from .sub_agents.Mixxx.academic_analyzer.agent import root_agent as academic_analyzer
 import os
 
 # ── Language Model Setup ──────────────────────────────────────────────
@@ -66,7 +67,8 @@ root_agent = LlmAgent(
         - Student affairs → student_chatbot
         - Coding → vibe_coder_agent
         - General knowledge → search_agent
+        - Academic performance, attendance stats, absences, warning status, or lecture logs → academic_analyzer
     """,
     # List of sub-agents this agent can delegate to
-    sub_agents=[prompt_wizard, study_agent, student_chatbot, vibe_coder_agent, search_agent],
+    sub_agents=[prompt_wizard, study_agent, student_chatbot, vibe_coder_agent, search_agent, academic_analyzer],
 )
