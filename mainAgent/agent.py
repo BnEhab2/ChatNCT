@@ -10,7 +10,7 @@ The agent uses GPT-4o-mini as its language model and has 5 specialized
   - prompt_wizard    : Helps write professional AI prompts (CO-STAR framework)
   - study_agent      : Summarizes lectures and creates quizzes (uses local search)
   - student_chatbot  : Answers questions about student affairs (uses local search)
-  - vibe_coder_agent : Generates code and builds projects (powered by Gemini)
+  - vibe_coder_agent : Generates code and builds projects (using custom local coding tools)
   - search_agent     : Answers general knowledge questions (uses Google Search)
 
 The main agent automatically decides which sub-agent to use based on the
@@ -22,16 +22,16 @@ from google.adk.agents import LlmAgent
 from google.adk.models.lite_llm import LiteLlm
 
 # Import each sub-agent from its respective module
-from .sub_agents.Lex.agent import root_agent as prompt_wizard
-from .sub_agents.marwan.study_agent.agent import root_agent as study_agent
-from .sub_agents.Mixxx.search_agent.agent import root_agent as search_agent
-from .sub_agents.shahd.pro.student_chatbot.agent import root_agent as student_chatbot
-from .sub_agents.Mixxx.vibe_coder.agent import vibe_coder_agent
-from .sub_agents.Mixxx.academic_analyzer.agent import root_agent as academic_analyzer
+from .sub_agents.prompt_wizard.agent import root_agent as prompt_wizard
+from .sub_agents.study_agent.agent import root_agent as study_agent
+from .sub_agents.search_agent.agent import root_agent as search_agent
+from .sub_agents.student_chatbot.agent import root_agent as student_chatbot
+from .sub_agents.vibe_coder.agent import vibe_coder_agent
+from .sub_agents.academic_analyzer.agent import root_agent as academic_analyzer
 import os
 
 # ── Language Model Setup ──────────────────────────────────────────────
-# LiteLlm is a wrapper that lets us use different AI models (OpenAI, Gemini, etc.)
+# LiteLlm is a wrapper that lets us use different AI models through one interface.
 # We're using GPT-4o-mini here for a good balance of speed and quality.
 llm = LiteLlm(
     model="openrouter/openai/gpt-4o-mini",

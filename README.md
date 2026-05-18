@@ -57,7 +57,7 @@ pinned: false
 * **AI Integration:**
 
   * OpenAI API (chat, RAG)
-  * Google Gemini API (search, code generation)
+  * OpenRouter-hosted models for search and code generation
 * **Framework:** Google ADK
 
 ---

@@ -1,13 +1,14 @@
 import os
+from pathlib import Path
 from google.adk.agents import LlmAgent
 from google.adk.models.lite_llm import LiteLlm
-from .search_tools import search_data
+from .tools import search_data
 from dotenv import load_dotenv
 
-# Load .env from project root
-_ROOT_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", ".."))
-_env_path = os.path.join(_ROOT_DIR, ".env")
-if os.path.exists(_env_path):
+# Load .env from project root in a location-independent way.
+_ROOT_DIR = Path(__file__).resolve().parents[3]
+_env_path = _ROOT_DIR / ".env"
+if _env_path.exists():
     load_dotenv(_env_path)
 else:
     load_dotenv()
