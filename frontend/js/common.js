@@ -195,7 +195,7 @@ function detectDirection(text) {
 // Shows a temporary message at the top of the screen that auto-fades.
 // Usage: showNotification('Saved!', 'success')
 function showNotification(text, type = 'info') {
-    const colors = { info: '#5c4eb3', success: '#22c55e', error: '#ef4444' };
+    const colors = { info: '#6366f1', success: '#10b981', error: '#ef4444' };
     const msg = document.createElement('div');
     msg.className = 'notification';
     msg.setAttribute('role', 'alert');

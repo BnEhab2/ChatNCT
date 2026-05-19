@@ -8,122 +8,139 @@
     <meta name="description" content="ChatNCT Instructor Panel — Manage attendance sessions with QR codes.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Zain:wght@200;300;400;700;800;900&family=Poetsen+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <link rel="stylesheet" href="css/common.css?v=2">
+    <link rel="stylesheet" href="css/common.css?v=3">
     <style>
         body { overflow: auto; }
         .main-container {
-            width: 100%; max-width: 1200px; margin: 0 auto;
-            padding: 100px 20px 40px; position: relative; z-index: 10;
+            width: 100%; max-width: 1100px; margin: 0 auto;
+            padding: 88px 24px 40px; position: relative; z-index: 10;
             min-height: 100vh;
         }
         .page-title {
-            font-family: 'Poetsen One', cursive; font-size: clamp(28px,5vw,42px);
-            color: #e0d8fe; text-align: center; margin-bottom: 40px;
-            text-shadow: 0 0 30px rgba(124,102,227,0.5);
+            font-family: 'Inter', sans-serif;
+            font-size: clamp(26px, 4.5vw, 38px);
+            color: var(--text-primary); text-align: center;
+            margin-bottom: 36px; font-weight: 800;
+            letter-spacing: -0.03em;
         }
         .instructor-grid {
             display: grid; grid-template-columns: 1fr 1fr;
-            gap: 30px; max-width: 1000px; margin: 0 auto;
+            gap: 24px; max-width: 960px; margin: 0 auto;
         }
 
         /* Cards */
         .panel-card {
-            background: var(--card-bg); border-radius: 25px;
-            border: 2px solid rgba(124,102,227,0.3);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
-            padding: 30px; animation: fadeInUp 0.6s ease;
+            background: var(--card-bg); border-radius: 20px;
+            border: 1px solid var(--divider);
+            box-shadow: var(--card-shadow);
+            padding: 28px;
+            animation: fadeInUp 0.5s cubic-bezier(0.4,0,0.2,1);
+            backdrop-filter: blur(16px) saturate(180%);
         }
         .card-title {
-            color: #e0d8fe; font-family: 'Zain', sans-serif;
-            font-size: 20px; font-weight: 800; margin-bottom: 20px;
+            color: var(--text-primary); font-family: 'Inter', sans-serif;
+            font-size: 16px; font-weight: 700; margin-bottom: 18px;
             display: flex; align-items: center; gap: 10px;
+            letter-spacing: -0.01em;
         }
-        .card-title i { color: #7c66e3; font-size: 22px; }
+        .card-title i { color: var(--accent); font-size: 18px; }
 
         /* Course Select */
         .form-select {
-            width: 100%; padding: 14px 20px; border-radius: 15px;
-            border: 2px solid rgba(124,102,227,0.4);
-            background: rgba(62,58,131,0.8); color: #fff;
-            font-family: 'Zain', sans-serif; font-size: 16px;
-            outline: none; margin-bottom: 20px; cursor: pointer;
-            transition: all 0.3s ease; appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23b0a9ff' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat; background-position: right 15px center;
+            width: 100%; padding: 12px 18px; border-radius: 14px;
+            border: 1px solid var(--input-border);
+            background: var(--input-bg); color: var(--text-primary);
+            font-family: 'Inter', sans-serif; font-size: 14px;
+            outline: none; margin-bottom: 16px; cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+            appearance: none; font-weight: 500;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23818cf8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 14px center;
         }
-        .form-select:focus { border-color: #7c66e3; box-shadow: 0 0 15px rgba(124,102,227,0.3); }
-        .form-select option { background: #1a173a; color: #fff; }
+        .form-select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--input-focus-ring);
+        }
+        .form-select option { background: var(--bg-primary); color: var(--text-primary); }
 
         /* Buttons */
         .action-btn-lg {
-            width: 100%; padding: 14px 24px; border-radius: 20px;
-            border: 2px solid rgba(124,102,227,0.6);
-            background: linear-gradient(135deg, rgba(124,102,227,0.3), rgba(92,78,179,0.3));
-            color: #e0d8fe; font-family: 'Zain', sans-serif;
-            font-size: 16px; font-weight: 800; cursor: pointer;
-            transition: all 0.3s ease; display: flex; align-items: center;
-            justify-content: center; gap: 10px; margin-bottom: 10px;
+            width: 100%; padding: 12px 20px; border-radius: 14px;
+            border: 1px solid var(--divider);
+            background: var(--accent-muted);
+            color: var(--text-primary); font-family: 'Inter', sans-serif;
+            font-size: 14px; font-weight: 700; cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+            display: flex; align-items: center; justify-content: center;
+            gap: 8px; margin-bottom: 10px;
         }
-        .action-btn-lg:hover { background: linear-gradient(135deg, rgba(124,102,227,0.5), rgba(92,78,179,0.5)); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(124,102,227,0.4); }
-        .action-btn-lg:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .action-btn-lg.danger { border-color: rgba(239,68,68,0.6); }
-        .action-btn-lg.danger:hover { background: rgba(239,68,68,0.3); box-shadow: 0 8px 20px rgba(239,68,68,0.3); }
+        .action-btn-lg:hover {
+            background: var(--accent); color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.25);
+        }
+        .action-btn-lg:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .action-btn-lg.danger { border-color: rgba(248,113,113,0.3); }
+        .action-btn-lg.danger:hover { background: var(--error); box-shadow: 0 6px 20px rgba(248,113,113,0.25); }
 
         /* QR Display */
         .qr-display-area {
             display: flex; flex-direction: column; align-items: center;
-            justify-content: center; min-height: 300px;
+            justify-content: center; min-height: 280px;
         }
         #qrDisplay {
-            background: rgba(224,216,254,0.1); border-radius: 20px;
+            background: var(--accent-subtle); border-radius: 20px;
             padding: 20px; display: flex; align-items: center; justify-content: center;
-            min-width: 300px; min-height: 300px;
+            min-width: 280px; min-height: 280px;
+            border: 1px solid var(--divider);
         }
-        #qrDisplay canvas { border-radius: 15px; }
+        #qrDisplay canvas { border-radius: 14px; }
         .qr-placeholder-icon {
             display: flex; flex-direction: column; align-items: center;
-            gap: 15px; color: rgba(176,169,255,0.5);
+            gap: 14px; color: var(--text-tertiary);
         }
-        .qr-placeholder-icon i { font-size: 80px; }
-        .qr-placeholder-icon p { font-size: 16px; font-weight: 600; }
+        .qr-placeholder-icon i { font-size: 64px; }
+        .qr-placeholder-icon p { font-size: 14px; font-weight: 600; }
 
-        #sessionInfo { display: none; margin-top: 20px; text-align: center; }
+        #sessionInfo { display: none; margin-top: 16px; text-align: center; }
 
         /* Attendance Table */
         .attendance-section { grid-column: 1 / -1; }
         #attendanceTable { display: none; }
         .table-header {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;
+            flex-wrap: wrap; gap: 10px;
         }
         .attendance-count {
-            background: rgba(34,197,94,0.2); color: #22c55e;
-            padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 14px;
+            background: var(--success-muted); color: var(--success);
+            padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 13px;
         }
         table {
-            width: 100%; border-collapse: collapse; border-radius: 15px; overflow: hidden;
+            width: 100%; border-collapse: collapse; border-radius: 14px; overflow: hidden;
         }
         th {
-            background: rgba(124,102,227,0.3); color: #e0d8fe;
-            padding: 14px 16px; text-align: left; font-size: 14px;
-            font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+            background: var(--accent-subtle); color: var(--text-primary);
+            padding: 12px 16px; text-align: left; font-size: 12px;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
         }
         td {
-            padding: 12px 16px; color: #ddd8fd; font-size: 15px;
-            border-bottom: 1px solid rgba(124,102,227,0.15);
+            padding: 12px 16px; color: var(--text-secondary); font-size: 14px;
+            border-bottom: 1px solid var(--divider); font-weight: 500;
         }
-        tr:hover td { background: rgba(124,102,227,0.1); }
+        tr:hover td { background: var(--accent-subtle); }
 
         @media (max-width: 768px) {
             .instructor-grid { grid-template-columns: 1fr; }
             .attendance-section { grid-column: 1; }
-            #qrDisplay { min-width: 250px; min-height: 250px; }
+            #qrDisplay { min-width: 240px; min-height: 240px; }
         }
         @media (max-width: 480px) {
-            .panel-card { padding: 20px; border-radius: 18px; }
-            .page-title { font-size: clamp(22px,5vw,32px); margin-bottom: 25px; }
+            .panel-card { padding: 20px; border-radius: 16px; }
+            .page-title { font-size: clamp(22px, 4.5vw, 30px); margin-bottom: 24px; }
+            .main-container { padding: 72px 16px 32px; }
         }
     </style>
 </head>
@@ -211,8 +228,8 @@
             <div class="panel-card attendance-section" id="attendanceTable">
                 <div class="table-header">
                     <div class="card-title" style="margin-bottom:0;"><i class="fas fa-users"></i> Attendance Report</div>
-                    <div style="display:flex; gap:15px; align-items:center;">
-                        <button id="downloadCsvBtn" class="action-btn-lg" style="margin-bottom:0; width:auto; padding:8px 16px; font-size:14px;"><i class="fas fa-file-csv"></i> Export CSV</button>
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <button id="downloadCsvBtn" class="action-btn-lg" style="margin-bottom:0; width:auto; padding:8px 16px; font-size:13px;"><i class="fas fa-file-csv"></i> Export CSV</button>
                         <span class="attendance-count"><i class="fas fa-user-check"></i> <span id="attendanceCount">0</span> present</span>
                     </div>
                 </div>

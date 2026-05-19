@@ -9,154 +9,122 @@
     <meta name="description" content="ChatNCT AI Assistant Dashboard">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Zain:wght@200;300;400;700;800;900&family=Poetsen+One&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/common.css?v=2">
+    <link rel="stylesheet" href="css/common.css?v=3">
     <style>
         .main-container {
-            width: 100%;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 90px 20px 0;
-            position: relative;
-            z-index: 10;
-            height: 100dvh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            width: 100%; max-width: 1200px; margin: 0 auto;
+            padding: 80px 24px 0; position: relative; z-index: 10;
+            height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
         }
 
         .dashboard-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            flex: 1;
-            text-align: center;
-            overflow-y: hidden;
-            animation: fadeIn 0.5s ease;
-            padding-bottom: 20px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            flex: 1; text-align: center;
+            overflow-y: hidden; animation: fadeIn 0.5s ease;
+            padding-bottom: 24px; gap: 8px;
         }
 
         .robot-character {
-            width: var(--img-robot-dashboard);
-            height: var(--img-robot-dashboard);
-            margin-bottom: 5px;
-            animation: floatRobot 3s infinite ease-in-out;
+            width: var(--img-robot-dashboard); height: var(--img-robot-dashboard);
+            margin-bottom: 0; animation: subtleFloat 4s infinite ease-in-out;
         }
-
         .robot-character img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            filter: drop-shadow(0 0 30px rgba(124, 102, 227, 0.6));
+            width: 100%; height: 100%; object-fit: contain;
+            filter: drop-shadow(0 8px 24px rgba(99, 102, 241, 0.25));
         }
 
         .greeting-text {
-            font-family: 'Poetsen One', cursive;
-            font-size: clamp(26px, 4vw, 36px);
-            color: #e0d8fe;
-            margin-bottom: 12px;
-            text-shadow: 0 0 30px rgba(124, 102, 227, 0.5);
-            line-height: 1.3;
+            font-family: 'Inter', sans-serif;
+            font-size: clamp(26px, 3.8vw, 38px);
+            color: var(--text-primary);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 8px;
+            line-height: 1.2;
         }
 
         .dashboard-description {
-            font-size: clamp(14px, 1.8vw, 17px);
-            color: #b0a9ff;
-            margin-bottom: 25px;
-            max-width: 650px;
-            line-height: 1.8;
-            background: rgba(28, 26, 74, 0.6);
-            padding: 18px 25px;
-            border-radius: 20px;
-            border: 1px solid rgba(124, 102, 227, 0.3);
-            backdrop-filter: blur(10px);
-            font-family: 'Zain', sans-serif;
+            font-size: clamp(13px, 1.6vw, 15px);
+            color: var(--text-secondary);
+            margin-bottom: 28px; max-width: 580px;
+            line-height: 1.8; font-weight: 400;
+            background: var(--card-bg);
+            padding: 18px 24px;
+            border-radius: 16px;
+            border: 1px solid var(--divider);
+            backdrop-filter: blur(16px) saturate(180%);
         }
+        .dashboard-description strong { color: var(--accent); font-weight: 700; }
 
+        /* ── Quick Action Cards — Premium Grid ─────────── */
         .quick-actions {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 14px; max-width: 600px; width: 100%;
         }
 
         .action-card {
-            width: 125px;
-            height: 125px;
-            background: var(--panel-bg);
-            border: 2px solid var(--panel-border);
-            border-radius: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
+            background: var(--card-bg);
+            border: 1px solid var(--divider);
+            border-radius: 18px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 12px; cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(16px) saturate(180%);
+            padding: 24px 16px;
+            position: relative;
+            overflow: hidden;
         }
+        .action-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: var(--accent-gradient);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 18px;
+        }
+        .action-card:hover::before { opacity: 0.06; }
 
         .action-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 15px 35px rgba(124, 102, 227, 0.4);
-            border-color: #7c66e3;
+            transform: translateY(-6px);
+            box-shadow: 0 12px 32px rgba(99, 102, 241, 0.15);
+            border-color: var(--accent);
         }
 
         .action-card i {
-            font-size: 32px;
-            color: #e0d8fe;
-            margin-bottom: 0px;
+            font-size: 28px; color: var(--accent);
+            position: relative; z-index: 1;
         }
-
         .action-card img {
-            width: var(--img-action-card);
-            height: var(--img-action-card);
-            object-fit: contain;
-            filter: brightness(0) invert(1);
+            width: var(--img-action-card); height: var(--img-action-card);
+            object-fit: contain; position: relative; z-index: 1;
         }
+        [data-theme="dark"] .action-card img { filter: brightness(0) invert(1); }
 
         .action-card span {
-            color: #e0d8fe;
-            font-size: 14px;
-            font-weight: 700;
-            text-align: center;
-            font-family: 'Zain', sans-serif;
+            color: var(--text-primary);
+            font-size: 13px; font-weight: 600;
+            text-align: center; position: relative; z-index: 1;
+            letter-spacing: -0.01em;
         }
 
         @media (max-width: 768px) {
-            .quick-actions {
-                gap: 12px;
-            }
-
-            .action-card {
-                width: 105px;
-                height: 105px;
-                border-radius: 18px;
-                gap: 8px;
-            }
-
-            .action-card i {
-                font-size: 26px;
-            }
-
-            .action-card img {
-                width: var(--img-action-card-mob);
-                height: var(--img-action-card-mob);
-            }
-
-            .action-card span {
-                font-size: 12px;
-            }
-
-            .robot-character {
-                width: var(--img-robot-dashboard-mob);
-                height: var(--img-robot-dashboard-mob);
-            }
+            .quick-actions { grid-template-columns: repeat(2, 1fr); gap: 12px; max-width: 400px; }
+            .action-card { padding: 20px 14px; border-radius: 16px; }
+            .action-card i { font-size: 24px; }
+            .action-card img { width: var(--img-action-card-mob); height: var(--img-action-card-mob); }
+            .action-card span { font-size: 12px; }
+            .robot-character { width: var(--img-robot-dashboard-mob); height: var(--img-robot-dashboard-mob); }
+        }
+        @media (max-width: 480px) {
+            .main-container { padding: 68px 16px 0; }
+            .dashboard-description { padding: 14px 18px; font-size: 13px; }
         }
     </style>
 </head>
@@ -167,8 +135,7 @@
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-logo"><img src="img/Logo.svg" alt="ChatNCT"></div>
-            <button class="sidebar-close" id="sidebarClose" aria-label="Close menu"><i
-                    class="fas fa-times"></i></button>
+            <button class="sidebar-close" id="sidebarClose" aria-label="Close menu"><i class="fas fa-times"></i></button>
         </div>
         <div class="sidebar-menu">
             <div class="menu-item active" onclick="navigateTo('dashboard')">
@@ -218,18 +185,10 @@
     </nav>
 
     <div class="animated-bg">
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="glow-orb"></div>
-        <div class="glow-orb"></div>
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="glow-orb"></div><div class="glow-orb"></div>
     </div>
 
     <div class="main-container">

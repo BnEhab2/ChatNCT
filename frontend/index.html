@@ -10,924 +10,396 @@
         content="ChatNCT — AI-Powered University Assistant. Login to access chat, attendance, and more.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Zain:wght@200;300;400;700;800;900&family=Poetsen+One&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
         rel="stylesheet">
     <style>
         /* ── Theme init before paint ── */
-        html[data-theme="light"] {
-            background: #f8f9fc;
+        html[data-theme="light"] { background: #fafbfe; }
+        :root, [data-theme="dark"] {
+            --bg-primary: #0a0a0f;
+            --card-bg: rgba(22, 22, 32, 0.92);
+            --input-bg: rgba(255, 255, 255, 0.04);
+            --input-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f1f1f4;
+            --text-secondary: #a1a1b5;
+            --accent: #818cf8;
+            --accent-hover: #6366f1;
+            --accent-gradient: linear-gradient(135deg, #818cf8 0%, #6366f1 50%, #4f46e5 100%);
+            --divider: rgba(255, 255, 255, 0.06);
+            --glow-color: rgba(129, 140, 248, 0.08);
         }
-
-        :root,
-        [data-theme="dark"] {
-            --bg-dark: #1a173a;
-            --card-bg: rgba(28, 26, 74, 0.95);
-            --input-bg: rgba(62, 58, 131, 0.8);
-            --text-primary: #ffffff;
-            --text-secondary: #b0a9ff;
-            --accent-purple: #5c4eb3;
-            --submit-btn: #4c429c;
-        }
-
         [data-theme="light"] {
-            --bg-dark: #f8f9fc;
-            --card-bg: rgba(255, 255, 255, 0.98);
-            --input-bg: #f1f3f8;
-            --text-primary: #1e1e2e;
-            --text-secondary: #6c5ce7;
-            --accent-purple: #6c5ce7;
-            --submit-btn: #6c5ce7;
+            --bg-primary: #fafbfe;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --input-bg: #f3f4f8;
+            --input-border: rgba(0, 0, 0, 0.08);
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #4338ca 100%);
+            --divider: rgba(0, 0, 0, 0.06);
+            --glow-color: rgba(99, 102, 241, 0.04);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html {
-            font-size: 16px;
-            height: 100%;
-            overflow: hidden;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { font-size: 16px; height: 100%; overflow: hidden; }
 
         body {
-            height: 100vh;
-            height: 100dvh;
-            background: var(--bg-dark);
+            height: 100vh; height: 100dvh;
+            background: var(--bg-primary);
             color: var(--text-primary);
-            overflow: hidden;
-            width: 100%;
-            max-width: 100vw;
-            font-family: 'Zain', sans-serif;
-            transition: background 0.3s ease, color 0.3s ease;
-        }
-
-        [data-theme="light"] body {
-            background: linear-gradient(135deg, #f8f9fc 0%, #f0f1f8 50%, #f5f6fb 100%);
+            overflow: hidden; width: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            transition: background 0.4s cubic-bezier(0.4,0,0.2,1), color 0.3s ease;
+            -webkit-font-smoothing: antialiased;
         }
 
         .scroll-container {
-            height: 100vh;
-            height: 100dvh;
+            height: 100vh; height: 100dvh;
             overflow-y: scroll;
             scroll-snap-type: y mandatory;
             scroll-behavior: auto;
             scrollbar-width: none;
         }
-
-        .scroll-container::-webkit-scrollbar {
-            display: none;
-        }
+        .scroll-container::-webkit-scrollbar { display: none; }
 
         .section {
-            height: 100vh;
-            height: 100dvh;
+            height: 100vh; height: 100dvh;
             width: 100%;
             scroll-snap-align: start;
             position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg-dark);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: var(--bg-primary);
         }
 
+        /* ── Ambient Background ─────────────────────── */
         .animated-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            z-index: 0;
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            overflow: hidden; z-index: 0;
         }
-
         .particle {
-            position: absolute;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(124, 102, 227, 0.6) 0%, transparent 70%);
-            animation: float 15s infinite ease-in-out;
-            opacity: 0.5;
+            position: absolute; border-radius: 50%;
+            background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
+            animation: particleFloat 20s infinite ease-in-out; opacity: 0.4;
         }
-
-        .particle:nth-child(1) {
-            width: 80px;
-            height: 80px;
-            top: 20%;
-            left: 10%;
-            animation-delay: 0s;
-        }
-
-        .particle:nth-child(2) {
-            width: 120px;
-            height: 120px;
-            top: 60%;
-            left: 80%;
-            animation-delay: -5s;
-        }
-
-        .particle:nth-child(3) {
-            width: 60px;
-            height: 60px;
-            top: 70%;
-            left: 10%;
-            animation-delay: -10s;
-        }
-
-        .particle:nth-child(4) {
-            width: 100px;
-            height: 100px;
-            top: 40%;
-            left: 75%;
-            animation-delay: -2s;
-        }
-
-        .particle:nth-child(5) {
-            width: 70px;
-            height: 70px;
-            top: 20%;
-            left: 40%;
-            animation-delay: -7s;
-        }
-
-        .particle:nth-child(6) {
-            width: 90px;
-            height: 90px;
-            top: 70%;
-            left: 80%;
-            animation-delay: -12s;
-        }
-
-        .particle:nth-child(7) {
-            width: 40px;
-            height: 40px;
-            top: 80%;
-            left: 20%;
-            animation-delay: -5s;
-        }
-
-        .particle:nth-child(8) {
-            width: 80px;
-            height: 80px;
-            top: 10%;
-            left: 70%;
-            animation-delay: -4s;
-        }
-
-        .particle:nth-child(9) {
-            width: 30px;
-            height: 30px;
-            top: 40%;
-            left: 50%;
-            animation-delay: -19s;
-        }
-
-        .particle:nth-child(10) {
-            width: 80px;
-            height: 80px;
-            top: 75%;
-            left: 40%;
-            animation-delay: -16s;
-        }
-
-        @keyframes float {
-
-            0%,
-            100% {
-                transform: translate(0, 0) scale(1);
-            }
-
-            25% {
-                transform: translate(30px, -20px) scale(1.1);
-            }
-
-            50% {
-                transform: translate(-20px, 30px) scale(0.9);
-            }
-
-            75% {
-                transform: translate(20px, 20px) scale(1.05);
-            }
-        }
+        .particle:nth-child(1) { width: 300px; height: 300px; top: 10%; left: 5%; }
+        .particle:nth-child(2) { width: 200px; height: 200px; top: 60%; left: 75%; animation-delay: -5s; }
+        .particle:nth-child(3) { width: 150px; height: 150px; top: 70%; left: 15%; animation-delay: -10s; }
+        .particle:nth-child(4) { width: 250px; height: 250px; top: 30%; left: 80%; animation-delay: -3s; }
+        .particle:nth-child(5) { width: 180px; height: 180px; top: 15%; left: 45%; animation-delay: -7s; }
 
         .glow-orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(40px);
-            animation: pulse 8s infinite ease-in-out;
+            position: absolute; border-radius: 50%;
+            filter: blur(80px); animation: orbPulse 12s infinite ease-in-out;
+        }
+        .glow-orb:nth-child(1) { width: 400px; height: 400px; background: var(--glow-color); top: 20%; left: 15%; }
+        .glow-orb:nth-child(2) { width: 300px; height: 300px; background: var(--glow-color); bottom: 15%; right: 20%; animation-delay: -6s; }
+
+        @keyframes particleFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+            25% { transform: translate(20px, -30px) scale(1.05); opacity: 0.5; }
+            50% { transform: translate(-15px, 20px) scale(0.95); opacity: 0.35; }
+            75% { transform: translate(15px, 15px) scale(1.02); opacity: 0.45; }
+        }
+        @keyframes orbPulse {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.15); }
         }
 
-        .glow-orb:nth-child(1) {
-            width: 200px;
-            height: 200px;
-            background: rgba(124, 102, 227, 0.4);
-            top: 30%;
-            left: 20%;
-        }
-
-        .glow-orb:nth-child(2) {
-            width: 150px;
-            height: 150px;
-            background: rgba(76, 66, 156, 0.5);
-            bottom: 20%;
-            right: 25%;
-            animation-delay: -4s;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 0.6;
-                transform: scale(1);
-            }
-
-            50% {
-                opacity: 0.9;
-                transform: scale(1.2);
-            }
-        }
-
+        /* ── Intro Screen ─────────────────────────────── */
         .morph-logo {
-            position: fixed;
-            top: 50%;
-            left: 50%;
+            position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%) scale(1);
-            width: clamp(150px, 25vw, 280px);
-            max-width: 90vw;
+            width: clamp(140px, 22vw, 260px); max-width: 90vw;
             z-index: 1001;
-            filter: drop-shadow(0 0 30px rgba(124, 102, 227, 0.8));
-            animation: logoGlow 3s infinite ease-in-out;
+            filter: drop-shadow(0 4px 20px rgba(99, 102, 241, 0.4));
+            animation: logoBreath 4s infinite ease-in-out;
             pointer-events: none;
         }
+        .morph-logo img { width: 100%; height: auto; display: block; }
 
-        .morph-logo img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        @keyframes logoGlow {
-
-            0%,
-            100% {
-                filter: drop-shadow(0 0 30px rgba(124, 102, 227, 0.8));
-            }
-
-            50% {
-                filter: drop-shadow(0 0 50px rgba(124, 102, 227, 1));
-            }
+        @keyframes logoBreath {
+            0%, 100% { filter: drop-shadow(0 4px 20px rgba(99, 102, 241, 0.4)); }
+            50% { filter: drop-shadow(0 8px 40px rgba(99, 102, 241, 0.6)); }
         }
 
         .intro-tagline {
-            font-size: clamp(14px, 2vw, 18px);
-            color: #b0a9ff;
+            font-size: clamp(13px, 1.8vw, 16px);
+            color: var(--text-secondary);
             opacity: 0.9;
-            margin-top: clamp(80px, 15vh, 120px);
+            margin-top: clamp(80px, 14vh, 120px);
             z-index: 10;
-            animation: fadeInUp 1s ease 0.3s both;
+            animation: fadeInUp 0.8s ease 0.3s both;
             text-align: center;
             padding: 0 20px;
-            transition: opacity 0.1s ease;
-            letter-spacing: 0.01em;
+            font-weight: 500;
+            letter-spacing: 0.3px;
         }
 
+        /* ── Scroll Indicator ───────────────────────────── */
         .scroll-indicator {
-            position: fixed;
-            bottom: 40px !important;
-            left: 50% !important;
-            transform: translateX(-50%) !important;
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            gap: 12px;
-            z-index: 9999 !important;
-            cursor: pointer;
-            opacity: 1;
+            position: fixed; bottom: 36px !important;
+            left: 50% !important; transform: translateX(-50%) !important;
+            display: flex !important; flex-direction: column !important;
+            align-items: center !important; gap: 10px;
+            z-index: 9999 !important; cursor: pointer; opacity: 1;
         }
-
         .scroll-track {
-            width: 2px;
-            height: 60px;
-            background: rgba(221, 216, 253, 0.3);
-            border-radius: 2px;
-            position: relative;
+            width: 2px; height: 48px;
+            background: rgba(129, 140, 248, 0.15);
+            border-radius: 2px; position: relative;
         }
-
         .scroll-ball {
-            position: absolute;
-            top: 0;
-            left: 50%;
+            position: absolute; top: 0; left: 50%;
             transform: translateX(-50%);
-            width: 10px;
-            height: 10px;
-            background: #ddd8fd;
-            border-radius: 50%;
-            animation: scrollUpDown 2s infinite ease-in-out;
+            width: 8px; height: 8px;
+            background: var(--accent); border-radius: 50%;
+            animation: scrollBounce 2s infinite ease-in-out;
         }
-
-        @keyframes scrollUpDown {
-
-            0%,
-            100% {
-                top: 0;
-                opacity: 0.4;
-            }
-
-            50% {
-                top: calc(100% - 10px);
-                opacity: 1;
-            }
+        @keyframes scrollBounce {
+            0%, 100% { top: 0; opacity: 0.4; }
+            50% { top: calc(100% - 8px); opacity: 1; }
         }
-
         .scroll-text {
-            font-size: 11px;
-            color: #b0a9ff;
-            letter-spacing: 3px;
-            text-transform: uppercase;
+            font-size: 10px; color: var(--text-secondary);
+            letter-spacing: 3px; text-transform: uppercase;
+            font-weight: 600;
         }
 
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
+        /* ── Login Section ──────────────────────────────── */
         .container {
-            width: 100%;
-            max-width: 1200px;
-            display: flex;
-            align-items: center;
+            width: 100%; max-width: 1100px;
+            display: flex; align-items: center;
             justify-content: center;
-            gap: clamp(15px, 3vw, 50px);
-            padding: 15px;
-            margin-left: -15%;
-            position: relative;
-            z-index: 10;
+            gap: clamp(20px, 4vw, 60px);
+            padding: 20px; margin-left: -12%;
+            position: relative; z-index: 10;
         }
 
         .brand-section {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            min-width: 0;
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            text-align: center; min-width: 0;
         }
 
         .robot-container {
-            width: min(var(--img-robot-login), 50vw);
-            height: auto;
-            max-width: 100%;
-            margin-bottom: clamp(10px, 2vh, 25px);
-            filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.3));
-            transition: transform 0.1s ease-out;
-            opacity: 0;
-            transform: translateY(30px);
+            width: min(var(--img-robot-login, 400px), 45vw);
+            height: auto; max-width: 100%;
+            margin-bottom: clamp(10px, 2vh, 20px);
+            filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.2));
+            transition: transform 0.3s ease-out;
+            opacity: 0; transform: translateY(30px);
         }
-
         .robot-container.visible {
-            opacity: 1;
-            transform: translateY(0);
-            transition: opacity 0.3s ease, transform 0.3s ease;
+            opacity: 1; transform: translateY(0);
+            transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.4,0,0.2,1);
         }
-
-        .robot-container img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
+        .robot-container img { width: 100%; height: auto; display: block; }
 
         .welcome-text {
-            color: #ddd8fd;
-            font-family: 'Poetsen One', cursive;
-            font-size: clamp(28px, 5.5vw, 52px);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: clamp(28px, 5vw, 48px);
             font-weight: 800;
             line-height: 1.1;
-            text-shadow: -5px 2px 2px rgba(221, 216, 253, 0.3);
-            word-break: break-word;
-            opacity: 0;
-            transform: translateY(30px);
-            letter-spacing: 0.01em;
+            letter-spacing: -0.03em;
+            opacity: 0; transform: translateY(30px);
         }
-
         .welcome-text.visible {
-            opacity: 1;
-            transform: translateY(0);
-            transition: opacity 0.3s ease, transform 0.3s ease;
+            opacity: 1; transform: translateY(0);
+            transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.4,0,0.2,1);
         }
 
+        /* ── Login Card — Glassmorphism ─────────────────── */
         .login-card {
             background: var(--card-bg);
-            width: min(520px, 92vw);
-            padding: clamp(35px, 6vh, 55px) clamp(30px, 5vw, 45px);
-            border-radius: clamp(20px, 3vw, 40px);
-            border: 2px solid rgba(124, 102, 227, 0.3);
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            width: min(480px, 92vw);
+            padding: clamp(32px, 5vh, 48px) clamp(28px, 4vw, 40px);
+            border-radius: 24px;
+            border: 1px solid var(--divider);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+            backdrop-filter: blur(20px) saturate(180%);
             flex-shrink: 0;
-            opacity: 0;
-            transform: translateY(40px);
+            opacity: 0; transform: translateY(40px);
         }
-
         .login-card.visible {
-            opacity: 1;
-            transform: translateY(0);
-            transition: opacity 0.3s ease, transform 0.3s ease;
+            opacity: 1; transform: translateY(0);
+            transition: opacity 0.5s ease 0.1s, transform 0.5s cubic-bezier(0.4,0,0.2,1) 0.1s;
         }
 
         .login-card h2 {
-            color: #e0d8fe;
-            font-size: clamp(32px, 5.5vw, 56px);
-            margin-bottom: clamp(25px, 4vh, 45px);
+            color: var(--text-primary);
+            font-size: clamp(28px, 4.5vw, 40px);
+            margin-bottom: clamp(24px, 3.5vh, 36px);
             text-align: center;
-            position: relative;
             font-weight: 800;
-            letter-spacing: 0.01em;
+            letter-spacing: -0.03em;
             line-height: 1.1;
-            font-family: 'Zain', sans-serif;
-        }
-
-        .login-card h2::after {
-            display: none;
         }
 
         .in-underline {
-            position: relative;
-            display: inline-block;
+            position: relative; display: inline-block;
         }
-
         .in-underline::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: #e0d8ff;
+            content: ''; position: absolute;
+            bottom: -2px; left: 0; width: 100%; height: 3px;
+            background: var(--accent-gradient);
             border-radius: 2px;
         }
 
         .form-group {
-            margin-bottom: clamp(18px, 3vh, 28px);
+            margin-bottom: clamp(16px, 2.5vh, 24px);
         }
-
         .form-group label {
-            display: block;
-            margin-bottom: 10px;
-            font-size: clamp(14px, 1.6vw, 16px);
-            font-weight: 700;
-            color: #d1d1f7;
+            display: block; margin-bottom: 8px;
+            font-size: 13px; font-weight: 600;
+            color: var(--text-secondary);
             letter-spacing: 0.02em;
-            font-family: 'Zain', sans-serif;
+            text-transform: uppercase;
         }
-
         .form-group input {
             width: 100%;
-            padding: clamp(14px, 2.5vh, 18px) clamp(20px, 3vw, 28px);
-            border-radius: clamp(12px, 2.5vw, 22px);
-            border: none;
+            padding: 14px 18px;
+            border-radius: 14px;
+            border: 1px solid var(--input-border);
             background: var(--input-bg);
-            color: #fff;
-            font-size: clamp(15px, 1.8vw, 17px);
+            color: var(--text-primary);
+            font-size: 15px;
             outline: none;
-            transition: 0.3s;
-            min-height: 55px;
-            letter-spacing: 0.01em;
-            font-family: 'Zain', sans-serif;
+            transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
         }
-
         .form-group input::placeholder {
-            color: rgba(255, 255, 255, 0.4);
+            color: var(--text-secondary);
+            opacity: 0.6;
         }
-
         .form-group input:focus {
-            background: #4a45a3;
-            box-shadow: 0 0 0 2px var(--accent-purple);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+            background: var(--input-bg);
         }
 
         .forget-pass {
-            text-align: right;
-            margin-top: -12px;
-            margin-bottom: clamp(20px, 3.5vh, 35px);
+            text-align: right; margin-top: -8px;
+            margin-bottom: clamp(20px, 3vh, 28px);
         }
-
         .forget-pass a {
-            color: #d1d1f7;
+            color: var(--accent);
             text-decoration: none;
-            font-size: clamp(13px, 1.4vw, 14px);
-            opacity: 0.8;
-            font-weight: 500;
+            font-size: 13px; font-weight: 500;
+            transition: color 0.2s ease;
         }
-
         .forget-pass a:hover {
-            opacity: 1;
+            color: var(--accent-hover);
             text-decoration: underline;
         }
 
         .submit-btn {
-            width: 80%;
-            display: block;
-            margin: 0 auto;
-            padding: clamp(14px, 2.5vh, 18px);
-            border-radius: clamp(22px, 4vw, 30px);
-            border: none;
-            background: var(--submit-btn);
+            width: 100%; display: block;
+            padding: 14px 24px;
+            border-radius: 14px; border: none;
+            background: var(--accent-gradient);
             color: white;
-            font-size: clamp(16px, 2.5vw, 22px);
-            font-weight: 800;
+            font-size: 15px; font-weight: 700;
             cursor: pointer;
-            transition: 0.3s;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            min-height: 55px;
-            letter-spacing: 0.03em;
-            font-family: 'Zain', sans-serif;
+            transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.01em;
+            position: relative;
+            overflow: hidden;
         }
-
+        .submit-btn::before {
+            content: '';
+            position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transition: left 0.5s ease;
+        }
+        .submit-btn:hover::before { left: 100%; }
         .submit-btn:hover {
-            background: #5d53b8;
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
         }
-
-        .submit-btn:active {
-            transform: translateY(0);
-        }
-
-        .submit-btn:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
+        .submit-btn:active { transform: translateY(0); }
+        .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
         .sign-in-text {
-            text-align: center;
-            margin-top: clamp(18px, 3vh, 25px);
-            font-size: clamp(13px, 1.4vw, 14px);
-            color: #d1d1f7;
+            text-align: center; margin-top: clamp(16px, 2.5vh, 22px);
+            font-size: 13px; color: var(--text-secondary);
             font-weight: 400;
-            opacity: 0.85;
         }
 
         .error-message {
-            color: #ff6b6b;
-            font-size: 14px;
-            text-align: center;
-            margin-top: 10px;
-            min-height: 20px;
-            font-weight: 500;
-            letter-spacing: 0.01em;
+            color: #f87171; font-size: 13px;
+            text-align: center; margin-top: 10px;
+            min-height: 20px; font-weight: 500;
         }
 
-        /* ── Light Mode Overrides (Login Page) ─────────── */
+        /* ── Light Mode Overrides ───────────────────────── */
         [data-theme="light"] .section {
-            background: linear-gradient(135deg, #f8f9fc, #f0f1f8) !important;
+            background: linear-gradient(135deg, #fafbfe, #f0f1f8) !important;
         }
-
         [data-theme="light"] .login-card {
-            background: rgba(255, 255, 255, 0.97) !important;
-            border-color: rgba(0, 0, 0, 0.06) !important;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04) !important;
         }
+        [data-theme="light"] .error-message { color: #ef4444 !important; }
 
-        [data-theme="light"] .login-card h2 {
-            color: #0f0d2e !important;
-        }
-
-        [data-theme="light"] .form-group label {
-            color: #1e1e2e !important;
-            font-weight: 600;
-        }
-
-        [data-theme="light"] .form-group input {
-            background: #f1f3f8 !important;
-            color: #1e1e2e !important;
-            border: 1px solid rgba(0, 0, 0, 0.08) !important;
-        }
-
-        [data-theme="light"] .form-group input::placeholder {
-            color: #9ca3af !important;
-        }
-
-        [data-theme="light"] .form-group input:focus {
-            background: #fff !important;
-            border-color: #6c5ce7 !important;
-            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1) !important;
-        }
-
-        [data-theme="light"] .submit-btn {
-            background: #6c5ce7 !important;
-            color: #fff !important;
-            box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3) !important;
-        }
-
-        [data-theme="light"] .submit-btn:hover {
-            background: #5a4bd4 !important;
-        }
-
-        [data-theme="light"] .welcome-text {
-            color: #0f0d2e !important;
-            text-shadow: none !important;
-        }
-
-        [data-theme="light"] .intro-tagline {
-            color: #64748b !important;
-        }
-
-        [data-theme="light"] .forget-pass a {
-            color: #6c5ce7 !important;
-        }
-
-        [data-theme="light"] .sign-in-text {
-            color: #6b7280 !important;
-        }
-
-        [data-theme="light"] .scroll-text {
-            color: #6c5ce7 !important;
-        }
-
-        [data-theme="light"] .scroll-ball {
-            background: #6c5ce7 !important;
-        }
-
-        [data-theme="light"] .scroll-track {
-            background: rgba(108, 92, 231, 0.15) !important;
-        }
-
-        [data-theme="light"] .particle {
-            background: radial-gradient(circle, rgba(108, 92, 231, 0.1) 0%, transparent 70%);
-        }
-
-        [data-theme="light"] .in-underline::after {
-            background: #6c5ce7 !important;
-        }
-
-        [data-theme="light"] .error-message {
-            color: #ef4444 !important;
-        }
-
-
-        /* Theme toggle button on login page */
+        /* ── Theme Toggle — Login ────────────────────────── */
         .login-theme-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1001;
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            background: rgba(124, 102, 227, 0.2);
-            border: 1px solid rgba(124, 102, 227, 0.4);
-            color: #b0a9ff;
-            font-size: 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
+            position: fixed; top: 20px; right: 20px; z-index: 1001;
+            width: 42px; height: 42px; border-radius: 12px;
+            background: rgba(129, 140, 248, 0.1);
+            border: 1px solid rgba(129, 140, 248, 0.2);
+            color: var(--accent); font-size: 18px;
+            cursor: pointer; display: flex; align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
+            transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
             backdrop-filter: blur(10px);
         }
-
         .login-theme-btn:hover {
-            background: rgba(124, 102, 227, 0.35);
-            transform: scale(1.1);
+            background: var(--accent);
+            color: white;
+            transform: scale(1.08);
         }
 
-        [data-theme="light"] .login-theme-btn {
-            background: rgba(108, 92, 231, 0.06);
-            color: #6c5ce7;
-            border-color: rgba(108, 92, 231, 0.15);
-        }
-
-        @media(max-width:480px) {
-            .login-theme-btn {
-                top: 12px;
-                right: 12px;
-                width: 38px;
-                height: 38px;
-                font-size: 18px;
-            }
-        }
-
+        /* ── Responsive ─────────────────────────────────── */
         @media(max-width:900px) {
-            .container {
-                flex-direction: column;
-                gap: 25px;
-                margin-left: 0;
-            }
-
-            .brand-section {
-                order: 1;
-                width: 100%;
-            }
-
-            .login-card {
-                order: 2;
-                width: min(450px, 90vw);
-            }
-
-            .robot-container {
-                width: min(280px, 50vw);
-            }
-
-            .welcome-text {
-                font-size: clamp(26px, 5vw, 42px);
-            }
-
-            .morph-logo {
-                width: clamp(120px, 30vw, 220px);
-            }
-
-            .intro-tagline {
-                margin-top: clamp(60px, 12vh, 100px);
-            }
+            .container { flex-direction: column; gap: 24px; margin-left: 0; }
+            .brand-section { order: 1; width: 100%; }
+            .login-card { order: 2; width: min(440px, 90vw); }
+            .robot-container { width: min(260px, 45vw); }
+            .welcome-text { font-size: clamp(24px, 4.5vw, 38px); }
+            .morph-logo { width: clamp(110px, 28vw, 200px); }
         }
-
-        @media(max-width:768px) {
-            .login-card {
-                padding: clamp(22px, 4vh, 35px) clamp(18px, 3vw, 28px);
-            }
-
-            .robot-container {
-                width: min(180px, 50vw);
-            }
-
-            .welcome-text {
-                font-size: clamp(20px, 4vw, 30px);
-            }
-
-            .submit-btn {
-                width: 85%;
-            }
-
-            .intro-tagline {
-                margin-top: clamp(50px, 10vh, 90px);
-            }
-        }
-
         @media(max-width:600px) {
-            body {
-                padding: 0;
-            }
-
-            .container {
-                gap: 18px;
-            }
-
-            .brand-section {
-                order: 1;
-            }
-
-            .login-card {
-                order: 2;
-                width: 80%;
-                padding: 25px 18px;
-                border-radius: 18px;
-            }
-
-            .robot-container {
-                width: min(220px, 55vw);
-            }
-
-            .welcome-text {
-                font-size: clamp(22px, 5vw, 34px);
-            }
-
-            .form-group input {
-                font-size: 16px;
-            }
-
-            .morph-logo {
-                width: clamp(100px, 35vw, 180px);
-            }
-
-            .intro-tagline {
-                margin-top: clamp(40px, 8vh, 80px);
-            }
+            .container { gap: 16px; }
+            .login-card { width: 90%; padding: 24px 20px; border-radius: 20px; }
+            .robot-container { width: min(200px, 50vw); }
+            .welcome-text { font-size: clamp(20px, 4vw, 30px); }
         }
-
         @media(max-width:480px) {
-            .brand-section {
-                order: 1;
-            }
-
-            .login-card {
-                order: 2;
-                padding: 20px 14px;
-                border-radius: 15px;
-                width: 100%;
-                max-width: 95vw;
-            }
-
-            .login-card h2 {
-                font-size: 22px;
-                margin-bottom: 15px;
-            }
-
-            .form-group {
-                margin-bottom: 12px;
-            }
-
-            .form-group input {
-                padding: 10px 12px;
-                min-height: 45px;
-                font-size: 14px;
-            }
-
-            .forget-pass {
-                margin-bottom: 15px;
-            }
-
-            .submit-btn {
-                width: 90%;
-                font-size: 15px;
-                padding: 10px;
-                min-height: 45px;
-            }
-
-            .sign-in-text {
-                margin-top: 12px;
-                font-size: 12px;
-            }
-
-            .robot-container {
-                width: min(110px, 45vw);
-                margin-bottom: 15px;
-            }
-
-            .welcome-text {
-                font-size: clamp(15px, 4vw, 19px);
-                margin-bottom: 20px;
-            }
-
-            .morph-logo {
-                width: clamp(75px, 32vw, 130px);
-            }
-
-            .intro-tagline {
-                margin-top: clamp(30px, 6vh, 60px);
-                font-size: 13px;
-            }
-
-            .scroll-indicator {
-                bottom: 20px !important;
-            }
-
-            .scroll-track {
-                height: 50px;
-            }
-        }
-
-        @media(max-width:320px) {
-            .login-card {
-                padding: 18px 12px;
-            }
-
-            .login-card h2 {
-                font-size: 22px;
-            }
-
-            .robot-container {
-                width: 110px;
-            }
-
-            .welcome-text {
-                font-size: 16px;
-            }
-
-            .form-group input {
-                padding: 9px 11px;
-                font-size: 14px;
-            }
-
-            .submit-btn {
-                padding: 9px;
-                font-size: 15px;
-                width: 95%;
-            }
-
-            .morph-logo {
-                width: 80px;
-            }
-
-            .intro-tagline {
-                margin-top: 30px;
-            }
+            .login-card { padding: 20px 16px; border-radius: 18px; width: 95%; }
+            .login-card h2 { font-size: 24px; margin-bottom: 18px; }
+            .form-group input { padding: 12px 14px; font-size: 15px; }
+            .submit-btn { padding: 12px; font-size: 14px; }
+            .robot-container { width: min(140px, 40vw); }
+            .welcome-text { font-size: clamp(16px, 4vw, 20px); }
+            .morph-logo { width: clamp(80px, 30vw, 130px); }
+            .login-theme-btn { top: 12px; right: 12px; width: 38px; height: 38px; }
         }
 
         @media(prefers-reduced-motion:reduce) {
-
-            *,
-            *::before,
-            *::after {
+            *, *::before, *::after {
                 animation-duration: 0.01ms !important;
                 animation-iteration-count: 1 !important;
                 transition-duration: 0.01ms !important;
@@ -955,26 +427,16 @@
                 <div class="particle"></div>
                 <div class="particle"></div>
                 <div class="particle"></div>
-                <div class="particle"></div>
-                <div class="particle"></div>
-                <div class="particle"></div>
-                <div class="particle"></div>
-                <div class="particle"></div>
                 <div class="glow-orb"></div>
                 <div class="glow-orb"></div>
             </div>
             <div class="morph-logo" id="morphLogo"><img src="img/Logo.svg" alt="ChatNCT"></div>
-            <p class="intro-tagline" id="introTagline">Your AI-Powered Chat Experience</p>
+            <p class="intro-tagline" id="introTagline">Your AI-Powered University Assistant</p>
         </section>
 
         <!-- SECTION 2: LOGIN -->
         <section class="section" id="section-login">
             <div class="animated-bg">
-                <div class="particle"></div>
-                <div class="particle"></div>
-                <div class="particle"></div>
-                <div class="particle"></div>
-                <div class="particle"></div>
                 <div class="particle"></div>
                 <div class="particle"></div>
                 <div class="particle"></div>
