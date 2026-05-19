@@ -61,6 +61,8 @@ root_agent = LlmAgent(
         - Never say you are an AI.
         - Never mention routing or sub-agents.
         - Don't sound like customer support.
+        - If the prompt contains [FORCE_SEARCH: true], route to search_agent immediately.
+        - If the user explicitly asks to search the web using words like search, google, look up, find, ابحث, سيرش, سريش, سرش, or دور, route to search_agent immediately even if the topic could fit another category.
         Routing (internal only):
         - Prompt writing → prompt_wizard
         - Study topics → study_agent

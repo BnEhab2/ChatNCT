@@ -2,6 +2,7 @@ import os
 import sys
 import asyncio
 import json
+import re
 import traceback
 import threading
 import warnings
@@ -108,6 +109,39 @@ def _resolve_student_code(user_id: str) -> str:
         release_connection(conn)
 
 
+_SEARCH_TRIGGER_PATTERNS = [
+    r"\bsearch\b",
+    r"\bgoogle\b",
+    r"\blookup\b",
+    r"\blook up\b",
+    r"\bfind\b",
+    r"سيرش",
+    r"سرش",
+    r"سريش",
+    r"ابحث",
+    r"دور",
+    r"دوّر",
+    r"شوفلي",
+]
+
+
+def _should_force_search(message: str) -> bool:
+    """Return True when the user explicitly asks to search the web."""
+    text = (message or "").strip().lower()
+    if not text:
+        return False
+    return any(re.search(pattern, text, re.IGNORECASE) for pattern in _SEARCH_TRIGGER_PATTERNS)
+
+
+def _build_contextual_message(user_id: str, message: str) -> str:
+    resolved_code = _resolve_student_code(user_id)
+    prefixes = [f"[STUDENT_CODE: {resolved_code}]"]
+    if _should_force_search(message):
+        prefixes.append("[FORCE_SEARCH: true]")
+    prefixes.append(message)
+    return "\n".join(prefixes)
+
+
 # ── Helper: Run agent ──────────────────────────────────────────────────
 async def _run_agent(user_id: str, message: str) -> str:
     """Send a message to the root agent and collect the response."""
@@ -125,8 +159,7 @@ async def _run_agent(user_id: str, message: str) -> str:
 
     session_id = user_sessions[user_id]
 
-    resolved_code = _resolve_student_code(user_id)
-    contextual_message = f"[STUDENT_CODE: {resolved_code}]\n{message}"
+    contextual_message = _build_contextual_message(user_id, message)
 
     content = types.Content(
         role="user",
@@ -164,8 +197,7 @@ async def _stream_agent(user_id: str, message: str, queue: Queue) -> str:
 
     session_id = user_sessions[user_id]
 
-    resolved_code = _resolve_student_code(user_id)
-    contextual_message = f"[STUDENT_CODE: {resolved_code}]\n{message}"
+    contextual_message = _build_contextual_message(user_id, message)
 
     content = types.Content(
         role="user",
