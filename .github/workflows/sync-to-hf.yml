@@ -20,18 +20,18 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           git lfs install
-          # Configure git
           git config user.email "minadiaa@nct.edu"
           git config user.name "Mina Diaa"
 
-          # Fetch all LFS objects from GitHub
-          git lfs fetch --all origin
+          # Create a fresh orphan branch (no history = no old binary files)
+          git checkout --orphan hf-clean
+          git add -A
+          git commit -m "Deploy to Hugging Face Space"
 
-          # Add HF remote
+          # Migrate any binary files to LFS before pushing
+          git lfs migrate import --include="*.shard1,*-shard1,*shard*,*.caffemodel,*.task,*.pkl,*.faiss,*.db,*.rar" --yes
+
+          # Add HF remote and push
           git remote add hf https://miza22:$HF_TOKEN@huggingface.co/spaces/miza22/ChatNCT
-
-          # Push LFS objects to HF first
           git lfs push --all hf
-
-          # Force push to HF (mirror the main branch)
-          git push hf main --force
+          git push hf hf-clean:main --force
