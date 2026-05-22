@@ -317,9 +317,3 @@ def get_missed_lecture_summaries(student_code: str, course_code_or_name: str = "
         "status": "success",
         "message": "لا يوجد ملخصات هنا لأن الماتيريال أصبحت في قاعدة البيانات الخاصة بـ study agent. يرجى إخبار الطالب بأن يسأل الـ study agent عن ملخص المادة."
     }
-
-    except Exception as e:
-        traceback.print_exc()
-        return {"status": "error", "message": str(e)}
-    finally:
-        release_connection(conn)
