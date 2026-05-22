@@ -32,6 +32,7 @@ jobs:
           git lfs migrate import --include="*.shard1,*-shard1,*shard*,*.caffemodel,*.task,*.pkl,*.faiss,*.db,*.rar" --yes
 
           # Add HF remote and push
+          git config lfs.allowincompletepush true
           git remote add hf https://miza22:$HF_TOKEN@huggingface.co/spaces/miza22/ChatNCT
           git lfs push --all hf
           git push hf hf-clean:main --force
