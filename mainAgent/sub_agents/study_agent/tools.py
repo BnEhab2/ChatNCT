@@ -41,30 +41,69 @@ TERM_VARIATIONS = {
 
 
 def load_materials(materials_dir: str = "materials") -> Dict[str, str]:
-    """Load all lecture materials from the materials directory."""
+    """Load all lecture materials from the database."""
     global materials
     global _documents
     if materials:
         return materials  # Already loaded
 
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    materials_path = os.path.join(base_dir, materials_dir)
+    from mainAgent.db.database import get_connection, release_connection
+    conn = get_connection()
+    if not conn:
+        print("[ERROR] Could not connect to DB for materials.")
+        return {}
+        
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT m.title, m.content, c.name 
+            FROM materials m 
+            LEFT JOIN courses c ON m.course_id = c.id
+            WHERE m.content IS NOT NULL
+        """)
+        rows = cur.fetchall()
+        
+        _documents = []
+        materials = {}
+        for row in rows:
+            title = row[0]
+            content = row[1]
+            course_name = row[2] or "Unknown"
+            
+            source_name = title if course_name.lower() in title.lower() else f"{course_name} - {title}"
+            
+            _documents.append({
+                "source": source_name,
+                "content": content
+            })
+            materials[source_name] = content
+            
+        print(f"[OK] {len(materials)} study materials loaded from database.")
+    except Exception as e:
+        print(f"[ERROR] Loading materials from DB: {e}")
+    finally:
+        release_connection(conn)
 
-    _documents = load_text_documents(materials_path)
-    materials = {doc["source"]: doc["content"] for doc in _documents}
-
-    print(f"[OK] {len(materials)} study materials loaded.")
     return materials
 
 
-def search_material(query: str) -> dict:
-    """Search lecture materials using the shared keyword search engine."""
+def search_material(query: str, subject: str = None) -> dict:
+    """Search lecture materials using the shared keyword search engine.
+    If subject is provided, it only searches within that specific subject's materials."""
     if not _documents:
         load_materials()
 
+    docs_to_search = _documents
+    if subject:
+        subject_lower = subject.lower()
+        docs_to_search = [d for d in _documents if subject_lower in d["source"].lower()]
+
+    if not docs_to_search:
+        return {"error": f"No materials found for the specified subject: {subject}"}
+
     return search_documents(
         query=query,
-        documents=_documents,
+        documents=docs_to_search,
         term_variations=TERM_VARIATIONS,
         min_keyword_length=3,
         snippet_chars=4000,
@@ -73,16 +112,22 @@ def search_material(query: str) -> dict:
     )
 
 
-def get_all_materials_info() -> dict:
+def get_all_materials_info(subject: str = None) -> dict:
     """
     Get information about all loaded materials.
+    If subject is provided, it filters the results to only include materials for that subject.
     """
+    if not materials:
+        load_materials()
+        
     info = {}
     for name, content in materials.items():
+        if subject and subject.lower() not in name.lower():
+            continue
         info[name] = {
-            "size": len(content),
-            "lines": content.count('\n') + 1,
-            "words": len(content.split())
+            "size": len(content) if content else 0,
+            "lines": content.count('\n') + 1 if content else 0,
+            "words": len(content.split()) if content else 0
         }
     return info
 
@@ -91,6 +136,9 @@ def get_available_subjects() -> list:
     """
     Get list of available subjects from loaded materials.
     """
+    if not materials:
+        load_materials()
+        
     subjects = set()
     for name in materials.keys():
         if 'C++' in name or 'c++' in name.lower():

@@ -178,19 +178,15 @@ def get_course_session_log(student_code: str, course_code_or_name: str) -> dict:
             return {"status": "error", "message": f"مفيش مادة اسمها أو كودها '{course_code_or_name}'."}
         course_id = course["id"]
 
-        # 3. Fetch all sessions + optional lecture info + attendance
+        # 3. Fetch all sessions + attendance
         cur.execute("""
             SELECT 
                 s.session_id,
                 s.session_code,
                 s.created_at,
-                l.title AS lecture_title,
-                l.topic AS lecture_topic,
-                l.lecture_number,
                 a.id AS attendance_id,
                 a.created_at AS attended_at
             FROM attendance_sessions s
-            LEFT JOIN lectures l ON l.session_id = s.session_id
             LEFT JOIN attendance a ON a.session_id = s.session_id AND a.student_id = %s
             WHERE s.course_id = %s
             ORDER BY s.created_at ASC
@@ -201,9 +197,7 @@ def get_course_session_log(student_code: str, course_code_or_name: str) -> dict:
         for idx, r in enumerate(rows, start=1):
             attended = r["attendance_id"] is not None
             sessions.append({
-                "lecture_number": r["lecture_number"] or idx,
-                "lecture_title": r["lecture_title"] or f"Lecture {idx}",
-                "lecture_topic": r["lecture_topic"],
+                "lecture_number": idx,
                 "session_code": r["session_code"],
                 "date": str(r["created_at"]),
                 "status": "✅ Present" if attended else "❌ Absent",
@@ -272,13 +266,9 @@ def get_missed_lectures(student_code: str, course_code_or_name: str = "") -> dic
                 c.course_code,
                 c.name AS course_name,
                 s.session_id,
-                s.created_at AS session_date,
-                l.lecture_number,
-                l.title AS lecture_title,
-                l.topic AS lecture_topic
+                s.created_at AS session_date
             FROM attendance_sessions s
             JOIN courses c ON c.id = s.course_id
-            LEFT JOIN lectures l ON l.session_id = s.session_id
             LEFT JOIN attendance a ON a.session_id = s.session_id AND a.student_id = %s
             WHERE a.id IS NULL
             {course_filter}
@@ -298,9 +288,6 @@ def get_missed_lectures(student_code: str, course_code_or_name: str = "") -> dic
                     "missed_lectures": [],
                 }
             missed_by_course[key]["missed_lectures"].append({
-                "lecture_number": r["lecture_number"] or "—",
-                "lecture_title": r["lecture_title"] or "بدون عنوان",
-                "lecture_topic": r["lecture_topic"],
                 "date": str(r["session_date"]),
             })
 
@@ -324,98 +311,12 @@ def get_missed_lectures(student_code: str, course_code_or_name: str = "") -> dic
 
 def get_missed_lecture_summaries(student_code: str, course_code_or_name: str = "") -> dict:
     """Get summaries and key points of lectures the student missed.
-
-    Helps students catch up by showing what was covered in their absent lectures.
-    If course_code_or_name is provided, filters to that course only.
-
-    Args:
-        student_code: The student's academic code (e.g. '20220101').
-        course_code_or_name: Optional — course code or name to filter by.
-
-    Returns:
-        A dict with missed lecture summaries grouped by course.
+    Since lecture materials are now stored elsewhere, this tool will just instruct the agent to refer the user to the study agent.
     """
-    err = _validate_student_code(student_code)
-    if err:
-        return err
-
-    conn = get_connection()
-    try:
-        cur = conn.cursor()
-
-        # 1. Resolve student
-        student = _resolve_student(cur, student_code)
-        if not student:
-            return {"status": "error", "message": "مفيش طالب بالكود ده."}
-        student_id = student["id"]
-
-        # 2. Build course filter
-        course_filter = ""
-        params = [student_id]
-
-        if course_code_or_name:
-            course = _resolve_course(cur, course_code_or_name)
-            if not course:
-                return {"status": "error", "message": f"مفيش مادة اسمها أو كودها '{course_code_or_name}'."}
-            course_filter = "AND s.course_id = %s"
-            params.append(course["id"])
-
-        # 3. Get missed lectures that HAVE summaries
-        cur.execute(f"""
-            SELECT 
-                c.course_code,
-                c.name AS course_name,
-                l.lecture_number,
-                l.title AS lecture_title,
-                l.topic AS lecture_topic,
-                s.created_at AS session_date,
-                ls.summary_text,
-                ls.key_points
-            FROM attendance_sessions s
-            JOIN courses c ON c.id = s.course_id
-            JOIN lectures l ON l.session_id = s.session_id
-            LEFT JOIN lecture_summaries ls ON ls.lecture_id = l.id
-            LEFT JOIN attendance a ON a.session_id = s.session_id AND a.student_id = %s
-            WHERE a.id IS NULL
-            {course_filter}
-            ORDER BY c.course_code, l.lecture_number ASC
-        """, params)
-
-        rows = cur.fetchall()
-
-        # Group by course
-        summaries_by_course = {}
-        no_summary_count = 0
-
-        for r in rows:
-            key = r["course_code"]
-            if key not in summaries_by_course:
-                summaries_by_course[key] = {
-                    "course_code": r["course_code"],
-                    "course_name": r["course_name"],
-                    "lectures": [],
-                }
-
-            has_summary = r["summary_text"] is not None
-            if not has_summary:
-                no_summary_count += 1
-
-            summaries_by_course[key]["lectures"].append({
-                "lecture_number": r["lecture_number"],
-                "lecture_title": r["lecture_title"] or "بدون عنوان",
-                "lecture_topic": r["lecture_topic"],
-                "date": str(r["session_date"]),
-                "summary": r["summary_text"] or "❌ مفيش ملخص متاح للمحاضرة دي لسه.",
-                "key_points": list(r["key_points"]) if r["key_points"] else [],
-            })
-
-        return {
-            "status": "success",
-            "student_name": student["name"],
-            "total_missed_with_summaries": len(rows) - no_summary_count,
-            "total_missed_without_summaries": no_summary_count,
-            "courses": list(summaries_by_course.values()),
-        }
+    return {
+        "status": "success",
+        "message": "لا يوجد ملخصات هنا لأن الماتيريال أصبحت في قاعدة البيانات الخاصة بـ study agent. يرجى إخبار الطالب بأن يسأل الـ study agent عن ملخص المادة."
+    }
 
     except Exception as e:
         traceback.print_exc()

@@ -165,6 +165,7 @@ function updateBotMessage(messageId, text) {
     if (!bubble) return;
 
     bubble.innerHTML = marked.parse(text || '');
+    bubble.dir = detectDirection(text || '');
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 

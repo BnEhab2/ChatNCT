@@ -85,26 +85,26 @@ def run_async(coro):
     return future.result(timeout=120)
 
 
-def _resolve_student_code(user_id: str) -> str:
-    """Resolve student_code from profiles table given user_id (which could be student_code or UUID)."""
+def _resolve_student_info(user_id: str) -> tuple:
+    """Resolve (student_code, student_name) from profiles table given user_id."""
     conn = get_connection()
     try:
         cur = conn.cursor()
         # 1. Check if user_id is already the student_code
-        cur.execute("SELECT student_code FROM profiles WHERE student_code = %s", (user_id,))
+        cur.execute("SELECT student_code, name FROM profiles WHERE student_code = %s", (user_id,))
         row = cur.fetchone()
         if row:
-            return str(row["student_code"])
+            return str(row["student_code"]), str(row.get("name", ""))
         
         # 2. Check if user_id is the database UUID (id)
-        cur.execute("SELECT student_code FROM profiles WHERE id::text = %s", (user_id,))
+        cur.execute("SELECT student_code, name FROM profiles WHERE id::text = %s", (user_id,))
         row = cur.fetchone()
         if row:
-            return str(row["student_code"])
+            return str(row["student_code"]), str(row.get("name", ""))
             
-        return user_id
+        return user_id, ""
     except Exception:
-        return user_id
+        return user_id, ""
     finally:
         release_connection(conn)
 
@@ -134,8 +134,10 @@ def _should_force_search(message: str) -> bool:
 
 
 def _build_contextual_message(user_id: str, message: str) -> str:
-    resolved_code = _resolve_student_code(user_id)
+    resolved_code, resolved_name = _resolve_student_info(user_id)
     prefixes = [f"[STUDENT_CODE: {resolved_code}]"]
+    if resolved_name:
+        prefixes.append(f"[STUDENT_NAME: {resolved_name}]")
     if _should_force_search(message):
         prefixes.append("[FORCE_SEARCH: true]")
     prefixes.append(message)
