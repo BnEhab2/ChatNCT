@@ -28,7 +28,7 @@ generateBtn.addEventListener('click', async () => {
     try {
         const response = await fetch(`${API_BASE}/api/prompt/generate`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify({ idea: ideaText, user_id: getUsername() })
         });
         const data = await response.json();

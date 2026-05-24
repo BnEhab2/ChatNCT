@@ -529,7 +529,9 @@ async function resumeSession(sessionId) {
     currentChatSessionId = sessionId;
     if (chatMessages) chatMessages.innerHTML = '';
     try {
-        const res = await fetch(`${API_BASE}/api/chat/sessions/${sessionId}/messages`);
+        const res = await fetch(`${API_BASE}/api/chat/sessions/${sessionId}/messages`, {
+            headers: getAuthHeaders(),
+        });
         const data = await res.json();
         if (data.status === 'success') {
             data.messages.forEach(m => addMessage(m.content, m.role === 'user' ? 'user' : 'bot'));
@@ -542,7 +544,10 @@ async function resumeSession(sessionId) {
 async function deleteSession(sessionId) {
     if (!confirm('Delete this chat session?')) return;
     try {
-        await fetch(`${API_BASE}/api/chat/sessions/${sessionId}`, { method: 'DELETE' });
+        await fetch(`${API_BASE}/api/chat/sessions/${sessionId}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders(),
+        });
         // If we deleted the currently active session, clear the chat area
         if (currentChatSessionId === sessionId) {
             currentChatSessionId = null;
@@ -561,7 +566,7 @@ async function renameSession(sessionId) {
     try {
         await fetch(`${API_BASE}/api/chat/sessions/${sessionId}/rename`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify({ title: newTitle.trim() }),
         });
         loadChatSessions();  // Refresh the sidebar list

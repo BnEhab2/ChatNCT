@@ -10,6 +10,7 @@ import requests as http_requests
 from datetime import datetime
 from dotenv import load_dotenv
 from queue import Queue
+from functools import wraps
 
 # Suppress urllib3 SSL warnings (we use self-signed certs for local dev)
 warnings.filterwarnings("ignore", message="Unverified HTTPS request")
@@ -268,31 +269,159 @@ def _save_chat_message(chat_session_id: str, role: str, content: str) -> None:
         release_connection(conn)
 
 
+# ── Auth Decorator ─────────────────────────────────────────────────────
+def token_required(f):
+    """Validate Supabase JWT from 'Authorization: Bearer <token>' header.
+
+    Injects `current_user_id` (the verified Supabase UUID) into route kwargs.
+    Returns 401 if the token is missing or invalid, 500 on auth-service failure.
+    """
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return jsonify({
+                "status": "error",
+                "code": "MISSING_TOKEN",
+                "message": "Authorization token is required.",
+            }), 401
+
+        token = auth_header.split(" ", 1)[1].strip()
+        if not token:
+            return jsonify({
+                "status": "error",
+                "code": "MISSING_TOKEN",
+                "message": "Authorization token is required.",
+            }), 401
+
+        supabase_url = os.getenv("SUPABASE_URL")
+        supabase_key = os.getenv("SUPABASE_ANON_KEY")
+
+        try:
+            res = http_requests.get(
+                f"{supabase_url}/auth/v1/user",
+                headers={
+                    "apikey": supabase_key,
+                    "Authorization": f"Bearer {token}",
+                },
+                timeout=10,
+            )
+
+            if res.status_code != 200:
+                return jsonify({
+                    "status": "error",
+                    "code": "INVALID_TOKEN",
+                    "message": "Invalid or expired token. Please log in again.",
+                }), 401
+
+            user_data = res.json()
+            current_user_id = user_data.get("id")
+
+            if not current_user_id:
+                return jsonify({
+                    "status": "error",
+                    "code": "INVALID_TOKEN",
+                    "message": "Could not extract user identity from token.",
+                }), 401
+
+        except Exception as e:
+            return jsonify({
+                "status": "error",
+                "code": "AUTH_SERVICE_ERROR",
+                "message": f"Auth service error: {str(e)}",
+            }), 500
+
+        # Inject the verified UUID into the route — never trust client-provided IDs
+        kwargs["current_user_id"] = current_user_id
+        return f(*args, **kwargs)
+
+    return decorated
+
+
+def _verify_session_ownership(session_id: str, user_uuid: str) -> bool:
+    """Return True if the chat session belongs to the authenticated user.
+
+    Checks both the raw Supabase UUID and the associated student_code to handle
+    sessions that may have been created before the auth decorator was enforced.
+    """
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        # Resolve the student_code linked to this UUID
+        cur.execute(
+            "SELECT student_code FROM profiles WHERE id::text = %s",
+            (user_uuid,),
+        )
+        row = cur.fetchone()
+        student_code = str(row["student_code"]) if row and row.get("student_code") else None
+
+        if student_code:
+            cur.execute(
+                "SELECT 1 FROM chat_sessions"
+                " WHERE id = %s AND (student_id = %s OR student_id = %s)",
+                (session_id, user_uuid, student_code),
+            )
+        else:
+            cur.execute(
+                "SELECT 1 FROM chat_sessions WHERE id = %s AND student_id = %s",
+                (session_id, user_uuid),
+            )
+        return cur.fetchone() is not None
+    except Exception:
+        return False
+    finally:
+        release_connection(conn)
+
+
+def instructor_required(f):
+    """Ensure the user is an instructor or admin."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        current_user_id = kwargs.get("current_user_id")
+        if not current_user_id:
+            return jsonify({"status": "error", "code": "UNAUTHORIZED", "message": "User identity missing."}), 401
+        
+        conn = get_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT role FROM profiles WHERE id::text = %s", (current_user_id,))
+            row = cur.fetchone()
+            if not row or row["role"] not in ("instructor", "admin"):
+                return jsonify({"status": "error", "code": "FORBIDDEN", "message": "Instructor privileges required."}), 403
+        finally:
+            release_connection(conn)
+            
+        return f(*args, **kwargs)
+    return decorated
+
+
 # API ENDPOINTS
 # ══════════════════════════════════════════════════════════════════════
 
 # ── Chat (with Supabase persistence — Feature 1) ──────────────────────
 @app.route("/api/chat", methods=["POST"])
-def chat():
+@token_required
+def chat(current_user_id: str):
     """Send a message to the root agent and return the response. Saves to DB."""
     data = request.get_json()
     message = data.get("message", "").strip()
-    user_id = data.get("user_id", "default_user")
     chat_session_id = data.get("session_id", None)  # Supabase chat_sessions.id
 
     if not message:
         return jsonify({"status": "error", "code": "MISSING_MESSAGE", "message": "Message is required."}), 400
 
     try:
-        # Create chat session if not provided
+        # Create a new session, or verify ownership of an existing one (IDOR fix)
         if not chat_session_id:
-            chat_session_id = _create_chat_session(user_id, message)
+            chat_session_id = _create_chat_session(current_user_id, message)
+        elif not _verify_session_ownership(chat_session_id, current_user_id):
+            return jsonify({"status": "error", "code": "FORBIDDEN", "message": "Access denied to this session."}), 403
 
         # Save user message
         _save_chat_message(chat_session_id, "user", message)
 
-        # Get agent response
-        response = run_async(_run_agent(user_id, message))
+        # Get agent response (UUID passed; _build_contextual_message resolves student_code)
+        response = run_async(_run_agent(current_user_id, message))
 
         # Save bot response
         _save_chat_message(chat_session_id, "bot", response)
@@ -314,19 +443,22 @@ def chat():
 
 # ── Feature 1: Chat Sessions CRUD ─────────────────────────────────────
 @app.route("/api/chat/stream", methods=["POST"])
-def chat_stream():
+@token_required
+def chat_stream(current_user_id: str):
     """Stream agent text parts as newline-delimited JSON for a faster chat feel."""
     data = request.get_json()
     message = data.get("message", "").strip()
-    user_id = data.get("user_id", "default_user")
     chat_session_id = data.get("session_id", None)
 
     if not message:
         return jsonify({"status": "error", "code": "MISSING_MESSAGE", "message": "Message is required."}), 400
 
     try:
+        # Create a new session, or verify ownership of an existing one (IDOR fix)
         if not chat_session_id:
-            chat_session_id = _create_chat_session(user_id, message)
+            chat_session_id = _create_chat_session(current_user_id, message)
+        elif not _verify_session_ownership(chat_session_id, current_user_id):
+            return jsonify({"status": "error", "code": "FORBIDDEN", "message": "Access denied to this session."}), 403
         _save_chat_message(chat_session_id, "user", message)
     except Exception as e:
         traceback.print_exc()
@@ -346,7 +478,7 @@ def chat_stream():
 
         async def run_and_finish():
             try:
-                response_text = await _stream_agent(user_id, message, queue)
+                response_text = await _stream_agent(current_user_id, message, queue)
                 if not response_text:
                     response_text = "عذرًا، مفيش رد متاح دلوقتي."
                 _save_chat_message(chat_session_id, "bot", response_text)
@@ -377,9 +509,9 @@ def chat_stream():
 
 
 @app.route("/api/chat/sessions", methods=["GET"])
-def list_chat_sessions():
-    """List chat sessions for a user with pagination."""
-    user_id = request.args.get("user_id", "default_user")
+@token_required
+def list_chat_sessions(current_user_id: str):
+    """List chat sessions for the authenticated user with pagination."""
     page = int(request.args.get("page", 1))
     per_page = int(request.args.get("per_page", 20))
     offset = (page - 1) * per_page
@@ -387,16 +519,38 @@ def list_chat_sessions():
     conn = get_connection()
     try:
         cur = conn.cursor()
-        # Get total count
-        cur.execute("SELECT COUNT(*) FROM chat_sessions WHERE student_id = %s", (user_id,))
-        total = cur.fetchone()[0]
+        # Resolve the student_code so sessions stored under either identifier are found
+        cur.execute(
+            "SELECT student_code FROM profiles WHERE id::text = %s",
+            (current_user_id,),
+        )
+        row = cur.fetchone()
+        student_code = str(row["student_code"]) if row and row.get("student_code") else None
 
-        # Get sessions
-        cur.execute("""
-            SELECT id, title, created_at FROM chat_sessions
-            WHERE student_id = %s ORDER BY created_at DESC
-            LIMIT %s OFFSET %s
-        """, (user_id, per_page, offset))
+        if student_code:
+            cur.execute(
+                "SELECT COUNT(*) FROM chat_sessions"
+                " WHERE student_id = %s OR student_id = %s",
+                (current_user_id, student_code),
+            )
+            total = cur.fetchone()[0]
+            cur.execute("""
+                SELECT id, title, created_at FROM chat_sessions
+                WHERE student_id = %s OR student_id = %s
+                ORDER BY created_at DESC LIMIT %s OFFSET %s
+            """, (current_user_id, student_code, per_page, offset))
+        else:
+            cur.execute(
+                "SELECT COUNT(*) FROM chat_sessions WHERE student_id = %s",
+                (current_user_id,),
+            )
+            total = cur.fetchone()[0]
+            cur.execute("""
+                SELECT id, title, created_at FROM chat_sessions
+                WHERE student_id = %s ORDER BY created_at DESC
+                LIMIT %s OFFSET %s
+            """, (current_user_id, per_page, offset))
+
         sessions = []
         for row in cur.fetchall():
             r = dict(row)
@@ -416,8 +570,12 @@ def list_chat_sessions():
 
 
 @app.route("/api/chat/sessions/<session_id>/messages", methods=["GET"])
-def get_chat_messages(session_id):
-    """Get messages for a chat session with pagination."""
+@token_required
+def get_chat_messages(session_id, current_user_id: str):
+    """Get messages for a chat session with pagination (ownership enforced)."""
+    if not _verify_session_ownership(session_id, current_user_id):
+        return jsonify({"status": "error", "code": "FORBIDDEN", "message": "Access denied to this session."}), 403
+
     page = int(request.args.get("page", 1))
     per_page = int(request.args.get("per_page", 50))
     offset = (page - 1) * per_page
@@ -452,8 +610,12 @@ def get_chat_messages(session_id):
 
 
 @app.route("/api/chat/sessions/<session_id>", methods=["DELETE"])
-def delete_chat_session(session_id):
-    """Delete a chat session and all its messages."""
+@token_required
+def delete_chat_session(session_id, current_user_id: str):
+    """Delete a chat session and all its messages (ownership enforced)."""
+    if not _verify_session_ownership(session_id, current_user_id):
+        return jsonify({"status": "error", "code": "FORBIDDEN", "message": "Access denied to this session."}), 403
+
     conn = get_connection()
     try:
         cur = conn.cursor()
@@ -468,8 +630,12 @@ def delete_chat_session(session_id):
 
 
 @app.route("/api/chat/sessions/<session_id>/rename", methods=["PUT"])
-def rename_chat_session(session_id):
-    """Rename a chat session."""
+@token_required
+def rename_chat_session(session_id, current_user_id: str):
+    """Rename a chat session (ownership enforced)."""
+    if not _verify_session_ownership(session_id, current_user_id):
+        return jsonify({"status": "error", "code": "FORBIDDEN", "message": "Access denied to this session."}), 403
+
     data = request.get_json()
     title = data.get("title", "").strip()
     if not title:
@@ -490,7 +656,8 @@ def rename_chat_session(session_id):
 
 # ── Prompt Generation ─────────────────────────────────────────────────
 @app.route("/api/prompt/generate", methods=["POST"])
-def generate_prompt():
+@token_required
+def generate_prompt(current_user_id: str):
     data = request.get_json()
     idea = data.get("idea", "").strip()
     user_id = data.get("user_id", "prompt_user")
@@ -599,7 +766,8 @@ def login():
 # ══════════════════════════════════════════════════════════════════════
 
 @app.route("/api/courses", methods=["GET"])
-def get_courses():
+@token_required
+def get_courses(current_user_id: str):
     conn = get_connection()
     try:
         cur = conn.cursor()
@@ -619,7 +787,9 @@ def get_courses():
 
 
 @app.route("/api/session/create", methods=["POST"])
-def proxy_create_session():
+@token_required
+@instructor_required
+def proxy_create_session(current_user_id: str):
     try:
         r = http_requests.post(
             f"{ATTENDANCE_SERVER}/api/session/create",
@@ -632,7 +802,8 @@ def proxy_create_session():
 
 
 @app.route("/api/session/<code>", methods=["GET"])
-def proxy_check_session(code):
+@token_required
+def proxy_check_session(code, current_user_id: str):
     try:
         r = http_requests.get(f"{ATTENDANCE_SERVER}/api/session/{code}", verify=False, timeout=15)
         return jsonify(r.json()), r.status_code
@@ -641,7 +812,9 @@ def proxy_check_session(code):
 
 
 @app.route("/api/session/<code>/qr-token", methods=["GET"])
-def proxy_qr_token(code):
+@token_required
+@instructor_required
+def proxy_qr_token(code, current_user_id: str):
     """Proxy: get rotating QR token."""
     try:
         r = http_requests.get(f"{ATTENDANCE_SERVER}/api/session/{code}/qr-token", verify=False, timeout=15)
@@ -651,7 +824,8 @@ def proxy_qr_token(code):
 
 
 @app.route("/api/attendance/verify", methods=["POST"])
-def proxy_verify_attendance():
+@token_required
+def proxy_verify_attendance(current_user_id: str):
     try:
         r = http_requests.post(
             f"{ATTENDANCE_SERVER}/api/attendance/verify",
@@ -664,7 +838,8 @@ def proxy_verify_attendance():
 
 
 @app.route("/api/attendance/check_identity", methods=["POST"])
-def proxy_check_identity():
+@token_required
+def proxy_check_identity(current_user_id: str):
     try:
         r = http_requests.post(
             f"{ATTENDANCE_SERVER}/api/attendance/check_identity",
@@ -682,7 +857,8 @@ def proxy_check_identity():
 
 
 @app.route("/api/attendance/check_pose", methods=["POST"])
-def proxy_check_pose():
+@token_required
+def proxy_check_pose(current_user_id: str):
     try:
         r = http_requests.post(
             f"{ATTENDANCE_SERVER}/api/attendance/check_pose",
@@ -698,7 +874,8 @@ def proxy_check_pose():
 
 
 @app.route("/api/attendance/challenges", methods=["GET"])
-def proxy_challenges():
+@token_required
+def proxy_challenges(current_user_id: str):
     """Proxy: get liveness challenges."""
     try:
         r = http_requests.get(f"{ATTENDANCE_SERVER}/api/attendance/challenges", verify=False, timeout=15)
@@ -708,7 +885,8 @@ def proxy_challenges():
 
 
 @app.route("/api/attendance/prepare", methods=["POST"])
-def proxy_prepare():
+@token_required
+def proxy_prepare(current_user_id: str):
     """Proxy: pre-cache student embedding for fast identity check."""
     try:
         r = http_requests.post(
@@ -722,7 +900,9 @@ def proxy_prepare():
 
 
 @app.route("/api/session/<code>/report", methods=["GET"])
-def proxy_session_report(code):
+@token_required
+@instructor_required
+def proxy_session_report(code, current_user_id: str):
     try:
         r = http_requests.get(f"{ATTENDANCE_SERVER}/api/session/{code}/report", verify=False, timeout=15)
         return jsonify(r.json()), r.status_code
@@ -731,7 +911,9 @@ def proxy_session_report(code):
 
 
 @app.route("/api/session/<code>/close", methods=["POST"])
-def proxy_close_session(code):
+@token_required
+@instructor_required
+def proxy_close_session(code, current_user_id: str):
     try:
         r = http_requests.post(f"{ATTENDANCE_SERVER}/api/session/{code}/close", verify=False, timeout=15)
         return jsonify(r.json()), r.status_code

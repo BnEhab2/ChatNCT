@@ -56,7 +56,9 @@ const sessionStatus = document.getElementById('sessionStatus');
 
 async function loadCourses() {
     try {
-        const response = await fetch(`${API_BASE}/api/courses`);
+        const response = await fetch(`${API_BASE}/api/courses`, {
+            headers: getAuthHeaders()
+        });
         const data = await response.json();
 
         // The API might return courses as an array or inside an object
@@ -98,7 +100,7 @@ startBtn.addEventListener('click', async () => {
     try {
         const response = await fetch(`${API_BASE}/api/session/create`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify({ course_id: courseId })
         });
         const data = await response.json();
@@ -177,7 +179,9 @@ function stopQRRefresh() {
 async function _fetchAndRenderQR(code) {
     // Request a fresh one-time token from the server
     try {
-        const res = await fetch(`${API_BASE}/api/session/${code}/qr-token`);
+        const res = await fetch(`${API_BASE}/api/session/${code}/qr-token`, {
+            headers: getAuthHeaders()
+        });
         const data = await res.json();
         if (data.status === 'success' && data.token) {
             _renderQR(code, data.token, data.timestamp);
@@ -225,7 +229,10 @@ closeBtn.addEventListener('click', async () => {
 
     closeBtn.disabled = true;
     try {
-        await fetch(`${API_BASE}/api/session/${currentSessionCode}/close`, { method: 'POST' });
+        await fetch(`${API_BASE}/api/session/${currentSessionCode}/close`, { 
+            method: 'POST',
+            headers: getAuthHeaders()
+        });
         showNotification('Session closed', 'success');
     } catch (err) {
         console.error('Close session error:', err);
@@ -325,7 +332,9 @@ function stopReportPolling() {
 async function fetchReport() {
     if (!currentSessionCode) return;
     try {
-        const response = await fetch(`${API_BASE}/api/session/${currentSessionCode}/report`);
+        const response = await fetch(`${API_BASE}/api/session/${currentSessionCode}/report`, {
+            headers: getAuthHeaders()
+        });
         const data = await response.json();
 
         if (data.attendance && data.attendance.length > 0) {

@@ -277,7 +277,9 @@ async function onQrCodeSuccess(decodedText) {
 
     // Verify session
     try {
-        const response = await fetch(`${API_BASE}/api/session/${sessionCode}`);
+        const response = await fetch(`${API_BASE}/api/session/${sessionCode}`, {
+            headers: getAuthHeaders()
+        });
         const data = await response.json();
 
         if (data.status === 'success' || data.status === 'active') {
@@ -343,8 +345,11 @@ async function startFaceVerify(sessionCode) {
     try {
         await fetch(`${API_BASE}/api/attendance/prepare`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ student_id: studentId })
+            headers: {
+                ...getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ session_code: sessionCode, student_code: studentId })
         });
     } catch (e) {
         console.warn("Prepare call failed (non-fatal):", e);
@@ -402,8 +407,11 @@ async function startFaceVerify(sessionCode) {
             try {
                 const res = await fetch(`${API_BASE}/api/attendance/check_identity`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ student_id: studentId, image: frame })
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ session_code: sessionCode, student_code: studentId, image: frame })
                 });
                 const data = await res.json();
 
@@ -469,7 +477,9 @@ async function startFaceVerify(sessionCode) {
         // Get challenge from server
         let challenges = [];
         try {
-            const res = await fetch(`${API_BASE}/api/attendance/challenges`);
+            const res = await fetch(`${API_BASE}/api/attendance/challenges`, {
+                headers: getAuthHeaders()
+            });
             const data = await res.json();
             challenges = data.challenges || [];
         } catch (e) {
@@ -560,7 +570,9 @@ async function startFaceVerify(sessionCode) {
 async function _serverSideLiveness(videoElement, faceBox) {
     let challenges = [];
     try {
-        const res = await fetch(`${API_BASE}/api/attendance/challenges`);
+        const res = await fetch(`${API_BASE}/api/attendance/challenges`, {
+            headers: getAuthHeaders()
+        });
         const data = await res.json();
         challenges = data.challenges || [];
     } catch (e) {
@@ -587,8 +599,11 @@ async function _serverSideLiveness(videoElement, faceBox) {
             try {
                 const res = await fetch(`${API_BASE}/api/attendance/check_pose`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image: frame, faceBox: faceBox })
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ image: frame, challenge: challenge.action })
                 });
                 const data = await res.json();
                 _showChallengeOverlay(
@@ -614,7 +629,10 @@ async function _recordAttendance(sessionCode, studentId, imageFrame, livenessPas
     try {
         const response = await fetch(`${API_BASE}/api/attendance/verify`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                ...getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({
                 session_code: sessionCode,
                 student_id: studentId,
