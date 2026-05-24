@@ -78,6 +78,7 @@ async function authSignIn(email, password) {
     localStorage.setItem('chatnct_role', profile.role);
     localStorage.setItem('chatnct_user_id', profile.student_code || data.user.id);
     localStorage.setItem('chatnct_is_admin', profile.role === 'admin' ? 'true' : 'false');
+    localStorage.setItem('chatnct_access_token', data.session.access_token);
 
     return {
         success: true,
@@ -245,6 +246,7 @@ async function requireAuth() {
         localStorage.setItem('chatnct_role', profile.role);
         localStorage.setItem('chatnct_user_id', profile.student_code || session.user.id);
         localStorage.setItem('chatnct_is_admin', profile.role === 'admin' ? 'true' : 'false');
+        localStorage.setItem('chatnct_access_token', session.access_token);
     }
 
     return { session, profile };
