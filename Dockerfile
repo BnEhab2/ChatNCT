@@ -19,5 +19,7 @@ COPY . .
 # Expose port 7860 (HF Spaces default)
 EXPOSE 7860
 
-# Run the Flask app on port 7860
-CMD ["python", "-c", "from server import app; app.run(host='0.0.0.0', port=7860, debug=False)"]
+# Run app.py which starts BOTH servers:
+#   - Attendance server (port 5001) in a background thread
+#   - Main server (port 7860) in the main thread
+CMD ["python", "app.py"]
