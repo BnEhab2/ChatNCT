@@ -49,6 +49,28 @@ def get_lan_ip():
         return "127.0.0.1"
 
 
+def wait_for_port(host: str, port: int, timeout: int = 120, check_interval: float = 2.0) -> bool:
+    """
+    Wait until a port is actually accepting TCP connections.
+    Returns True if the port became ready, False if timeout was reached.
+
+    Uses raw TCP (not HTTPS) because the SSL handshake may fail with
+    self-signed certs, but the port IS open if TCP connects.
+    """
+    deadline = time.time() + timeout
+    dots = 0
+    while time.time() < deadline:
+        try:
+            with socket.create_connection((host, port), timeout=1):
+                print(f"\n  [OK] Attendance Server is ready on port {port}!")
+                return True
+        except (ConnectionRefusedError, OSError):
+            dots += 1
+            print(f"\r  Waiting for Attendance Server{'.' * (dots % 4)}   ", end="", flush=True)
+            time.sleep(check_interval)
+    return False
+
+
 def main():
     # Get the folder where this file lives (the project root)
     project_dir = os.path.dirname(os.path.abspath(__file__))
@@ -56,8 +78,7 @@ def main():
     # ── Server 1: Attendance (Face Recognition + QR) ──────────
     # Runs as a separate process so it doesn't block the main server.
     # Uses SSL (HTTPS) because mobile cameras require a secure connection.
-    # stdout/stderr are suppressed to keep the console clean.
-    print("Starting Attendance Server (loading AI models, please wait ~15s)...")
+    print("Starting Attendance Server (loading AI models, please wait)...")
     attendance_proc = subprocess.Popen(
         [sys.executable, "-c", 
          "import os, sys; "
@@ -74,8 +95,10 @@ def main():
         cwd=project_dir,
     )
 
-    # Give the attendance server 15 seconds to start up and load DeepFace
-    time.sleep(15)
+    # Smart wait: poll port 5001 until it actually accepts connections (up to 2 min)
+    ready = wait_for_port("127.0.0.1", 5001, timeout=120)
+    if not ready:
+        print("\n  [WARN] Attendance Server did not start in time. Main server will start anyway.")
 
     # ── Server 2: Main (API + Frontend) ───────────────────────
     # This is the server users interact with directly.

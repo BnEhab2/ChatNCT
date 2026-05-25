@@ -790,15 +790,23 @@ def get_courses(current_user_id: str):
 @token_required
 @instructor_required
 def proxy_create_session(current_user_id: str):
-    try:
-        r = http_requests.post(
-            f"{ATTENDANCE_SERVER}/api/session/create",
-            json=request.get_json(),
-            verify=False, timeout=15,
-        )
-        return jsonify(r.json()), r.status_code
-    except Exception as e:
-        return jsonify({"status": "error", "message": f"Attendance server unreachable: {e}"}), 502
+    """Proxy to attendance server with retry (server may still be loading models on first call)."""
+    import time as _time
+    last_err = None
+    for attempt in range(3):
+        try:
+            r = http_requests.post(
+                f"{ATTENDANCE_SERVER}/api/session/create",
+                json=request.get_json(),
+                verify=False, timeout=20,
+            )
+            return jsonify(r.json()), r.status_code
+        except Exception as e:
+            last_err = e
+            if attempt < 2:
+                _time.sleep(5)   # wait 5s then retry
+    return jsonify({"status": "error", "message": f"Attendance server unreachable: {last_err}"}), 502
+
 
 
 @app.route("/api/session/<code>", methods=["GET"])
