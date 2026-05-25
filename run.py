@@ -57,6 +57,7 @@ def main():
     # Runs as a separate process so it doesn't block the main server.
     # Uses SSL (HTTPS) because mobile cameras require a secure connection.
     # stdout/stderr are suppressed to keep the console clean.
+    print("Starting Attendance Server (loading AI models, please wait ~15s)...")
     attendance_proc = subprocess.Popen(
         [sys.executable, "-c", 
          "import os, sys; "
@@ -68,16 +69,17 @@ def main():
          "cert_path, key_path = generate_self_signed_cert(cert_dir); "
          "ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); "
          "ssl_ctx.load_cert_chain(cert_path, key_path); "
-         "app.run(host='0.0.0.0', port=5001, debug=True, ssl_context=ssl_ctx)"
+         "app.run(host='0.0.0.0', port=5001, ssl_context=ssl_ctx)"
         ],
         cwd=project_dir,
     )
 
-    # Give the attendance server 2 seconds to start up
-    time.sleep(2)
+    # Give the attendance server 15 seconds to start up and load DeepFace
+    time.sleep(15)
 
     # ── Server 2: Main (API + Frontend) ───────────────────────
     # This is the server users interact with directly.
+    print("Starting Main Server...")
     main_proc = subprocess.Popen(
         [sys.executable, "server.py"],
         cwd=project_dir,
