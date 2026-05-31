@@ -410,13 +410,7 @@
 
 <body>
     <!-- Inline theme init to prevent flash -->
-    <script>(function () { var t = localStorage.getItem('chatnct_theme') || 'dark'; document.documentElement.setAttribute('data-theme', t); })();</script>
-
-    <!-- Theme Toggle Button (fixed, top-right) -->
-    <button class="login-theme-btn" id="loginThemeBtn" onclick="loginToggleTheme()" aria-label="Toggle theme"
-        title="Toggle Light/Dark Mode">
-        <span id="loginThemeIcon">☀️</span>
-    </button>
+    <script>(function () { document.documentElement.setAttribute('data-theme', 'dark'); })();</script>
 
     <div class="scroll-container" id="scrollContainer">
         <!-- SECTION 1: INTRO -->
@@ -484,21 +478,8 @@
     <script src="js/supabase-client.js?v=4"></script>
     <script src="js/login.js?v=4"></script>
     <script>
-        // Theme toggle for login page
-        function loginToggleTheme() {
-            var current = document.documentElement.getAttribute('data-theme') || 'dark';
-            var next = current === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', next);
-            localStorage.setItem('chatnct_theme', next);
-            var icon = document.getElementById('loginThemeIcon');
-            if (icon) icon.textContent = next === 'light' ? '🌙' : '☀️';
-        }
-        // Sync icon on load
-        (function () {
-            var t = localStorage.getItem('chatnct_theme') || 'dark';
-            var icon = document.getElementById('loginThemeIcon');
-            if (icon) icon.textContent = t === 'light' ? '🌙' : '☀️';
-        })();
+        // Theme toggle for login page (Stub: Light mode is disabled)
+        function loginToggleTheme() {}
     </script>
 </body>
 

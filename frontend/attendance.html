@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <script>(function () { var t = localStorage.getItem('chatnct_theme') || 'dark'; document.documentElement.setAttribute('data-theme', t); })();</script>
+    <script>(function () { document.documentElement.setAttribute('data-theme', 'dark'); })();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ChatNCT - Student Attendance</title>
@@ -212,13 +212,7 @@
                 <div class="user-avatar" id="userAvatar">G</div>
                 <div class="user-name" id="userNameDisplay">Guest</div>
             </div>
-            <button class="theme-toggle-btn" onclick="toggleTheme()" id="themeToggleBtn" aria-label="Toggle theme">
-                <span class="toggle-label">
-                    <span class="theme-icon">☀️</span>
-                    <span class="theme-label-text">Light Mode</span>
-                </span>
-                <span class="toggle-track"><span class="toggle-thumb"></span></span>
-            </button>
+
             <a href="#" class="sidebar-login" onclick="logout(); return false;"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
         </div>
     </div>

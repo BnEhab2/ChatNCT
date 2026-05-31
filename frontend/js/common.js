@@ -21,37 +21,19 @@ if (localStorage.getItem('chatnct_backend') === 'php') {
 }
 
 
-// ── Theme Management (Dark / Light Mode) ───────────────────────
-// Reads the saved theme from localStorage and applies it to <html>.
-// The theme is stored as 'dark' or 'light'; default is 'dark'.
+// ── Theme Management (Forced Dark Mode) ───────────────────────
+// Light mode has been completely removed. Theme is permanently set to 'dark'.
 function initTheme() {
-    const saved = localStorage.getItem('chatnct_theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', saved);
-    updateThemeToggleUI(saved);
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('chatnct_theme', 'dark');
 }
 
 function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme') || 'dark';
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('chatnct_theme', next);
-    updateThemeToggleUI(next);
+    // No-op: Light mode is disabled
 }
 
 function updateThemeToggleUI(theme) {
-    // Update all theme toggle buttons on the page
-    const btns = document.querySelectorAll('.theme-toggle-btn');
-    btns.forEach(btn => {
-        const icon = btn.querySelector('.theme-icon');
-        const label = btn.querySelector('.theme-label-text');
-        if (theme === 'light') {
-            if (icon) icon.textContent = '🌙';
-            if (label) label.textContent = 'Dark Mode';
-        } else {
-            if (icon) icon.textContent = '☀️';
-            if (label) label.textContent = 'Light Mode';
-        }
-    });
+    // No-op: Light mode is disabled
 }
 
 // Apply theme BEFORE the page is rendered to prevent flash
