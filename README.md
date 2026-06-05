@@ -1,3 +1,11 @@
+---
+title: ChatNCT
+emoji: 🎓
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
 # ChatNCT – AI-Powered Assistant for NCT University
 
 ## Overview
