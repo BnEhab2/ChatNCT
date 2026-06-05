@@ -6,8 +6,9 @@
     <meta charset="UTF-8">
     <link rel="icon" type="image/svg+xml" href="img/Head of Charcter.svg">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatNCT - Dashboard</title>
-    <meta name="description" content="ChatNCT AI Assistant Dashboard">
+    <title>ChatNCT — AI-Powered University Assistant</title>
+    <meta name="description"
+        content="ChatNCT — Your intelligent university companion. AI chat, smart attendance, prompt engineering, and more.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
@@ -15,117 +16,640 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/common.css?v=3">
     <style>
+        body {
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
         .main-container {
-            width: 100%; max-width: 1200px; margin: 0 auto;
-            padding: 80px 24px 0; position: relative; z-index: 10;
-            height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 88px 20px 60px;
+            position: relative;
+            z-index: 10;
         }
 
-        .dashboard-container {
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            flex: 1; text-align: center;
-            overflow-y: hidden; animation: fadeIn 0.5s ease;
-            padding-bottom: 24px; gap: 8px;
+        /* ── Hero Section ─────────────────────────────── */
+        .hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: clamp(24px, 4vw, 60px);
+            min-height: clamp(340px, 50vh, 500px);
+            animation: fadeIn 0.6s ease;
         }
 
-        .robot-character {
-            width: var(--img-robot-dashboard); height: var(--img-robot-dashboard);
-            margin-bottom: 0; animation: subtleFloat 4s infinite ease-in-out;
-        }
-        .robot-character img {
-            width: 100%; height: 100%; object-fit: contain;
-            filter: drop-shadow(0 8px 24px rgba(99, 102, 241, 0.25));
+        .hero-content {
+            flex: 1;
+            min-width: 0;
         }
 
-        .greeting-text {
-            font-family: 'Inter', sans-serif;
-            font-size: clamp(26px, 3.8vw, 38px);
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: rgba(124, 102, 227, 0.12);
+            border: 1px solid rgba(124, 102, 227, 0.25);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 16px;
+            animation: fadeInUp 0.5s ease 0.1s both;
+        }
+
+        .hero-badge i {
+            font-size: 10px;
+        }
+
+        .hero-badge .pulse-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+            animation: statusPulse 2s infinite;
+        }
+
+        .hero-title {
+            font-size: clamp(32px, 5vw, 56px);
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            line-height: 1.08;
+            margin-bottom: 10px;
+            animation: fadeInUp 0.5s ease 0.15s both;
+        }
+
+        .hero-title .gradient-text {
+            background: linear-gradient(135deg, #fff 0%, #b0a9ff 40%, #7c66e3 80%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-title .accent-line {
+            display: block;
+            background: linear-gradient(135deg, #7c66e3, #b0a9ff 50%, #ddd8fd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-greeting {
+            font-size: 15px;
+            font-weight: 600;
             color: var(--text-primary);
-            font-weight: 800;
-            letter-spacing: -0.03em;
-            margin-bottom: 8px;
-            line-height: 1.2;
+            margin-bottom: 14px;
+            animation: fadeInUp 0.5s ease 0.2s both;
         }
 
-        .dashboard-description {
-            font-size: clamp(13px, 1.6vw, 15px);
+        .hero-desc {
+            font-size: 14px;
+            line-height: 1.75;
             color: var(--text-secondary);
-            margin-bottom: 28px; max-width: 580px;
-            line-height: 1.8; font-weight: 400;
-            background: var(--card-bg);
-            padding: 18px 24px;
-            border-radius: 16px;
-            border: 1px solid var(--divider);
-            backdrop-filter: blur(16px) saturate(180%);
-        }
-        .dashboard-description strong { color: var(--accent); font-weight: 700; }
-
-        /* ── Quick Action Cards — Premium Grid ─────────── */
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 14px; max-width: 600px; width: 100%;
+            max-width: 480px;
+            margin-bottom: 24px;
+            animation: fadeInUp 0.5s ease 0.25s both;
         }
 
-        .action-card {
-            background: var(--card-bg);
-            border: 1px solid var(--divider);
-            border-radius: 18px;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            gap: 12px; cursor: pointer;
+        .hero-desc strong {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.5s ease 0.3s both;
+        }
+
+        .hero-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            backdrop-filter: blur(16px) saturate(180%);
-            padding: 24px 16px;
+            font-family: 'Inter', sans-serif;
             position: relative;
             overflow: hidden;
         }
-        .action-card::before {
+
+        .hero-btn::before {
             content: '';
-            position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%;
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .hero-btn:hover::before {
+            left: 100%;
+        }
+
+        .hero-btn.primary {
+            background: var(--accent-gradient);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(124, 102, 227, 0.35);
+        }
+
+        .hero-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(124, 102, 227, 0.5);
+        }
+
+        .hero-btn.secondary {
+            background: rgba(124, 102, 227, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(124, 102, 227, 0.25);
+        }
+
+        .hero-btn.secondary:hover {
+            background: rgba(124, 102, 227, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* ── Character Showcase ─────────────────────── */
+        .hero-character {
+            flex-shrink: 0;
+            position: relative;
+            width: clamp(200px, 28vw, 340px);
+            height: clamp(200px, 28vw, 340px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeInUp 0.6s ease 0.2s both;
+        }
+
+        .character-glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(124, 102, 227, 0.2) 0%, transparent 70%);
+            animation: characterPulse 4s infinite ease-in-out;
+        }
+
+        .character-ring {
+            position: absolute;
+            width: 90%;
+            height: 90%;
+            border-radius: 50%;
+            border: 2px solid rgba(124, 102, 227, 0.15);
+            animation: ringRotate 20s infinite linear;
+        }
+
+        .character-ring::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 12px var(--accent);
+        }
+
+        .character-ring-2 {
+            position: absolute;
+            width: 105%;
+            height: 105%;
+            border-radius: 50%;
+            border: 1px dashed rgba(124, 102, 227, 0.1);
+            animation: ringRotate 30s infinite linear reverse;
+        }
+
+        .character-img {
+            width: 60%;
+            height: auto;
+            filter: drop-shadow(0 8px 32px rgba(124, 102, 227, 0.4));
+            animation: characterFloat 5s infinite ease-in-out;
+            position: relative;
+            z-index: 2;
+        }
+
+        @keyframes characterFloat {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            25% {
+                transform: translateY(-10px) rotate(1deg);
+            }
+
+            50% {
+                transform: translateY(-5px) rotate(0deg);
+            }
+
+            75% {
+                transform: translateY(-12px) rotate(-1deg);
+            }
+        }
+
+        @keyframes characterPulse {
+
+            0%,
+            100% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.8;
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes ringRotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ── Stats Strip ──────────────────────────────── */
+        .stats-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin: 40px 0;
+            animation: fadeInUp 0.5s ease 0.35s both;
+        }
+
+        .stat-card {
+            background: rgba(28, 26, 74, 0.5);
+            border: 1px solid rgba(124, 102, 227, 0.15);
+            border-radius: 16px;
+            padding: 18px 16px;
+            text-align: center;
+            backdrop-filter: blur(12px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: default;
+        }
+
+        .stat-card:hover {
+            border-color: rgba(124, 102, 227, 0.35);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(124, 102, 227, 0.12);
+        }
+
+        .stat-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #fff;
+            margin: 0 auto 10px;
+        }
+
+        .stat-number {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.02em;
+        }
+
+        /* ── Feature Grid ─────────────────────────────── */
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .feature-card {
+            background: rgba(28, 26, 74, 0.5);
+            border: 1px solid rgba(124, 102, 227, 0.15);
+            border-radius: 18px;
+            padding: 22px 20px;
+            backdrop-filter: blur(14px);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: default;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 200px;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
             background: var(--accent-gradient);
             opacity: 0;
             transition: opacity 0.3s ease;
-            border-radius: 18px;
         }
-        .action-card:hover::before { opacity: 0.06; }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-card:hover {
+            border-color: rgba(124, 102, 227, 0.35);
+            transform: translateY(-6px);
+            box-shadow: 0 12px 32px rgba(124, 102, 227, 0.12);
+        }
+
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #fff;
+            margin-bottom: 14px;
+            box-shadow: 0 4px 12px rgba(124, 102, 227, 0.25);
+        }
+
+        .feature-card h3 {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            font-size: 13px;
+            line-height: 1.65;
+            color: var(--text-secondary);
+        }
+
+        .feature-tag {
+            display: inline-flex;
+            align-items: center;
+            align-self: flex-start;
+            gap: 4px;
+            margin-top: auto;
+            padding: 3px 10px;
+            border-radius: 8px;
+            background: rgba(124, 102, 227, 0.1);
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 0.03em;
+        }
+
+        /* ── Quick Actions ─────────────────────────────── */
+        .actions-grid {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            gap: 16px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .action-card {
+            background: rgba(28, 26, 74, 0.5);
+            border: 1px solid rgba(124, 102, 227, 0.15);
+            border-radius: 18px;
+            padding: 22px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+            text-align: center;
+            backdrop-filter: blur(12px);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            flex: 1 1 calc(25% - 16px);
+            min-width: 220px;
+            max-width: 320px;
+            min-height: 200px;
+        }
+
+        .action-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 16px;
+            background: var(--accent-gradient);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 0;
+        }
+
+        .action-card:hover::after {
+            opacity: 0.08;
+        }
 
         .action-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 12px 32px rgba(99, 102, 241, 0.15);
-            border-color: var(--accent);
+            border-color: rgba(124, 102, 227, 0.4);
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 12px 28px rgba(124, 102, 227, 0.15);
         }
 
         .action-card i {
-            font-size: 28px; color: var(--accent);
-            position: relative; z-index: 1;
+            font-size: 32px;
+            color: var(--text-primary);
+            position: relative;
+            z-index: 1;
+            transition: transform 0.3s ease;
+            opacity: 0.9;
         }
+
+        .action-card:hover i {
+            transform: scale(1.15);
+        }
+
         .action-card img {
-            width: var(--img-action-card); height: var(--img-action-card);
-            object-fit: contain; position: relative; z-index: 1;
+            width: 36px;
+            height: 36px;
+            object-fit: contain;
+            position: relative;
+            z-index: 1;
+            transition: transform 0.3s ease;
         }
-        [data-theme="dark"] .action-card img { filter: brightness(0) invert(1); }
+
+        .action-card:hover img {
+            transform: scale(1.15);
+        }
+
+        [data-theme="dark"] .action-card img {
+            filter: brightness(0) invert(1);
+        }
 
         .action-card span {
+            font-size: 16px;
+            font-weight: 700;
             color: var(--text-primary);
-            font-size: 13px; font-weight: 600;
-            text-align: center; position: relative; z-index: 1;
-            letter-spacing: -0.01em;
+            position: relative;
+            z-index: 1;
         }
 
-        @media (max-width: 768px) {
-            .quick-actions { grid-template-columns: repeat(2, 1fr); gap: 12px; max-width: 400px; }
-            .action-card { padding: 20px 14px; border-radius: 16px; }
-            .action-card i { font-size: 24px; }
-            .action-card img { width: var(--img-action-card-mob); height: var(--img-action-card-mob); }
-            .action-card span { font-size: 12px; }
-            .robot-character { width: var(--img-robot-dashboard-mob); height: var(--img-robot-dashboard-mob); }
+        .action-card .action-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            position: relative;
+            z-index: 1;
+            line-height: 1.45;
         }
+
+        /* ── Tech Stack Footer ─────────────────────────── */
+        .tech-strip {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            padding: 20px 0;
+            border-top: 1px solid rgba(124, 102, 227, 0.1);
+            flex-wrap: wrap;
+        }
+
+        .tech-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+
+        .tech-item:hover {
+            opacity: 1;
+        }
+
+        .tech-item i {
+            color: var(--accent);
+            font-size: 13px;
+        }
+
+        /* ── Responsive ───────────────────────────────── */
+        @media (max-width: 900px) {
+            .hero {
+                flex-direction: column-reverse;
+                text-align: center;
+                gap: 20px;
+                min-height: auto;
+                padding-top: 10px;
+            }
+
+            .hero-content {
+                align-items: center;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .hero-desc {
+                text-align: center;
+            }
+
+            .hero-actions {
+                justify-content: center;
+            }
+
+            .hero-character {
+                width: clamp(160px, 35vw, 240px);
+                height: clamp(160px, 35vw, 240px);
+            }
+
+            .stats-strip {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .actions-grid {
+                display: flex;
+                gap: 16px;
+            }
+
+            .action-card {
+                flex: 1 1 calc(50% - 16px);
+                max-width: 100%;
+            }
+        }
+
         @media (max-width: 480px) {
-            .main-container { padding: 68px 16px 0; }
-            .dashboard-description { padding: 14px 18px; font-size: 13px; }
+            .main-container {
+                padding: 76px 14px 40px;
+            }
+
+            .hero-title {
+                font-size: clamp(26px, 7vw, 36px);
+            }
+
+            .hero-character {
+                width: 150px;
+                height: 150px;
+            }
+
+            .stats-strip {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .actions-grid {
+                display: flex;
+                gap: 10px;
+            }
+
+            .action-card {
+                flex: 1 1 calc(50% - 10px);
+                min-width: 130px;
+                min-height: 160px;
+                padding: 16px 10px;
+                gap: 8px;
+            }
         }
     </style>
 </head>
@@ -136,7 +660,8 @@
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-logo"><img src="img/Logo.svg" alt="ChatNCT"></div>
-            <button class="sidebar-close" id="sidebarClose" aria-label="Close menu"><i class="fas fa-times"></i></button>
+            <button class="sidebar-close" id="sidebarClose" aria-label="Close menu"><i
+                    class="fas fa-times"></i></button>
         </div>
         <div class="sidebar-menu">
             <div class="menu-item active" onclick="navigateTo('dashboard')">
@@ -161,7 +686,6 @@
                 <div class="user-avatar" id="userAvatar">G</div>
                 <div class="user-name" id="userNameDisplay">Guest</div>
             </div>
-
             <a href="#" class="sidebar-login" onclick="logout(); return false;">
                 <i class="fas fa-sign-out-alt"></i><span>Logout</span>
             </a>
@@ -180,66 +704,172 @@
     </nav>
 
     <div class="animated-bg">
-        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
-        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
-        <div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div>
-        <div class="glow-orb"></div><div class="glow-orb"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="glow-orb"></div>
+        <div class="glow-orb"></div>
     </div>
 
     <div class="main-container">
-        <div class="dashboard-container">
-            <div class="robot-character"><img src="img/Head of Charcter.svg" alt="ChatNCT Robot"></div>
-            <h1 class="greeting-text" id="greetingText">Hello, User!</h1>
-            <p class="dashboard-description">
-                <strong>ChatNCT</strong> is your intelligent AI University Assistant. It has no direct relation to a
-                simple chat box — it is a smart supervisor that explains concepts, quizzes you on your courses,
-                generates professional prompts via CO-STAR framework, and automates face-recognition smart attendance.
-                Choose your destination below.
-            </p>
-            <script>
-                const username = localStorage.getItem('chatnct_username') || 'User';
-                document.getElementById('userNameDisplay').innerText = username;
-                const greeting = document.getElementById('greetingText');
-                if (greeting) greeting.innerText = 'Hello, ' + username + '!';
-            </script>
-            <div class="quick-actions">
-                <div class="action-card" onclick="navigateTo('chat')">
-                    <i class="far fa-comments"></i><span>AI Chat</span>
+
+        <!-- ══ Hero ══════════════════════════════════════ -->
+        <section class="hero" id="heroSection">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="pulse-dot"></span>
+                    <span>AI-Powered Platform</span>
                 </div>
-                <div class="action-card" data-card-role="student" onclick="navigateTo('attendance')">
-                    <img src="img/Groups.png" alt="Attendance"><span>Attendance</span>
-                </div>
-                <div class="action-card" data-card-role="instructor,admin" onclick="navigateTo('instructor')">
-                    <i class="fas fa-chalkboard-teacher"></i><span>Instructor Panel</span>
-                </div>
-                <div class="action-card" onclick="navigateTo('prompt')">
-                    <img src="img/Groupw.png" alt="Prompt"><span>Prompt Generator</span>
+                <h1 class="hero-title">
+                    <span class="gradient-text">Your Smart</span>
+                    <span class="accent-line">University Assistant</span>
+                </h1>
+                <p class="hero-greeting" id="greetingText">Welcome back!</p>
+                <p class="hero-desc">
+                    <strong>ChatNCT</strong> combines AI chat, biometric attendance, smart prompt engineering,
+                    and academic analytics — all in one intelligent platform built for modern universities.
+                </p>
+                <div class="hero-actions">
+                    <button class="hero-btn primary" onclick="navigateTo('chat')">
+                        <i class="fas fa-comments"></i> Start Chatting
+                    </button>
+                    <button class="hero-btn secondary" onclick="navigateTo('prompt')">
+                        <i class="fas fa-wand-magic-sparkles"></i> Prompt Studio
+                    </button>
                 </div>
             </div>
+            <div class="hero-character">
+                <div class="character-glow"></div>
+                <div class="character-ring"></div>
+                <div class="character-ring-2"></div>
+                <img src="img/Head of Charcter.svg" alt="ChatNCT Character" class="character-img">
+            </div>
+        </section>
+
+        <!-- ══ Stats ═════════════════════════════════════ -->
+        <div class="stats-strip">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-brain"></i></div>
+                <div class="stat-number">6</div>
+                <div class="stat-label">AI Sub-Agents</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-shield-halved"></i></div>
+                <div class="stat-number">3-Step</div>
+                <div class="stat-label">Anti-Spoof Verification</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-bolt"></i></div>
+                <div class="stat-number">Live</div>
+                <div class="stat-label">Streaming Responses</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-wand-magic-sparkles"></i></div>
+                <div class="stat-number">CO-STAR</div>
+                <div class="stat-label">Structured Prompting</div>
+            </div>
         </div>
+
+        <!-- ══ Quick Actions ═════════════════════════════ -->
+        <div class="section-label"><i class="fas fa-rocket"></i> Quick Actions</div>
+        <div class="actions-grid">
+            <div class="action-card" onclick="navigateTo('chat')">
+                <i class="far fa-comments"></i>
+                <span>AI Chat</span>
+                <div class="action-desc">Ask anything, learn faster</div>
+            </div>
+            <div class="action-card" data-card-role="student" onclick="navigateTo('attendance')">
+                <img src="img/Groups.png" alt="Attendance">
+                <span>Attendance</span>
+                <div class="action-desc">Scan QR & verify face</div>
+            </div>
+            <div class="action-card" data-card-role="instructor,admin" onclick="navigateTo('instructor')">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <span>Instructor</span>
+                <div class="action-desc">Manage sessions & QR</div>
+            </div>
+            <div class="action-card" onclick="navigateTo('prompt')">
+                <img src="img/Groupw.png" alt="Prompt Generator">
+                <span>Prompt Gen</span>
+                <div class="action-desc">Create perfect prompts</div>
+            </div>
+        </div>
+
+        <!-- ══ Features ══════════════════════════════════ -->
+        <div class="section-label"><i class="fas fa-sparkles"></i> Core Capabilities</div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-robot"></i></div>
+                <h3>Intelligent AI Chat</h3>
+                <p>Multi-agent architecture powered by Google ADK. Study agent, code helper, academic analyzer, live web
+                    search — all routing through one conversation.</p>
+                <span class="feature-tag"><i class="fas fa-microchip"></i> GPT-4o-mini</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-fingerprint"></i></div>
+                <h3>Biometric Attendance</h3>
+                <p>QR scan + DeepFace identity verification + MediaPipe liveness detection. Anti-spoof pipeline with
+                    device binding and rotating HMAC tokens.</p>
+                <span class="feature-tag"><i class="fas fa-eye"></i> Computer Vision</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-wand-magic-sparkles"></i></div>
+                <h3>Prompt Studio</h3>
+                <p>CO-STAR framework prompt generator. Upload context, describe your goal, get a structured professional
+                    prompt — then execute it directly in chat.</p>
+                <span class="feature-tag"><i class="fas fa-star"></i> CO-STAR Framework</span>
+            </div>
+        </div>
+
+        <!-- ══ Tech Stack Footer ═════════════════════════ -->
+        <div class="tech-strip">
+            <div class="tech-item"><i class="fab fa-python"></i> Flask</div>
+            <div class="tech-item"><i class="fas fa-database"></i> Supabase</div>
+            <div class="tech-item"><i class="fas fa-brain"></i> Google ADK</div>
+            <div class="tech-item"><i class="fas fa-eye"></i> DeepFace</div>
+            <div class="tech-item"><i class="fas fa-hand-sparkles"></i> MediaPipe</div>
+            <div class="tech-item"><i class="fas fa-camera"></i> OpenCV</div>
+        </div>
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-client.js"></script>
     <script src="js/common.js"></script>
     <script>
-        // ── Auth Guard: Redirect to login if no session ────────
         (async () => {
             const auth = await requireAuth();
-            if (!auth) return; // requireAuth redirects if no session
+            if (!auth) return;
         })();
 
         document.addEventListener('DOMContentLoaded', () => {
             const greetingEl = document.getElementById('greetingText');
             if (greetingEl) {
                 const hour = new Date().getHours();
-                let timeGreet = 'Welcome';
+                let timeGreet = 'Welcome back';
                 if (hour >= 5 && hour < 12) timeGreet = 'Good Morning';
                 else if (hour >= 12 && hour < 17) timeGreet = 'Good Afternoon';
                 else timeGreet = 'Good Evening';
-                const name = getUsername();
-                greetingEl.innerHTML = `${timeGreet}, ${name}! `;
+                greetingEl.textContent = `${timeGreet}, ${getUsername()}!`;
             }
+
+            // Stagger feature card animations
+            document.querySelectorAll('.feature-card').forEach((card, i) => {
+                card.style.animation = `fadeInUp 0.5s ease ${0.1 + i * 0.08}s both`;
+            });
+            document.querySelectorAll('.action-card').forEach((card, i) => {
+                card.style.animation = `fadeInUp 0.5s ease ${0.15 + i * 0.06}s both`;
+            });
+            document.querySelectorAll('.stat-card').forEach((card, i) => {
+                card.style.animation = `fadeInUp 0.4s ease ${0.1 + i * 0.06}s both`;
+            });
         });
     </script>
 </body>

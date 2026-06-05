@@ -34,14 +34,14 @@ const ChatNCT3D = (function () {
     function getThemeColors() {
         const isLight = document.documentElement.getAttribute('data-theme') === 'light';
         return {
-            accent: isLight ? 0x6366f1 : 0x818cf8,
-            accentHover: isLight ? 0x4f46e5 : 0x6366f1,
-            bgPrimary: isLight ? 0xfafbfe : 0x0a0a0f,
-            glow: isLight ? 0x6366f1 : 0x818cf8,
+            accent: isLight ? 0x7c66e3 : 0x7c66e3,
+            accentHover: isLight ? 0x5c4eb3 : 0x5c4eb3,
+            bgPrimary: isLight ? 0xf0eeff : 0x1a173a,
+            glow: isLight ? 0x7c66e3 : 0x7c66e3,
             success: 0x10b981,
             error: 0xef4444,
-            starColor: isLight ? 0x4f46e5 : 0xa5b4fc,
-            fogColor: isLight ? 0xf0f1f8 : 0x0a0a0f
+            starColor: isLight ? 0x5c4eb3 : 0xb0a9ff,
+            fogColor: isLight ? 0xf0eeff : 0x1a173a
         };
     }
 
@@ -311,7 +311,7 @@ const ChatNCT3D = (function () {
             this.group.add(this.ringGroup);
 
             this.rings = [];
-            const ringColors = [this.colors.accent, 0x818cf8, 0xa5b4fc];
+            const ringColors = [this.colors.accent, 0x7c66e3, 0xb0a9ff];
             const ringSizes = [2.1, 2.3, 2.5];
 
             for (let i = 0; i < 3; i++) {

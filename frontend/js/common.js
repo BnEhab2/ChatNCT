@@ -177,7 +177,7 @@ function detectDirection(text) {
 // Shows a temporary message at the top of the screen that auto-fades.
 // Usage: showNotification('Saved!', 'success')
 function showNotification(text, type = 'info') {
-    const colors = { info: '#6366f1', success: '#10b981', error: '#ef4444' };
+    const colors = { info: '#7c66e3', success: '#10b981', error: '#ef4444' };
     const msg = document.createElement('div');
     msg.className = 'notification';
     msg.setAttribute('role', 'alert');
@@ -236,10 +236,27 @@ function initRoleBasedNav() {
 }
 
 
+// ── Logo → Dashboard ───────────────────────────────────────
+function initLogoNavigation() {
+    document.querySelectorAll('.header-logo, .sidebar-logo').forEach(logo => {
+        logo.style.cursor = 'pointer';
+        logo.setAttribute('role', 'link');
+        logo.setAttribute('aria-label', 'Go to Dashboard');
+        logo.addEventListener('click', () => {
+            closeSidebar();
+            if (!window.location.pathname.endsWith('dashboard.html')) {
+                navigateTo('dashboard');
+            }
+        });
+    });
+}
+
+
 // ── Initialize on Page Load ────────────────────────────────
 // These functions run automatically when any page finishes loading.
 document.addEventListener('DOMContentLoaded', () => {
     initSidebarUser();      // Show username in sidebar
     initRoleBasedNav();     // Hide/show menu items based on role
+    initLogoNavigation();   // Logo click → dashboard
     updateThemeToggleUI(localStorage.getItem('chatnct_theme') || 'dark'); // Sync toggle button icon
 });

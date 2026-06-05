@@ -17,30 +17,32 @@
         /* ── Theme init before paint ── */
         html[data-theme="light"] { background: #fafbfe; }
         :root, [data-theme="dark"] {
-            --bg-primary: #0a0a0f;
-            --card-bg: rgba(22, 22, 32, 0.92);
-            --input-bg: rgba(255, 255, 255, 0.04);
-            --input-border: rgba(255, 255, 255, 0.08);
-            --text-primary: #f1f1f4;
-            --text-secondary: #a1a1b5;
-            --accent: #818cf8;
-            --accent-hover: #6366f1;
-            --accent-gradient: linear-gradient(135deg, #818cf8 0%, #6366f1 50%, #4f46e5 100%);
-            --divider: rgba(255, 255, 255, 0.06);
-            --glow-color: rgba(129, 140, 248, 0.08);
+            --bg-primary: #1a173a;
+            --card-bg: rgba(28, 26, 74, 0.95);
+            --input-bg: rgba(62, 58, 131, 0.8);
+            --input-border: rgba(124, 102, 227, 0.4);
+            --text-primary: #ffffff;
+            --text-secondary: #b0a9ff;
+            --accent: #7c66e3;
+            --accent-hover: #5c4eb3;
+            --accent-gradient: linear-gradient(135deg, #7c66e3 0%, #5c4eb3 50%, #4c429c 100%);
+            --divider: rgba(124, 102, 227, 0.25);
+            --glow-color: rgba(124, 102, 227, 0.45);
+            --glow-color-secondary: rgba(76, 66, 156, 0.55);
         }
         [data-theme="light"] {
-            --bg-primary: #fafbfe;
-            --card-bg: rgba(255, 255, 255, 0.95);
-            --input-bg: #f3f4f8;
-            --input-border: rgba(0, 0, 0, 0.08);
-            --text-primary: #111827;
-            --text-secondary: #6b7280;
-            --accent: #6366f1;
-            --accent-hover: #4f46e5;
-            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #4338ca 100%);
-            --divider: rgba(0, 0, 0, 0.06);
-            --glow-color: rgba(99, 102, 241, 0.04);
+            --bg-primary: #f0eeff;
+            --card-bg: rgba(255, 255, 255, 0.97);
+            --input-bg: rgba(230, 225, 255, 0.85);
+            --input-border: rgba(124, 102, 227, 0.3);
+            --text-primary: #1a173a;
+            --text-secondary: #5c4eb3;
+            --accent: #7c66e3;
+            --accent-hover: #5c4eb3;
+            --accent-gradient: linear-gradient(135deg, #7c66e3 0%, #5c4eb3 50%, #4c429c 100%);
+            --divider: rgba(124, 102, 227, 0.2);
+            --glow-color: rgba(124, 102, 227, 0.22);
+            --glow-color-secondary: rgba(76, 66, 156, 0.28);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -84,30 +86,35 @@
         .particle {
             position: absolute; border-radius: 50%;
             background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
-            animation: particleFloat 20s infinite ease-in-out; opacity: 0.4;
+            animation: particleFloat 25s infinite ease-in-out; opacity: 0.65;
         }
         .particle:nth-child(1) { width: 300px; height: 300px; top: 10%; left: 5%; }
         .particle:nth-child(2) { width: 200px; height: 200px; top: 60%; left: 75%; animation-delay: -5s; }
         .particle:nth-child(3) { width: 150px; height: 150px; top: 70%; left: 15%; animation-delay: -10s; }
         .particle:nth-child(4) { width: 250px; height: 250px; top: 30%; left: 80%; animation-delay: -3s; }
         .particle:nth-child(5) { width: 180px; height: 180px; top: 15%; left: 45%; animation-delay: -7s; }
+        .particle:nth-child(6) { width: 220px; height: 220px; top: 75%; left: 60%; animation-delay: -12s; }
+        .particle:nth-child(7) { width: 120px; height: 120px; top: 85%; left: 25%; animation-delay: -5s; }
+        .particle:nth-child(8) { width: 200px; height: 200px; top: 5%; left: 70%; animation-delay: -4s; }
+        .particle:nth-child(9) { width: 100px; height: 100px; top: 45%; left: 50%; animation-delay: -15s; }
+        .particle:nth-child(10) { width: 160px; height: 160px; top: 50%; left: 30%; animation-delay: -9s; }
 
         .glow-orb {
             position: absolute; border-radius: 50%;
-            filter: blur(80px); animation: orbPulse 12s infinite ease-in-out;
+            filter: blur(80px); animation: orbPulse 16s infinite ease-in-out;
         }
         .glow-orb:nth-child(1) { width: 400px; height: 400px; background: var(--glow-color); top: 20%; left: 15%; }
-        .glow-orb:nth-child(2) { width: 300px; height: 300px; background: var(--glow-color); bottom: 15%; right: 20%; animation-delay: -6s; }
+        .glow-orb:nth-child(2) { width: 300px; height: 300px; background: var(--glow-color-secondary, var(--glow-color)); bottom: 15%; right: 20%; animation-delay: -8s; }
 
         @keyframes particleFloat {
-            0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
-            25% { transform: translate(20px, -30px) scale(1.05); opacity: 0.5; }
-            50% { transform: translate(-15px, 20px) scale(0.95); opacity: 0.35; }
-            75% { transform: translate(15px, 15px) scale(1.02); opacity: 0.45; }
+            0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 0.45; }
+            25% { transform: translate(120px, -100px) scale(1.2) rotate(45deg); opacity: 0.75; }
+            50% { transform: translate(-100px, 140px) scale(0.85) rotate(90deg); opacity: 0.5; }
+            75% { transform: translate(90px, 80px) scale(1.1) rotate(135deg); opacity: 0.7; }
         }
         @keyframes orbPulse {
-            0%, 100% { opacity: 0.4; transform: scale(1); }
-            50% { opacity: 0.7; transform: scale(1.15); }
+            0%, 100% { opacity: 0.45; transform: scale(1) translate(0, 0); }
+            50% { opacity: 0.75; transform: scale(1.25) translate(60px, -40px); }
         }
 
         /* ── Intro Screen ─────────────────────────────── */
@@ -116,15 +123,15 @@
             transform: translate(-50%, -50%) scale(1);
             width: clamp(140px, 22vw, 260px); max-width: 90vw;
             z-index: 1001;
-            filter: drop-shadow(0 4px 20px rgba(99, 102, 241, 0.4));
+            filter: drop-shadow(0 4px 20px rgba(124, 102, 227, 0.5));
             animation: logoBreath 4s infinite ease-in-out;
             pointer-events: none;
         }
         .morph-logo img { width: 100%; height: auto; display: block; }
 
         @keyframes logoBreath {
-            0%, 100% { filter: drop-shadow(0 4px 20px rgba(99, 102, 241, 0.4)); }
-            50% { filter: drop-shadow(0 8px 40px rgba(99, 102, 241, 0.6)); }
+            0%, 100% { filter: drop-shadow(0 4px 20px rgba(124, 102, 227, 0.5)); }
+            50% { filter: drop-shadow(0 8px 40px rgba(124, 102, 227, 0.7)); }
         }
 
         .intro-tagline {
@@ -150,7 +157,7 @@
         }
         .scroll-track {
             width: 2px; height: 48px;
-            background: rgba(129, 140, 248, 0.15);
+            background: rgba(124, 102, 227, 0.2);
             border-radius: 2px; position: relative;
         }
         .scroll-ball {
@@ -285,7 +292,7 @@
         }
         .form-group input:focus {
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+            box-shadow: 0 0 0 3px rgba(124, 102, 227, 0.15);
             background: var(--input-bg);
         }
 
@@ -313,7 +320,7 @@
             font-size: 15px; font-weight: 700;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 4px 12px rgba(124, 102, 227, 0.35);
             font-family: 'Inter', sans-serif;
             letter-spacing: 0.01em;
             position: relative;
@@ -329,7 +336,7 @@
         .submit-btn:hover::before { left: 100%; }
         .submit-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+            box-shadow: 0 8px 24px rgba(124, 102, 227, 0.45);
         }
         .submit-btn:active { transform: translateY(0); }
         .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
@@ -359,8 +366,8 @@
         .login-theme-btn {
             position: fixed; top: 20px; right: 20px; z-index: 1001;
             width: 42px; height: 42px; border-radius: 12px;
-            background: rgba(129, 140, 248, 0.1);
-            border: 1px solid rgba(129, 140, 248, 0.2);
+            background: rgba(124, 102, 227, 0.12);
+            border: 1px solid rgba(124, 102, 227, 0.25);
             color: var(--accent); font-size: 18px;
             cursor: pointer; display: flex; align-items: center;
             justify-content: center;
@@ -417,14 +424,13 @@
         <!-- SECTION 1: INTRO -->
         <section class="section" id="section-intro">
             <div class="animated-bg">
-                <div class="particle"></div>
-                <div class="particle"></div>
-                <div class="particle"></div>
-                <div class="particle"></div>
-                <div class="particle"></div>
+                <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+                <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+                <div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div>
                 <div class="glow-orb"></div>
                 <div class="glow-orb"></div>
             </div>
+
             <div class="morph-logo" id="morphLogo"><img src="img/Logo.svg" alt="ChatNCT"></div>
             <p class="intro-tagline" id="introTagline">Your AI-Powered University Assistant</p>
         </section>
@@ -432,11 +438,9 @@
         <!-- SECTION 2: LOGIN -->
         <section class="section" id="section-login">
             <div class="animated-bg">
-                <div class="particle"></div>
-                <div class="particle"></div>
-                <div class="particle"></div>
-                <div class="particle"></div>
-                <div class="particle"></div>
+                <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+                <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+                <div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div>
                 <div class="glow-orb"></div>
                 <div class="glow-orb"></div>
             </div>

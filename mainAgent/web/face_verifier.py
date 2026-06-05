@@ -37,7 +37,7 @@ from deepface import DeepFace
 # ── Debug Flag ─────────────────────────────────────────────────────────
 # Set to True to save pipeline artifacts to debug_logs/ folder.
 # Set to False for production (zero overhead — just a few bool checks).
-DEBUG_FACE_PIPELINE = os.getenv("DEBUG_FACE_PIPELINE", "1").strip().lower() in {"1", "true", "yes", "on"}
+DEBUG_FACE_PIPELINE = os.getenv("DEBUG_FACE_PIPELINE", "0").strip().lower() in {"1", "true", "yes", "on"}
 
 if DEBUG_FACE_PIPELINE:
     try:
