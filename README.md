@@ -10,7 +10,7 @@
 
 ### Student Portal
 
-* Secure login باستخدام university email
+* Secure login using university email
 * AI Chat Assistant capable of:
 
   * Explaining course materials using Retrieval-Augmented Generation (RAG)
