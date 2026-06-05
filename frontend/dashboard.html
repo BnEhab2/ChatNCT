@@ -30,7 +30,6 @@
             z-index: 10;
         }
 
-        /* ── Hero Section ─────────────────────────────── */
         .hero {
             display: flex;
             align-items: center;
@@ -286,7 +285,6 @@
             }
         }
 
-        /* ── Stats Strip ──────────────────────────────── */
         .stats-strip {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -302,14 +300,7 @@
             padding: 18px 16px;
             text-align: center;
             backdrop-filter: blur(12px);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: default;
-        }
-
-        .stat-card:hover {
-            border-color: rgba(124, 102, 227, 0.35);
-            transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(124, 102, 227, 0.12);
         }
 
         .stat-icon {
@@ -341,7 +332,6 @@
             letter-spacing: 0.02em;
         }
 
-        /* ── Feature Grid ─────────────────────────────── */
         .section-label {
             display: inline-flex;
             align-items: center;
@@ -367,35 +357,12 @@
             border-radius: 18px;
             padding: 22px 20px;
             backdrop-filter: blur(14px);
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: default;
             position: relative;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             min-height: 200px;
-        }
-
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: var(--accent-gradient);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .feature-card:hover::before {
-            opacity: 1;
-        }
-
-        .feature-card:hover {
-            border-color: rgba(124, 102, 227, 0.35);
-            transform: translateY(-6px);
-            box-shadow: 0 12px 32px rgba(124, 102, 227, 0.12);
         }
 
         .feature-icon {
@@ -413,14 +380,14 @@
         }
 
         .feature-card h3 {
-            font-size: 17px;
+            font-size: 20px;
             font-weight: 700;
             color: var(--text-primary);
             margin-bottom: 10px;
         }
 
         .feature-card p {
-            font-size: 13px;
+            font-size: 16px;
             line-height: 1.65;
             color: var(--text-secondary);
         }
@@ -440,7 +407,6 @@
             letter-spacing: 0.03em;
         }
 
-        /* ── Quick Actions ─────────────────────────────── */
         .actions-grid {
             display: flex;
             justify-content: center;
@@ -524,7 +490,7 @@
         }
 
         .action-card span {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 700;
             color: var(--text-primary);
             position: relative;
@@ -532,7 +498,7 @@
         }
 
         .action-card .action-desc {
-            font-size: 12px;
+            font-size: 14px;
             color: var(--text-secondary);
             font-weight: 500;
             position: relative;
@@ -540,7 +506,6 @@
             line-height: 1.45;
         }
 
-        /* ── Tech Stack Footer ─────────────────────────── */
         .tech-strip {
             display: flex;
             align-items: center;
@@ -558,20 +523,14 @@
             font-size: 11px;
             font-weight: 600;
             color: var(--text-secondary);
-            opacity: 0.7;
-            transition: opacity 0.2s ease;
-        }
-
-        .tech-item:hover {
-            opacity: 1;
+            opacity: 0.85;
         }
 
         .tech-item i {
             color: var(--accent);
-            font-size: 13px;
+            font-size: 16px;
         }
 
-        /* ── Responsive ───────────────────────────────── */
         @media (max-width: 900px) {
             .hero {
                 flex-direction: column-reverse;
@@ -720,7 +679,6 @@
 
     <div class="main-container">
 
-        <!-- ══ Hero ══════════════════════════════════════ -->
         <section class="hero" id="heroSection">
             <div class="hero-content">
                 <div class="hero-badge">
@@ -734,7 +692,7 @@
                 <p class="hero-greeting" id="greetingText">Welcome back!</p>
                 <p class="hero-desc">
                     <strong>ChatNCT</strong> combines AI chat, biometric attendance, smart prompt engineering,
-                    and academic analytics — all in one intelligent platform built for modern universities.
+                    and academic analytics all in one intelligent platform built for modern universities.
                 </p>
                 <div class="hero-actions">
                     <button class="hero-btn primary" onclick="navigateTo('chat')">
@@ -753,7 +711,6 @@
             </div>
         </section>
 
-        <!-- ══ Stats ═════════════════════════════════════ -->
         <div class="stats-strip">
             <div class="stat-card">
                 <div class="stat-icon"><i class="fas fa-brain"></i></div>
@@ -777,7 +734,6 @@
             </div>
         </div>
 
-        <!-- ══ Quick Actions ═════════════════════════════ -->
         <div class="section-label"><i class="fas fa-rocket"></i> Quick Actions</div>
         <div class="actions-grid">
             <div class="action-card" onclick="navigateTo('chat')">
@@ -786,7 +742,7 @@
                 <div class="action-desc">Ask anything, learn faster</div>
             </div>
             <div class="action-card" data-card-role="student" onclick="navigateTo('attendance')">
-                <img src="img/Groups.png" alt="Attendance">
+                <i class="fas fa-qrcode"></i>
                 <span>Attendance</span>
                 <div class="action-desc">Scan QR & verify face</div>
             </div>
@@ -796,13 +752,12 @@
                 <div class="action-desc">Manage sessions & QR</div>
             </div>
             <div class="action-card" onclick="navigateTo('prompt')">
-                <img src="img/Groupw.png" alt="Prompt Generator">
+                <i class="fas fa-wand-magic-sparkles"></i>
                 <span>Prompt Gen</span>
                 <div class="action-desc">Create perfect prompts</div>
             </div>
         </div>
 
-        <!-- ══ Features ══════════════════════════════════ -->
         <div class="section-label"><i class="fas fa-sparkles"></i> Core Capabilities</div>
         <div class="features-grid">
             <div class="feature-card">
@@ -828,7 +783,6 @@
             </div>
         </div>
 
-        <!-- ══ Tech Stack Footer ═════════════════════════ -->
         <div class="tech-strip">
             <div class="tech-item"><i class="fab fa-python"></i> Flask</div>
             <div class="tech-item"><i class="fas fa-database"></i> Supabase</div>
@@ -860,7 +814,6 @@
                 greetingEl.textContent = `${timeGreet}, ${getUsername()}!`;
             }
 
-            // Stagger feature card animations
             document.querySelectorAll('.feature-card').forEach((card, i) => {
                 card.style.animation = `fadeInUp 0.5s ease ${0.1 + i * 0.08}s both`;
             });
