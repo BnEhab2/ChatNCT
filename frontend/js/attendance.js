@@ -349,7 +349,7 @@ async function startFaceVerify(sessionCode) {
                 ...getAuthHeaders(),
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ session_code: sessionCode, student_code: studentId })
+            body: JSON.stringify({ session_code: sessionCode, student_id: studentId })
         });
     } catch (e) {
         console.warn("Prepare call failed (non-fatal):", e);
@@ -411,7 +411,7 @@ async function startFaceVerify(sessionCode) {
                         ...getAuthHeaders(),
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ session_code: sessionCode, student_code: studentId, image: frame })
+                    body: JSON.stringify({ session_code: sessionCode, student_id: studentId, image: frame })
                 });
                 const data = await res.json();
 
