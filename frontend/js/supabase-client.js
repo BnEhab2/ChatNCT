@@ -249,6 +249,10 @@ async function requireAuth() {
         localStorage.setItem('chatnct_access_token', session.access_token);
     }
 
+    if (typeof loadGlobalChatHistory === 'function') {
+        loadGlobalChatHistory();
+    }
+
     return { session, profile };
 }
 

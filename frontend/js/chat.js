@@ -604,7 +604,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const pendingPrompt = localStorage.getItem('chatnct_pending_prompt');
         if (pendingPrompt) {
             localStorage.removeItem('chatnct_pending_prompt');
-            setTimeout(() => startChat(pendingPrompt), 500);
+            setTimeout(() => {
+                if (messageInput) {
+                    messageInput.value = pendingPrompt;
+                    messageInput.focus();
+                    autoResizeTextarea();
+                    const val = pendingPrompt.trim();
+                    if (val) {
+                        messageInput.dir = detectDirection(val);
+                        messageInput.style.textAlign = detectDirection(val) === 'rtl' ? 'right' : 'left';
+                    }
+                }
+            }, 500);
         }
     }
 

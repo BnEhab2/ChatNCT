@@ -127,18 +127,25 @@
         }
         .copy-code-btn:hover { background: var(--accent); color: white; }
         .copy-code-btn.copied { background: var(--success-muted); border-color: var(--success); color: var(--success); }
+
         .code-block-wrapper pre {
-            margin: 0; padding: 14px 16px; overflow-x: auto;
+            margin: 0; padding: 14px 16px;
             font-size: 13px; line-height: 1.6;
             direction: ltr !important; text-align: left !important;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            overflow-x: hidden;
         }
         .code-block-wrapper pre code {
             background: none !important; padding: 0 !important; font-size: 13px;
             font-family: 'JetBrains Mono', monospace;
             direction: ltr !important; text-align: left !important;
             color: var(--text-secondary);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
-
         /* ── Input Area ─────────────────────────────────────── */
         .message-input-container {
             padding: 12px 20px 24px; position: relative; z-index: 10;

@@ -46,8 +46,30 @@ def add_no_cache_headers(response):
     if response.content_type and ('javascript' in response.content_type or 'html' in response.content_type):
         response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
         response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
     return response
+
+def is_greeting(message: str) -> bool:
+    """Check if the user message is a simple greeting so we can respond instantly."""
+    msg = message.strip().lower()
+    for char in [".", ",", "!", "?", "؟", "-", "_"]:
+        msg = msg.replace(char, "")
+    msg = msg.strip()
+    
+    greetings = {
+        "hi", "hello", "hey", "اهلا", "أهلا", "أهلاً", "ازيك", "إزيك", "سلام", "سلام عليكم", "السلام عليكم", 
+        "صباح الخير", "مساء الخير", "منور", "يا فنان", "يا صديقي", "hi there", "hello there"
+    }
+    
+    if msg in greetings:
+        return True
+        
+    words = msg.split()
+    if len(words) <= 3:
+        for w in words:
+            if w in greetings:
+                return True
+                
+    return False
 
 # Suppress verbose request logs (GET /img/Logo.png, etc.)
 import logging
@@ -420,6 +442,16 @@ def chat(current_user_id: str):
         # Save user message
         _save_chat_message(chat_session_id, "user", message)
 
+        # Check for instant greeting response
+        if is_greeting(message):
+            response = "أهلاً يا فنان! منور ChatNCT. أقدر أساعدك إزاي النهاردة في المنهج أو أي حاجة تانية؟"
+            _save_chat_message(chat_session_id, "bot", response)
+            return jsonify({
+                "status": "success",
+                "response": response,
+                "session_id": chat_session_id,
+            })
+
         # Get agent response (UUID passed; _build_contextual_message resolves student_code)
         response = run_async(_run_agent(current_user_id, message))
 
@@ -475,6 +507,13 @@ def chat_stream(current_user_id: str):
     def generate():
         queue = Queue()
         yield encode_event({"type": "meta", "session_id": chat_session_id})
+
+        if is_greeting(message):
+            response_text = "أهلاً يا فنان! منور ChatNCT. أقدر أساعدك إزاي النهاردة في المنهج أو أي حاجة تانية؟"
+            yield encode_event({"type": "delta", "text": response_text})
+            _save_chat_message(chat_session_id, "bot", response_text)
+            yield encode_event({"type": "done"})
+            return
 
         async def run_and_finish():
             try:

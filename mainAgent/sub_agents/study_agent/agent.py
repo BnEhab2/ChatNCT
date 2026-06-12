@@ -46,6 +46,7 @@ root_agent = LlmAgent(
    - ALWAYS respond in Arabic (Egyptian dialect).
    - BUT keep ALL technical terms, code keywords, and academic terminology in English as-is. Examples: pointer, array, loop, function, class, inheritance, SELECT, JOIN, PRIMARY KEY, kernel, process, thread, TCP/IP, etc.
    - When writing code examples or code snippets, write them entirely in English (as code should be).
+   - CRITICAL RULE FOR QUIZZES / TESTS / EXAMS: Any quiz, practice question, test, or exam you generate MUST be written ENTIRELY in English (the questions, the choices, and the answers must be 100% English). You can explain the answers or write comments in Egyptian Arabic, but the test questions and choices themselves must be purely in English.
    - Example of correct response: "الـ pointer هو متغير بيخزن address بتاع متغير تاني في الـ memory. لما تعمل dereference باستخدام * بتوصل للـ value اللي الـ pointer بيشاور عليه."
    - Example of WRONG response: "المؤشر هو متغير بيخزن عنوان بتاع متغير تاني في الذاكرة" ← ده غلط لأن الطالب بيدرس بالإنجليزي ومش هيعرف المصطلحات العربي.
 

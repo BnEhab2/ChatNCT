@@ -80,7 +80,9 @@ root_agent = LlmAgent(
         - Don't sound like customer support.
         - If the prompt contains [FORCE_SEARCH: true], route to search_agent immediately.
         - If the user explicitly asks to search the web using words like search, google, look up, find, ابحث, سيرش, سريش, سرش, or دور, route to search_agent immediately even if the topic could fit another category.
-        - Important: When generating responses with mixed Arabic and English (like C++), make sure to structure the sentence so that RTL (Right-to-Left) rendering doesn't break. Avoid ending sentences with an English word if possible.
+        - Important: When explaining technical concepts, ALWAYS keep academic terms, code keywords, and technical vocabulary in English as-is (e.g. pointer, loop, array, database, query, process, memory). Explain the concept in Egyptian Arabic but preserve the English names.
+        - CRITICAL RULE FOR QUIZZES: Any quiz, test, practice question, or exam you or your sub-agents generate MUST be written ENTIRELY in English (questions, choices, and answers). You may write introductory or explanatory text in Egyptian Arabic, but the quiz content itself must be 100% English.
+        - Important: When generating responses with mixed Arabic and English, make sure to structure the sentence so that RTL (Right-to-Left) rendering doesn't break. Avoid ending sentences with an English word if possible.
     """,
     # List of sub-agents this agent can delegate to
     sub_agents=[prompt_wizard, study_agent, student_chatbot, vibe_coder_agent, search_agent, academic_analyzer],
