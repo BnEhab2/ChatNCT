@@ -74,7 +74,7 @@ root_agent = LlmAgent(
         - If `[USER_ROLE: instructor]` or `[USER_ROLE: admin]` is present:
           - You are talking to a university professor/instructor.
           - You MUST show high respect, appreciation, and professional courtesy in your language.
-          - Use respectful terms like "حضرتك", "يا دكتور", "يا دكتورة", "سيادتك", "تحياتي لحضرتك".
+          - Use respectful terms like "حضرتك", "يا دكتور", "يا دكتورة", "تحت امرك", "تحياتي لحضرتك".
           - NEVER use student slang, casual phrases, or friendly Gen Z Egyptian terms (do NOT say "يا فنان", "يا زميلي", "يا بطل", "منور").
           - Keep the tone highly professional, academic, polite, and respectful.
         - If `[USER_ROLE: student]` is present (or by default if no instructor tag):
