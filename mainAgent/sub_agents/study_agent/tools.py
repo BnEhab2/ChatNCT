@@ -114,8 +114,10 @@ def search_material(query: str, subject: str = None) -> dict:
 
 def get_all_materials_info(subject: str = None) -> dict:
     """
-    Get information about all loaded materials.
+    Get a summary of all loaded materials including a content preview.
     If subject is provided, it filters the results to only include materials for that subject.
+    Use this to know what lectures exist and get a quick overview of their topics.
+    To get full content for a specific topic, use search_material instead.
     """
     if not materials:
         load_materials()
@@ -124,12 +126,21 @@ def get_all_materials_info(subject: str = None) -> dict:
     for name, content in materials.items():
         if subject and subject.lower() not in name.lower():
             continue
+        # Extract first meaningful lines as a topic preview
+        preview_lines = []
+        for line in (content or "").split('\n'):
+            line = line.strip()
+            if line and len(line) > 5:
+                preview_lines.append(line)
+            if len(preview_lines) >= 8:
+                break
+        
         info[name] = {
-            "size": len(content) if content else 0,
-            "lines": content.count('\n') + 1 if content else 0,
-            "words": len(content.split()) if content else 0
+            "lecture_name": name,
+            "topic_preview": "\n".join(preview_lines),
+            "total_words": len(content.split()) if content else 0,
         }
-    return info
+    return {"materials": info, "total_count": len(info)}
 
 
 def get_available_subjects() -> list:
