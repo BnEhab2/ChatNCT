@@ -587,6 +587,12 @@ function newChat() {
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
 
+    // Check if resuming a session from another page (sidebar click)
+    const sessionParam = params.get('session');
+    if (sessionParam) {
+        setTimeout(() => resumeSession(sessionParam), 300);
+    }
+
     // Check if there's an initial message to send (from dashboard "Start Chat" links)
     const initialRaw = params.get('initial');
     if (initialRaw) {
@@ -602,6 +608,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Load the user's chat history from the database
-    loadChatSessions();
+    // Chat history is loaded by common.js (loadGlobalChatHistory)
 });
+

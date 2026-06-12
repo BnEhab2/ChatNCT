@@ -259,4 +259,105 @@ document.addEventListener('DOMContentLoaded', () => {
     initRoleBasedNav();     // Hide/show menu items based on role
     initLogoNavigation();   // Logo click → dashboard
     updateThemeToggleUI(localStorage.getItem('chatnct_theme') || 'dark'); // Sync toggle button icon
+    loadGlobalChatHistory(); // Load chat history in sidebar (all pages)
 });
+
+
+// ── Global Chat History (Sidebar — All Pages) ──────────────
+// Loads recent chat sessions into the sidebar on every page,
+// so users can always see and resume past conversations.
+
+// Inject CSS for chat history items (needed on pages that don't have chat.css)
+(function injectChatHistoryStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .chat-history-section { padding: 0 8px; margin-top: 4px; }
+        .chat-history-header {
+            display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+            color: var(--text-tertiary); font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .chat-history-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 12px; color: var(--text-secondary); cursor: pointer;
+            border-radius: 10px; transition: all 0.2s ease; font-size: 13px;
+            margin-bottom: 2px; font-weight: 500;
+        }
+        .chat-history-item:hover { background: var(--accent-muted); color: var(--text-primary); }
+        .chat-history-title {
+            flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            cursor: pointer;
+        }
+        .chat-history-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s; }
+        .chat-history-item:hover .chat-history-actions { opacity: 1; }
+        .chat-history-btn {
+            width: 26px; height: 26px; border: none; border-radius: 8px;
+            background: var(--accent-muted); color: var(--text-secondary); cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 11px;
+            transition: all 0.2s;
+        }
+        .chat-history-btn:hover { background: var(--accent); color: white; }
+        .chat-history-btn.delete:hover { background: var(--error-muted); color: var(--error); }
+    `;
+    document.head.appendChild(style);
+})();
+
+async function loadGlobalChatHistory() {
+    const container = document.getElementById('chatHistoryList');
+    if (!container) return; // No sidebar on this page
+
+    const token = getAccessToken();
+    if (!token) return; // Not logged in
+
+    try {
+        const res = await fetch(`${API_BASE}/api/chat/sessions?per_page=10`, {
+            headers: getAuthHeaders(),
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+            renderGlobalSessionList(data.sessions, container);
+        }
+    } catch (e) {
+        console.error('Load global chat history error:', e);
+    }
+}
+
+function renderGlobalSessionList(sessions, container) {
+    container.innerHTML = '';
+    const isOnChatPage = window.location.pathname.endsWith('chat.html');
+
+    sessions.forEach(s => {
+        const item = document.createElement('div');
+        item.className = 'chat-history-item';
+        item.dataset.sessionId = s.id;
+
+        if (isOnChatPage) {
+            // On chat page: use the existing chat.js functions (resumeSession, etc.)
+            item.innerHTML = `
+                <span class="chat-history-title" onclick="resumeSession('${s.id}')">${s.title}</span>
+                <div class="chat-history-actions">
+                    <button class="chat-history-btn" onclick="renameSession('${s.id}')" title="Rename">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="chat-history-btn delete" onclick="deleteSession('${s.id}')" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+        } else {
+            // On other pages: clicking navigates to chat.html with the session
+            item.innerHTML = `
+                <span class="chat-history-title">${s.title}</span>
+            `;
+            item.addEventListener('click', () => {
+                window.location.href = `chat.html?session=${s.id}`;
+            });
+        }
+        container.appendChild(item);
+    });
+
+    if (sessions.length === 0) {
+        container.innerHTML = '<div style="padding: 8px 12px; color: var(--text-tertiary); font-size: 12px;">No chats yet</div>';
+    }
+}
+
