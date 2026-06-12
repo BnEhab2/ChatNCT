@@ -169,19 +169,19 @@
             line-height: 1.75;
         }
 
-        /* User: clean chatgpt bubble */
+        /* User: accent bubble */
         .message-bubble.user {
-            background: rgba(255, 255, 255, 0.06);
-            color: var(--text-primary);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            box-shadow: none;
+            background: var(--accent-gradient);
+            color: #ffffff;
+            border-bottom-right-radius: 6px;
+            box-shadow: 0 2px 8px rgba(124, 102, 227, 0.25);
         }
 
         [data-theme="light"] .message-bubble.user {
-            background: #f4f4f4;
-            color: #1a173a;
-            border: 1px solid rgba(0, 0, 0, 0.05);
+            background: var(--accent-gradient);
+            color: #ffffff;
+            border-bottom-right-radius: 6px;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
         }
 
         .message-bubble.bot h1,
@@ -357,7 +357,7 @@
 
         /* ── Input Area ─────────────────────────────────────── */
         .message-input-container {
-            padding: 12px 20px 16px;
+            padding: 12px 20px 24px;
             position: relative;
             z-index: 10;
         }
@@ -365,29 +365,19 @@
         .message-input-wrapper {
             display: flex;
             align-items: flex-end;
-            gap: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 28px;
-            padding: 10px 18px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            transition: all 0.3s ease;
+            gap: 10px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 8px 14px;
+            border: 1px solid var(--divider);
             position: relative;
-        }
-
-        [data-theme="light"] .message-input-wrapper {
-            background: #ffffff;
-            border-color: rgba(0, 0, 0, 0.1);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(16px) saturate(180%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .message-input-wrapper:focus-within {
-            border-color: rgba(255, 255, 255, 0.2);
-            background: rgba(255, 255, 255, 0.07);
-        }
-
-        [data-theme="light"] .message-input-wrapper:focus-within {
-            border-color: rgba(0, 0, 0, 0.2);
-            background: #ffffff;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--input-focus-ring);
         }
 
         .message-input {
@@ -407,64 +397,50 @@
 
         .message-input::placeholder {
             color: var(--text-tertiary);
-            opacity: 0.6;
         }
 
         .send-button,
         .study-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
             border: none;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             flex-shrink: 0;
         }
 
         .send-button {
-            background: var(--text-primary);
-            color: var(--bg-primary);
-            font-size: 14px;
+            background: var(--accent-gradient);
+            color: white;
+            font-size: 15px;
+            box-shadow: 0 2px 8px rgba(124, 102, 227, 0.3);
         }
 
-        [data-theme="light"] .send-button {
-            background: #1a173a;
-            color: #ffffff;
-        }
-
-        .send-button:hover:not(:disabled) {
-            transform: scale(1.05);
-            opacity: 0.9;
+        .send-button:hover {
+            transform: scale(1.08);
+            box-shadow: 0 4px 16px rgba(124, 102, 227, 0.4);
         }
 
         .send-button:disabled {
-            background: rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.3);
+            opacity: 0.4;
             cursor: not-allowed;
             transform: none;
         }
 
-        [data-theme="light"] .send-button:disabled {
-            background: #e4e4e4;
-            color: #b0b0b0;
-        }
-
         .study-btn {
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--text-primary);
-            font-size: 15px;
-        }
-
-        [data-theme="light"] .study-btn {
-            background: #f4f4f4;
-            color: #1a173a;
+            background: var(--accent-muted);
+            color: var(--accent);
+            font-size: 16px;
+            border: 1px solid var(--divider);
         }
 
         .study-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
+            background: var(--accent);
+            color: white;
         }
 
         /* ── Welcome Screen ─────────────────────────────────── */
