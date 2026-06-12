@@ -168,6 +168,52 @@ def _should_force_search(message: str) -> bool:
     return any(re.search(pattern, text, re.IGNORECASE) for pattern in _SEARCH_TRIGGER_PATTERNS)
 
 
+# ── Code Generation Detection ─────────────────────────────────────────
+# Patterns that indicate the user pasted a code generation prompt
+# (typically from the Prompt Generator page).
+_CODE_PERSONA_PATTERN = re.compile(
+    r"you are (?:a |an )?(?:senior|expert|professional|experienced|skilled|master)",
+    re.IGNORECASE,
+)
+_CODE_KEYWORD_PATTERNS = [
+    r"(?:build|create|develop|implement|write|code|generate|produce)\b.*\b(?:game|app|application|project|website|program|software|api|tool|script|bot)",
+    r"Implementation Blueprint",
+    r"Project Overview",
+    r"Tech Stack",
+    r"Folder Structure",
+    r"Build Steps",
+    r"requirements\.txt",
+    r"```(?:python|javascript|typescript|bash|html|css|java|c\+\+|cpp|go|rust)",
+]
+
+
+def _should_force_code(message: str) -> bool:
+    """Return True when the message looks like a code-generation prompt.
+
+    Detects two main patterns:
+      1. Expert persona prompt + coding keywords (from Prompt Generator)
+      2. Project blueprint / implementation plan with code blocks
+    """
+    text = (message or "").strip()
+    if not text:
+        return False
+
+    # Pattern 1: persona + coding keywords
+    if _CODE_PERSONA_PATTERN.search(text):
+        if any(re.search(kw, text, re.IGNORECASE) for kw in _CODE_KEYWORD_PATTERNS):
+            return True
+
+    # Pattern 2: multiple blueprint keywords present
+    blueprint_hits = sum(
+        1 for kw in _CODE_KEYWORD_PATTERNS
+        if re.search(kw, text, re.IGNORECASE)
+    )
+    if blueprint_hits >= 3:
+        return True
+
+    return False
+
+
 def _build_contextual_message(user_id: str, message: str) -> str:
     resolved_code, resolved_name, resolved_role = _resolve_student_info(user_id)
     prefixes = [f"[STUDENT_CODE: {resolved_code}]"]
@@ -177,6 +223,8 @@ def _build_contextual_message(user_id: str, message: str) -> str:
         prefixes.append(f"[USER_ROLE: {resolved_role}]")
     if _should_force_search(message):
         prefixes.append("[FORCE_SEARCH: true]")
+    if _should_force_code(message):
+        prefixes.append("[FORCE_CODE: true]")
     prefixes.append(message)
     return "\n".join(prefixes)
 
