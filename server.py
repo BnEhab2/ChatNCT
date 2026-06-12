@@ -109,25 +109,25 @@ def run_async(coro):
 
 
 def _resolve_student_info(user_id: str) -> tuple:
-    """Resolve (student_code, student_name) from profiles table given user_id."""
+    """Resolve (student_code, student_name, role) from profiles table given user_id."""
     conn = get_connection()
     try:
         cur = conn.cursor()
         # 1. Check if user_id is already the student_code
-        cur.execute("SELECT student_code, name FROM profiles WHERE student_code = %s", (user_id,))
+        cur.execute("SELECT student_code, name, role FROM profiles WHERE student_code = %s", (user_id,))
         row = cur.fetchone()
         if row:
-            return str(row["student_code"]), str(row.get("name", ""))
+            return str(row["student_code"]), str(row.get("name", "")), str(row.get("role", "student"))
         
         # 2. Check if user_id is the database UUID (id)
-        cur.execute("SELECT student_code, name FROM profiles WHERE id::text = %s", (user_id,))
+        cur.execute("SELECT student_code, name, role FROM profiles WHERE id::text = %s", (user_id,))
         row = cur.fetchone()
         if row:
-            return str(row["student_code"]), str(row.get("name", ""))
+            return str(row["student_code"]), str(row.get("name", "")), str(row.get("role", "student"))
             
-        return user_id, ""
+        return user_id, "", "student"
     except Exception:
-        return user_id, ""
+        return user_id, "", "student"
     finally:
         release_connection(conn)
 
@@ -157,10 +157,12 @@ def _should_force_search(message: str) -> bool:
 
 
 def _build_contextual_message(user_id: str, message: str) -> str:
-    resolved_code, resolved_name = _resolve_student_info(user_id)
+    resolved_code, resolved_name, resolved_role = _resolve_student_info(user_id)
     prefixes = [f"[STUDENT_CODE: {resolved_code}]"]
     if resolved_name:
         prefixes.append(f"[STUDENT_NAME: {resolved_name}]")
+    if resolved_role:
+        prefixes.append(f"[USER_ROLE: {resolved_role}]")
     if _should_force_search(message):
         prefixes.append("[FORCE_SEARCH: true]")
     prefixes.append(message)
@@ -515,7 +517,11 @@ def chat(current_user_id: str):
 
         # Check for instant greeting response
         if is_greeting(message):
-            response = "أهلاً يا فنان! منور ChatNCT. أقدر أساعدك إزاي النهاردة في المنهج أو أي حاجة تانية؟"
+            resolved_code, resolved_name, resolved_role = _resolve_student_info(current_user_id)
+            if resolved_role in ("instructor", "admin"):
+                response = f"أهلاً بحضرتك يا دكتور {resolved_name if resolved_name else ''}. كيف يمكنني مساعدة سيادتك اليوم؟"
+            else:
+                response = "أهلاً يا فنان! منور ChatNCT. أقدر أساعدك إزاي النهاردة في المنهج أو أي حاجة تانية؟"
             _save_chat_message(chat_session_id, "bot", response)
             return jsonify({
                 "status": "success",
@@ -580,7 +586,11 @@ def chat_stream(current_user_id: str):
         yield encode_event({"type": "meta", "session_id": chat_session_id})
 
         if is_greeting(message):
-            response_text = "أهلاً يا فنان! منور ChatNCT. أقدر أساعدك إزاي النهاردة في المنهج أو أي حاجة تانية؟"
+            resolved_code, resolved_name, resolved_role = _resolve_student_info(current_user_id)
+            if resolved_role in ("instructor", "admin"):
+                response_text = f"أهلاً بحضرتك يا دكتور {resolved_name if resolved_name else ''}. كيف يمكنني مساعدة سيادتك اليوم؟"
+            else:
+                response_text = "أهلاً يا فنان! منور ChatNCT. أقدر أساعدك إزاي النهاردة في المنهج أو أي حاجة تانية؟"
             yield encode_event({"type": "delta", "text": response_text})
             _save_chat_message(chat_session_id, "bot", response_text)
             yield encode_event({"type": "done"})
