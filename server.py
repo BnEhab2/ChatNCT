@@ -237,6 +237,77 @@ async def _stream_agent(user_id: str, message: str, queue: Queue) -> str:
     ):
         if event.content and event.content.parts:
             for part in event.content.parts:
+                # Check for tool/function calls to update the waiting status dynamically
+                try:
+                    if hasattr(part, "function_call") and part.function_call:
+                        name = part.function_call.name
+                        args = part.function_call.args
+                        args_dict = {}
+                        if args:
+                            try:
+                                args_dict = dict(args)
+                            except Exception:
+                                if hasattr(args, "items"):
+                                    args_dict = {k: v for k, v in args.items()}
+                        
+                        status_msg = None
+                        if name == "search_material":
+                            q = args_dict.get("query", "")
+                            status_msg = f"Searching lectures for '{q}'" if q else "Searching lecture files"
+                        elif name == "get_all_materials_info":
+                            status_msg = "Reviewing available lectures list"
+                        elif name == "get_available_subjects":
+                            status_msg = "Checking available subjects"
+                        elif name == "generate_project_blueprint":
+                            req = args_dict.get("requirement", "")
+                            short_req = (req[:30] + "...") if req and len(req) > 30 else req
+                            status_msg = f"Planning blueprint for '{short_req}'" if req else "Planning project blueprint"
+                        elif name == "generate_code_files":
+                            req = args_dict.get("requirement", "")
+                            short_req = (req[:30] + "...") if req and len(req) > 30 else req
+                            status_msg = f"Generating code for '{short_req}'" if req else "Writing code files"
+                        elif name == "debug_code_issue":
+                            err = args_dict.get("error_message", "")
+                            short_err = (err[:30] + "...") if err and len(err) > 30 else err
+                            status_msg = f"Debugging code issue '{short_err}'" if err else "Analyzing code for bugs"
+                        elif name == "search_data":
+                            q = args_dict.get("query", "")
+                            short_q = (q[:35] + "...") if q and len(q) > 35 else q
+                            status_msg = f"Searching university rules for '{short_q}'" if q else "Checking student affairs rules"
+                        elif name == "duckduckgo_search_tool":
+                            q = args_dict.get("query", "")
+                            short_q = (q[:35] + "...") if q and len(q) > 35 else q
+                            status_msg = f"Searching the web for '{short_q}'" if q else "Searching the web"
+                        elif name == "get_student_attendance_summary":
+                            status_msg = "Calculating attendance & absences summary"
+                        elif name == "get_course_session_log":
+                            course = args_dict.get("course_code_or_name", "")
+                            status_msg = f"Reviewing attendance log for {course}" if course else "Reviewing attendance logs"
+                        elif name == "get_missed_lectures":
+                            status_msg = "Checking missed lectures list"
+                        elif name == "get_missed_lecture_summaries":
+                            status_msg = "Generating missed lecture summaries"
+                        elif name == "transfer_to_agent":
+                            target = args_dict.get("target_agent_name", "")
+                            status_msg = f"Routing request to {target}" if target else "Routing request"
+                        elif name == "study_agent":
+                            status_msg = "Accessing study assistant"
+                        elif name == "vibe_coder_agent":
+                            status_msg = "Opening code builder"
+                        elif name == "search_agent":
+                            status_msg = "Accessing web search tools"
+                        elif name == "student_chatbot":
+                            status_msg = "Accessing student affairs"
+                        elif name == "academic_analyzer":
+                            status_msg = "Analyzing academic records"
+                        elif name == "prompt_wizard":
+                            status_msg = "Opening Prompt Wizard"
+
+                        if status_msg:
+                            queue.put({"type": "status", "status": status_msg})
+                except Exception as status_err:
+                    print(f"[DEBUG] Error extracting status: {status_err}")
+
                 if part.text:
                     response_parts.append(part.text)
                     queue.put({"type": "delta", "text": part.text})

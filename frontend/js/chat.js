@@ -120,6 +120,11 @@ if (studyBtn && studyPopup) {
 function addMessage(text, sender, isLoading = false) {
     if (!chatMessages) return null;
 
+    // Hide welcome screen if it's shown
+    const welcome = document.getElementById('chatWelcome');
+    if (welcome) welcome.style.display = 'none';
+    chatMessages.style.display = 'flex';
+
     // Create the message container
     const wrapper = document.createElement('div');
     wrapper.id = `message-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -275,7 +280,7 @@ async function sendToBackend(message) {
     }
 }
 
-async function sendToBackendStream(message, { onMeta, onDelta } = {}) {
+async function sendToBackendStream(message, { onMeta, onDelta, onStatus } = {}) {
     const response = await fetch(STREAM_API_URL, {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -310,6 +315,8 @@ async function sendToBackendStream(message, { onMeta, onDelta } = {}) {
             if (event.type === 'meta' && event.session_id) {
                 currentChatSessionId = event.session_id;
                 if (onMeta) onMeta(event);
+            } else if (event.type === 'status') {
+                if (onStatus) onStatus(event.status);
             } else if (event.type === 'delta') {
                 fullText += event.text || '';
                 if (onDelta) onDelta(event.text || '');
@@ -338,7 +345,7 @@ async function sendMessage() {
 
     // Show typing animation
     const loadingId = addMessage(
-        '<span class="typing-dot">Typing</span><span class="typing-dot">.</span><span class="typing-dot">.</span><span class="typing-dot">.</span>',
+        '<span>Thinking</span><span class="typing-dot">.</span><span class="typing-dot">.</span><span class="typing-dot">.</span>',
         'bot', true
     );
 
@@ -358,6 +365,12 @@ async function sendMessage() {
 
         try {
             const streamedText = await sendToBackendStream(message, {
+                onStatus: (statusText) => {
+                    const bubble = document.getElementById(loadingId)?.querySelector('.message-bubble.bot');
+                    if (bubble) {
+                        bubble.innerHTML = `<span>${statusText}</span><span class="typing-dot">.</span><span class="typing-dot">.</span><span class="typing-dot">.</span>`;
+                    }
+                },
                 onDelta: (text) => {
                     receivedAnyChunk = true;
                     ensureBotMessage();
@@ -539,6 +552,7 @@ async function resumeSession(sessionId) {
     } catch (e) {
         console.error('Resume session error:', e);
     }
+    toggleWelcomeScreen();
 }
 
 async function deleteSession(sessionId) {
@@ -576,15 +590,31 @@ async function renameSession(sessionId) {
     }
 }
 
+function toggleWelcomeScreen() {
+    const welcome = document.getElementById('chatWelcome');
+    const messages = document.getElementById('chatMessages');
+    if (!welcome || !messages) return;
+    
+    if (messages.children.length === 0) {
+        welcome.style.display = 'flex';
+        messages.style.display = 'none';
+    } else {
+        welcome.style.display = 'none';
+        messages.style.display = 'flex';
+    }
+}
+
 function newChat() {
     // Start a fresh conversation (no session ID = server creates a new one)
     currentChatSessionId = null;
     if (chatMessages) chatMessages.innerHTML = '';
+    toggleWelcomeScreen();
 }
 
 
 // ── Page Initialization ────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+    toggleWelcomeScreen();
     const params = new URLSearchParams(window.location.search);
 
     // Check if resuming a session from another page (sidebar click)

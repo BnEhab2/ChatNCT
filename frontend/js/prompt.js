@@ -23,7 +23,7 @@ generateBtn.addEventListener('click', async () => {
     isGenerating = true;
     generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
     generateBtn.disabled = true;
-    promptOutput.value = 'جاري توليد الـ Prompt...';
+    promptOutput.value = 'Generating Prompt...';
 
     try {
         const response = await fetch(`${API_BASE}/api/prompt/generate`, {

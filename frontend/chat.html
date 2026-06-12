@@ -65,11 +65,18 @@
             border-bottom-left-radius: 6px; padding: 8px 12px;
             font-size: 15px; line-height: 1.75;
         }
-        /* User: accent bubble */
+        /* User: clean chatgpt bubble */
         .message-bubble.user {
-            background: var(--accent-gradient);
-            color: #ffffff; border-bottom-right-radius: 6px;
-            box-shadow: 0 2px 8px rgba(124, 102, 227, 0.25);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-primary);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            box-shadow: none;
+        }
+        [data-theme="light"] .message-bubble.user {
+            background: #f4f4f4;
+            color: #1a173a;
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .message-bubble.bot h1,.message-bubble.bot h2,.message-bubble.bot h3,.message-bubble.bot h4 {
@@ -148,19 +155,29 @@
         }
         /* ── Input Area ─────────────────────────────────────── */
         .message-input-container {
-            padding: 12px 20px 24px; position: relative; z-index: 10;
+            padding: 12px 20px 16px; position: relative; z-index: 10;
         }
         .message-input-wrapper {
-            display: flex; align-items: flex-end; gap: 10px;
-            background: var(--card-bg); border-radius: 20px;
-            padding: 8px 14px; border: 1px solid var(--divider);
-            transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            display: flex; align-items: flex-end; gap: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 28px;
+            padding: 10px 18px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s ease;
             position: relative;
-            backdrop-filter: blur(16px) saturate(180%);
+        }
+        [data-theme="light"] .message-input-wrapper {
+            background: #ffffff;
+            border-color: rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
         .message-input-wrapper:focus-within {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px var(--input-focus-ring);
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.07);
+        }
+        [data-theme="light"] .message-input-wrapper:focus-within {
+            border-color: rgba(0, 0, 0, 0.2);
+            background: #ffffff;
         }
 
         .message-input {
@@ -169,25 +186,131 @@
             resize: none; outline: none; max-height: 200px;
             overflow-y: hidden; line-height: 1.6; padding: 8px 0;
         }
-        .message-input::placeholder { color: var(--text-tertiary); }
+        .message-input::placeholder { color: var(--text-tertiary); opacity: 0.6; }
 
         .send-button, .study-btn {
-            width: 40px; height: 40px; border-radius: 12px; border: none;
+            width: 36px; height: 36px; border-radius: 50%; border: none;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: all 0.25s cubic-bezier(0.4,0,0.2,1); flex-shrink: 0;
+            transition: all 0.2s ease; flex-shrink: 0;
         }
         .send-button {
-            background: var(--accent-gradient);
-            color: white; font-size: 15px;
-            box-shadow: 0 2px 8px rgba(124, 102, 227, 0.3);
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            font-size: 14px;
         }
-        .send-button:hover { transform: scale(1.08); box-shadow: 0 4px 16px rgba(124, 102, 227, 0.4); }
-        .send-button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        [data-theme="light"] .send-button {
+            background: #1a173a;
+            color: #ffffff;
+        }
+        .send-button:hover:not(:disabled) { transform: scale(1.05); opacity: 0.9; }
+        .send-button:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.3);
+            cursor: not-allowed;
+            transform: none;
+        }
+        [data-theme="light"] .send-button:disabled {
+            background: #e4e4e4;
+            color: #b0b0b0;
+        }
         .study-btn {
-            background: var(--accent-muted); color: var(--accent); font-size: 16px;
-            border: 1px solid var(--divider);
+            background: rgba(255, 255, 255, 0.08); color: var(--text-primary); font-size: 15px;
         }
-        .study-btn:hover { background: var(--accent); color: white; }
+        [data-theme="light"] .study-btn {
+            background: #f4f4f4; color: #1a173a;
+        }
+        .study-btn:hover { background: rgba(255, 255, 255, 0.15); }
+
+        /* ── Welcome Screen ─────────────────────────────────── */
+        .chat-welcome {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 24px;
+            padding: 60px 20px;
+            max-width: 800px;
+            margin: auto;
+            animation: fadeIn 0.4s ease;
+            flex: 1;
+            width: 100%;
+        }
+        .welcome-logo img {
+            width: 72px; height: 72px;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 12px rgba(124, 102, 227, 0.3));
+        }
+        .welcome-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: -0.03em;
+        }
+        .welcome-suggestions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .suggestion-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 16px 20px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        [data-theme="light"] .suggestion-card {
+            background: #ffffff;
+            border-color: rgba(0, 0, 0, 0.08);
+        }
+        .suggestion-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+        }
+        [data-theme="light"] .suggestion-card:hover {
+            background: #fcfcfc;
+            border-color: rgba(0, 0, 0, 0.15);
+        }
+        .suggestion-card i {
+            color: var(--accent);
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+        .suggestion-card span {
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+        .suggestion-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+        
+        .chat-footer-note {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-secondary);
+            opacity: 0.55;
+            margin-top: 12px;
+        }
+
+        @media (max-width: 600px) {
+            .welcome-suggestions {
+                grid-template-columns: 1fr;
+            }
+            .welcome-title {
+                font-size: 24px;
+            }
+        }
 
         /* ── Study Popup ────────────────────────────────────── */
         .study-popup {
@@ -320,6 +443,35 @@
     <div class="main-container">
         <div class="view-section active" id="chatView">
             <div class="chat-container">
+                <!-- Welcome Screen (shows only when chat is empty) -->
+                <div class="chat-welcome" id="chatWelcome">
+                    <div class="welcome-logo">
+                        <img src="img/Character.svg" alt="ChatNCT Logo">
+                    </div>
+                    <h2 class="welcome-title">What's on the agenda today?</h2>
+                    <div class="welcome-suggestions">
+                        <div class="suggestion-card" onclick="startChat('Quiz')">
+                            <i class="fas fa-question-circle"></i>
+                            <span>Quiz</span>
+                            <div class="suggestion-desc">Test your knowledge</div>
+                        </div>
+                        <div class="suggestion-card" onclick="startChat('Summarize')">
+                            <i class="fas fa-compress-alt"></i>
+                            <span>Summarize</span>
+                            <div class="suggestion-desc">Summarize any lecture</div>
+                        </div>
+                        <div class="suggestion-card" onclick="startChat('Guided Learning')">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                            <span>Guided Learning</span>
+                            <div class="suggestion-desc">Step-by-step tutoring</div>
+                        </div>
+                        <div class="suggestion-card" onclick="startChat('Explain a concept')">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>Explain Topic</span>
+                            <div class="suggestion-desc">Deconstruct complex topics</div>
+                        </div>
+                    </div>
+                </div>
                 <div class="chat-messages" id="chatMessages" role="log" aria-live="polite"></div>
             </div>
         </div>
@@ -342,6 +494,9 @@
                         <div class="popup-item" onclick="startChat('Explain a concept')"><i class="fas fa-lightbulb"></i><span>Explain Topic</span></div>
                     </div>
                 </div>
+            </div>
+            <div class="chat-footer-note">
+                ChatNCT can make mistakes. Verify important info.
             </div>
         </div>
     </div>
