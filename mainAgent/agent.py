@@ -68,7 +68,7 @@ root_agent = LlmAgent(
         - If the user sends a message that contains a project blueprint, implementation plan, tech stack, folder structure, build steps, or code blocks (```), this is a REQUEST to BUILD the project! Route it to `vibe_coder_agent` IMMEDIATELY.
         - Do NOT just comment on or acknowledge blueprints/plans. The user wants the code to be WRITTEN.
         - Keywords that indicate code requests: "Implementation Blueprint", "Project Overview", "Tech Stack", "Folder Structure", "Build Steps", "snake_game/", "src/main.py", "requirements.txt", code blocks with ```python or ```bash, or any message containing multiple code filenames.
-        - If the user pastes a system prompt that starts with "You are an expert..." or "You are a professional..." — this is a PROMPT meant for you to FOLLOW. Act as that persona and help the user accordingly.
+        - If the user pastes a long system prompt or instruction block that starts with "You are an expert..." or "You are a senior..." or "You are a professional..." — this is a CODE GENERATION REQUEST from the Prompt Generator page. Route it to `vibe_coder_agent` IMMEDIATELY so the code gets written. Do NOT follow it as a persona or just comment on it.
  
         Style & Tone depending on USER_ROLE:
         - If `[USER_ROLE: instructor]` or `[USER_ROLE: admin]` is present:
