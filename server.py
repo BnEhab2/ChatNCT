@@ -27,6 +27,7 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
 from mainAgent.agent import root_agent
+from mainAgent.sub_agents.prompt_wizard.agent import root_agent as prompt_wizard_agent
 
 # ── Database imports ───────────────────────────────────────────────────
 from mainAgent.db.database import (
@@ -91,8 +92,19 @@ runner = Runner(
     session_service=session_service,
 )
 
+# Dedicated runner for prompt_wizard — bypasses the root agent entirely
+PROMPT_APP_NAME = "chatnct_prompt"
+prompt_session_service = InMemorySessionService()
+prompt_runner = Runner(
+    agent=prompt_wizard_agent,
+    app_name=PROMPT_APP_NAME,
+    session_service=prompt_session_service,
+)
+
 # Store user sessions (user_id → session_id)
 user_sessions = {}
+prompt_user_sessions = {}
+
 
 ATTENDANCE_SERVER = os.getenv("ATTENDANCE_SERVER_URL", "https://127.0.0.1:5001")
 
@@ -207,7 +219,87 @@ async def _run_agent(user_id: str, message: str) -> str:
     return "\n".join(response_parts) if response_parts else "عذراً، مفيش رد متاح دلوقتي."
 
 
-# ══════════════════════════════════════════════════════════════════════
+# ── Direct Prompt Wizard (bypasses root agent) ─────────────────────────
+async def _run_prompt_wizard(user_id: str, idea: str) -> str:
+    """Call the prompt_wizard agent directly — no root agent in the middle."""
+    if user_id not in prompt_user_sessions:
+        session_result = prompt_session_service.create_session(
+            app_name=PROMPT_APP_NAME,
+            user_id=user_id,
+        )
+        import inspect
+        if inspect.iscoroutine(session_result):
+            session = await session_result
+        else:
+            session = session_result
+        prompt_user_sessions[user_id] = session.id
+
+    session_id = prompt_user_sessions[user_id]
+
+    # Send a clean, direct instruction to prompt_wizard
+    prompt_message = f"Generate a professional master prompt for this idea: {idea}"
+
+    content = types.Content(
+        role="user",
+        parts=[types.Part.from_text(text=prompt_message)],
+    )
+
+    response_parts = []
+    async for event in prompt_runner.run_async(
+        user_id=user_id,
+        session_id=session_id,
+        new_message=content,
+    ):
+        if event.content and event.content.parts:
+            for part in event.content.parts:
+                if part.text:
+                    response_parts.append(part.text)
+
+    raw = "\n".join(response_parts) if response_parts else ""
+
+    # ── Server-side cleanup: strip markdown code fences & conversational filler ──
+    cleaned = raw.strip()
+
+    # Remove ```markdown or ``` wrapper if present
+    if cleaned.startswith("```"):
+        first_newline = cleaned.find("\n")
+        if first_newline != -1:
+            cleaned = cleaned[first_newline + 1:]
+        else:
+            cleaned = cleaned[3:]
+    if cleaned.endswith("```"):
+        cleaned = cleaned[:-3]
+    cleaned = cleaned.strip()
+
+    # Remove any leading chatter lines before the actual prompt body
+    # Patterns like "Here is your prompt:", "Sure! Here you go:", etc.
+    chatter_patterns = [
+        r"^(?:here(?:'s| is| you go).*?[:!]?\s*\n)",
+        r"^(?:sure[!,.]?\s*(?:here.*?)?[:!]?\s*\n)",
+        r"^(?:of course[!,.]?\s*(?:here.*?)?[:!]?\s*\n)",
+        r"^(?:absolutely[!,.]?\s*(?:here.*?)?[:!]?\s*\n)",
+        r"^(?:اتفضل.*?\n)",
+        r"^(?:تفضل.*?\n)",
+        r"^(?:اهو.*?\n)",
+        r"^(?:ده ال.*?prompt.*?\n)",
+    ]
+    for pattern in chatter_patterns:
+        cleaned = re.sub(pattern, "", cleaned, count=1, flags=re.IGNORECASE)
+    cleaned = cleaned.strip()
+
+    # Remove any trailing chatter after the prompt
+    trailing_patterns = [
+        r"\n(?:feel free|let me know|hope this helps|if you need|you can use).*$",
+        r"\n(?:لو عايز|لو محتاج|ممكن تستخدم|تقدر تستخدم).*$",
+    ]
+    for pattern in trailing_patterns:
+        cleaned = re.sub(pattern, "", cleaned, count=1, flags=re.IGNORECASE | re.DOTALL)
+    cleaned = cleaned.strip()
+
+    return cleaned if cleaned else raw.strip()
+
+
+
 async def _stream_agent(user_id: str, message: str, queue: Queue) -> str:
     """Send agent text parts to a queue as they arrive."""
     if user_id not in user_sessions:
@@ -786,8 +878,8 @@ def generate_prompt(current_user_id: str):
         return jsonify({"status": "error", "message": "Idea is required."}), 400
 
     try:
-        prompt_message = f"اعملي prompt احترافي للفكرة دي: {idea}"
-        response = run_async(_run_agent(user_id, prompt_message))
+        # Call prompt_wizard DIRECTLY — bypasses the root agent entirely
+        response = run_async(_run_prompt_wizard(user_id, idea))
         return jsonify({"status": "success", "prompt": response})
     except Exception as e:
         traceback.print_exc()
