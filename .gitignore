@@ -11,3 +11,6 @@ mainAgent/sub_agents/Mixxx/vibe_coder/.env
 debug_logs
 gradproject_schema.sql
 *.json
+*.docx
+fix_doc_formatting.py
+*.pdf
