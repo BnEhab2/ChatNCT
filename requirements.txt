@@ -1,4 +1,5 @@
-google-adk>=0.3.0
+google-adk[db]>=0.3.0
+sqlalchemy
 litellm>=1.66.3
 openai>=1.0.0
 flask>=3.0.0
