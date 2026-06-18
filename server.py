@@ -95,7 +95,7 @@ def log_api_request():
             except Exception:
                 payload = "<Invalid JSON>"
         
-        logger.info(f"👉 [REQ] {method} {path} | IP: {ip} | Payload: {payload}")
+        logger.info(f"[REQ] {method} {path} | IP: {ip} | Payload: {payload}")
 
 @app.after_request
 def log_api_response(response):
@@ -103,7 +103,7 @@ def log_api_response(response):
         method = request.method
         path = request.path
         status = response.status_code
-        logger.info(f"👈 [RES] {method} {path} | Status: {status}")
+        logger.info(f"[RES] {method} {path} | Status: {status}")
     return response
 
 @app.errorhandler(Exception)
@@ -116,7 +116,7 @@ def handle_exception(e):
     
     # Don't print massive tracebacks for standard 404 Not Found warnings
     if status_code == 404:
-        logger.warning(f"⚠️  [404] Not Found: {request.method} {request.path}")
+        logger.warning(f"[404] Not Found: {request.method} {request.path}")
         return jsonify({
             "status": "error",
             "code": "NOT_FOUND",
@@ -124,7 +124,7 @@ def handle_exception(e):
         }), 404
 
     # Log full traceback for actual errors (500, etc.)
-    logger.error(f"❌ [ERROR] Exception on {request.method} {request.path}: {str(e)}\n{tb}")
+    logger.error(f"[ERROR] Exception on {request.method} {request.path}: {str(e)}\n{tb}")
     
     if hasattr(e, "code"):
         return jsonify({
@@ -169,15 +169,13 @@ import logging
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
-print("\n" + "=" * 60)
-print("👉 [STARTUP] Running database migrations...")
+print("[STARTUP] Running database migrations...")
 try:
     run_migrations()
-    print("✅ [STARTUP] Database migrations checks passed.")
+    print("[STARTUP] Database migrations checks passed.")
 except Exception as e:
-    print(f"❌ [STARTUP] Migration error (non-fatal): {e}")
+    print(f"[STARTUP] Migration error (non-fatal): {e}")
     traceback.print_exc()
-print("=" * 60 + "\n")
 
 # ── ADK Session Management ────────────────────────────────────────────
 import uuid as _uuid
@@ -186,7 +184,7 @@ APP_NAME = "chatnct"
 PROMPT_APP_NAME = "chatnct_prompt"
 _SESSIONS_DB = os.path.join(os.path.dirname(__file__), "sessions.db")
 
-print("👉 [STARTUP] Initializing ADK Session Services & Runners...")
+print("[STARTUP] Initializing ADK Session Services & Runners...")
 try:
     session_service = DatabaseSessionService(db_url=f"sqlite+aiosqlite:///{_SESSIONS_DB}")
     runner = Runner(
@@ -194,9 +192,9 @@ try:
         app_name=APP_NAME,
         session_service=session_service,
     )
-    print(f"✅ [STARTUP] Main Agent ADK Runner ready (app: {APP_NAME}, db: {_SESSIONS_DB})")
+    print(f"[STARTUP] Main Agent ADK Runner ready (app: {APP_NAME}, db: {_SESSIONS_DB})")
 except Exception as e:
-    print(f"❌ [STARTUP] Error initializing Main Agent ADK Runner: {e}")
+    print(f"[STARTUP] Error initializing Main Agent ADK Runner: {e}")
     traceback.print_exc()
 
 try:
@@ -206,11 +204,10 @@ try:
         app_name=PROMPT_APP_NAME,
         session_service=prompt_session_service,
     )
-    print(f"✅ [STARTUP] Prompt Wizard ADK Runner ready (app: {PROMPT_APP_NAME})")
+    print(f"[STARTUP] Prompt Wizard ADK Runner ready (app: {PROMPT_APP_NAME})")
 except Exception as e:
-    print(f"❌ [STARTUP] Error initializing Prompt Wizard ADK Runner: {e}")
+    print(f"[STARTUP] Error initializing Prompt Wizard ADK Runner: {e}")
     traceback.print_exc()
-print("=" * 60 + "\n")
 
 
 ATTENDANCE_SERVER = os.getenv("ATTENDANCE_SERVER_URL", "https://127.0.0.1:5001")
@@ -665,7 +662,7 @@ def token_required(f):
     def decorated(*args, **kwargs):
         auth_header = request.headers.get("Authorization", "")
         if not auth_header.startswith("Bearer "):
-            logger.warning("🔑 [AUTH] Access denied: Missing or invalid 'Bearer' prefix in Authorization header.")
+            logger.warning("[AUTH] Access denied: Missing or invalid 'Bearer' prefix in Authorization header.")
             return jsonify({
                 "status": "error",
                 "code": "MISSING_TOKEN",
@@ -674,7 +671,7 @@ def token_required(f):
 
         token = auth_header.split(" ", 1)[1].strip()
         if not token:
-            logger.warning("🔑 [AUTH] Access denied: Authorization token is empty after Bearer prefix.")
+            logger.warning("[AUTH] Access denied: Authorization token is empty after Bearer prefix.")
             return jsonify({
                 "status": "error",
                 "code": "MISSING_TOKEN",
@@ -695,7 +692,7 @@ def token_required(f):
             )
 
             if res.status_code != 200:
-                logger.warning(f"🔑 [AUTH] Access denied: Supabase auth validation failed with status {res.status_code}. Response: {res.text.strip()}")
+                logger.warning(f"[AUTH] Access denied: Supabase auth validation failed with status {res.status_code}. Response: {res.text.strip()}")
                 return jsonify({
                     "status": "error",
                     "code": "INVALID_TOKEN",
@@ -706,7 +703,7 @@ def token_required(f):
             current_user_id = user_data.get("id")
 
             if not current_user_id:
-                logger.warning("🔑 [AUTH] Access denied: User ID missing from Supabase user payload.")
+                logger.warning("[AUTH] Access denied: User ID missing from Supabase user payload.")
                 return jsonify({
                     "status": "error",
                     "code": "INVALID_TOKEN",
@@ -714,7 +711,7 @@ def token_required(f):
                 }), 401
 
         except Exception as e:
-            logger.error(f"❌ [AUTH] Auth service exception: {str(e)}", exc_info=True)
+            logger.error(f"[AUTH] Auth service exception: {str(e)}", exc_info=True)
             return jsonify({
                 "status": "error",
                 "code": "AUTH_SERVICE_ERROR",
@@ -1387,30 +1384,23 @@ if __name__ == "__main__":
     lan_ip = get_lan_ip()
     protocol = "https" if ssl_ctx else "http"
 
-    print("\n" + "=" * 60)
-    print(" 🚀 ChatNCT Server (Unified App)")
-    print("=" * 60)
-    print(f"  Local URL:      {protocol}://localhost:5000/")
-    print(f"  Network URL:    {protocol}://{lan_ip}:5000/")
-    print("=" * 60)
-    print("  [INFO] Serving frontend and API requests...")
-    print("  [INFO] Press Ctrl+C in this terminal to stop the server.")
-    print("=" * 60 + "\n")
+    print(f"Local URL:      {protocol}://localhost:5000/")
+    print(f"Network URL:    {protocol}://{lan_ip}:5000/")
+    print("[INFO] Serving frontend and API requests...")
+    print("[INFO] Press Ctrl+C in this terminal to stop the server.")
 
     try:
         app.run(host="0.0.0.0", port=5000, use_reloader=False, ssl_context=ssl_ctx)
     except OSError as os_err:
-        print(f"\n❌ [CRITICAL] OSError starting server: {os_err}")
+        print(f"[CRITICAL] OSError starting server: {os_err}")
         if "address already in use" in str(os_err).lower() or os_err.errno in (98, 10048):
-            print("=" * 60)
-            print("❌ PORT 5000 IS ALREADY OCCUPIED!")
-            print("   Another process is running on this port. To fix this:")
-            print("   - Run 'Stop-Process -Name python -Force' in PowerShell")
-            print("   - Or run 'taskkill /IM python.exe /F' in CMD")
-            print("   Then try starting this server again.")
-            print("=" * 60 + "\n")
+            print("[CRITICAL] PORT 5000 IS ALREADY OCCUPIED!")
+            print("Another process is running on this port. To fix this:")
+            print("- Run 'Stop-Process -Name python -Force' in PowerShell")
+            print("- Or run 'taskkill /IM python.exe /F' in CMD")
+            print("Then try starting this server again.")
         else:
             traceback.print_exc()
     except Exception as e:
-        print(f"\n❌ [CRITICAL] Exception starting server: {e}")
+        print(f"[CRITICAL] Exception starting server: {e}")
         traceback.print_exc()
