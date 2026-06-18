@@ -6,6 +6,7 @@ import re
 import traceback
 import threading
 import warnings
+import logging
 import requests as http_requests
 from datetime import datetime
 from dotenv import load_dotenv
@@ -17,6 +18,8 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request")
 
 from flask import Flask, Response, request, jsonify, send_from_directory, stream_with_context
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
@@ -24,7 +27,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "mainAgent", ".env"))
 
 # ── Google ADK imports ─────────────────────────────────────────────────
 from google.adk.runners import Runner
-from google.adk.sessions import InMemorySessionService
+from google.adk.sessions import DatabaseSessionService
 from google.genai import types
 from mainAgent.agent import root_agent
 from mainAgent.sub_agents.prompt_wizard.agent import root_agent as prompt_wizard_agent
@@ -37,6 +40,24 @@ from mainAgent.db.database import (
 # ── Flask App ──────────────────────────────────────────────────────────
 app = Flask(__name__, static_folder="frontend", static_url_path="")
 CORS(app)
+
+# ── Rate Limiter (W-12 fix: prevent API credit abuse) ─────────────────
+# Uses in-memory storage (no Redis needed for a prototype).
+# Limits are per-user based on IP address.
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per minute"],      # Global default for all endpoints
+    storage_uri="memory://",                 # In-memory — suitable for single-process
+)
+
+# ── Logging ────────────────────────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("chatnct")
 
 # Disable caching for static files during development
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
@@ -84,8 +105,11 @@ except Exception as e:
     print(f"Migration error (non-fatal): {e}")
 
 # ── ADK Session Management ────────────────────────────────────────────
+import uuid as _uuid
+
 APP_NAME = "chatnct"
-session_service = InMemorySessionService()
+_SESSIONS_DB = os.path.join(os.path.dirname(__file__), "sessions.db")
+session_service = DatabaseSessionService(db_url=f"sqlite:///{_SESSIONS_DB}")
 runner = Runner(
     agent=root_agent,
     app_name=APP_NAME,
@@ -94,16 +118,12 @@ runner = Runner(
 
 # Dedicated runner for prompt_wizard — bypasses the root agent entirely
 PROMPT_APP_NAME = "chatnct_prompt"
-prompt_session_service = InMemorySessionService()
+prompt_session_service = DatabaseSessionService(db_url=f"sqlite:///{_SESSIONS_DB}")
 prompt_runner = Runner(
     agent=prompt_wizard_agent,
     app_name=PROMPT_APP_NAME,
     session_service=prompt_session_service,
 )
-
-# Store user sessions (user_id → session_id)
-user_sessions = {}
-prompt_user_sessions = {}
 
 
 ATTENDANCE_SERVER = os.getenv("ATTENDANCE_SERVER_URL", "https://127.0.0.1:5001")
@@ -114,10 +134,25 @@ _loop_thread = threading.Thread(target=_loop.run_forever, daemon=True)
 _loop_thread.start()
 
 
-def run_async(coro):
-    """Run an async coroutine on the persistent event loop."""
+# Configurable timeout (W-08 fix): default 120s, override via AGENT_TIMEOUT env var
+_AGENT_TIMEOUT = int(os.getenv("AGENT_TIMEOUT", "120"))
+
+
+def run_async(coro, timeout=None):
+    """Run an async coroutine on the persistent event loop.
+
+    Uses a configurable timeout (default from AGENT_TIMEOUT env var).
+    Logs a warning if the operation times out instead of silently hanging.
+    """
+    if timeout is None:
+        timeout = _AGENT_TIMEOUT
     future = asyncio.run_coroutine_threadsafe(coro, _loop)
-    return future.result(timeout=120)
+    try:
+        return future.result(timeout=timeout)
+    except TimeoutError:
+        future.cancel()
+        logger.error("run_async timed out after %ds — cancelling coroutine", timeout)
+        raise TimeoutError(f"Agent did not respond within {timeout}s. Please try again.")
 
 
 def _resolve_student_info(user_id: str) -> tuple:
@@ -230,21 +265,36 @@ def _build_contextual_message(user_id: str, message: str) -> str:
 
 
 # ── Helper: Run agent ──────────────────────────────────────────────────
-async def _run_agent(user_id: str, message: str) -> str:
-    """Send a message to the root agent and collect the response."""
-    if user_id not in user_sessions:
-        session_result = session_service.create_session(
-            app_name=APP_NAME,
-            user_id=user_id,
+async def _run_agent(user_id: str, message: str, chat_session_id: str = None) -> str:
+    """Send a message to the root agent and collect the response.
+
+    When *chat_session_id* is provided it is used as the ADK session_id so that
+    each PostgreSQL chat session keeps its own isolated agent context.
+    """
+    session_id = chat_session_id or str(_uuid.uuid4())
+
+    # Ensure a session object exists (idempotent – first call creates it)
+    try:
+        session_result = session_service.get_session(
+            app_name=APP_NAME, user_id=user_id, session_id=session_id,
         )
         import inspect
         if inspect.iscoroutine(session_result):
             session = await session_result
         else:
             session = session_result
-        user_sessions[user_id] = session.id
+    except Exception:
+        session = None
 
-    session_id = user_sessions[user_id]
+    if session is None:
+        session_result = session_service.create_session(
+            app_name=APP_NAME, user_id=user_id, session_id=session_id,
+        )
+        import inspect
+        if inspect.iscoroutine(session_result):
+            await session_result
+        else:
+            pass  # already created synchronously
 
     contextual_message = _build_contextual_message(user_id, message)
 
@@ -269,20 +319,20 @@ async def _run_agent(user_id: str, message: str) -> str:
 
 # ── Direct Prompt Wizard (bypasses root agent) ─────────────────────────
 async def _run_prompt_wizard(user_id: str, idea: str) -> str:
-    """Call the prompt_wizard agent directly — no root agent in the middle."""
-    if user_id not in prompt_user_sessions:
-        session_result = prompt_session_service.create_session(
-            app_name=PROMPT_APP_NAME,
-            user_id=user_id,
-        )
-        import inspect
-        if inspect.iscoroutine(session_result):
-            session = await session_result
-        else:
-            session = session_result
-        prompt_user_sessions[user_id] = session.id
+    """Call the prompt_wizard agent directly — no root agent in the middle.
 
-    session_id = prompt_user_sessions[user_id]
+    Each invocation creates a fresh session (UUID) to prevent prompt history
+    from leaking between different generation requests.
+    """
+    session_id = str(_uuid.uuid4())
+    session_result = prompt_session_service.create_session(
+        app_name=PROMPT_APP_NAME,
+        user_id=user_id,
+        session_id=session_id,
+    )
+    import inspect
+    if inspect.iscoroutine(session_result):
+        await session_result
 
     # Send a clean, direct instruction to prompt_wizard
     prompt_message = f"Generate a professional master prompt for this idea: {idea}"
@@ -348,21 +398,34 @@ async def _run_prompt_wizard(user_id: str, idea: str) -> str:
 
 
 
-async def _stream_agent(user_id: str, message: str, queue: Queue) -> str:
-    """Send agent text parts to a queue as they arrive."""
-    if user_id not in user_sessions:
-        session_result = session_service.create_session(
-            app_name=APP_NAME,
-            user_id=user_id,
+async def _stream_agent(user_id: str, message: str, queue: Queue, chat_session_id: str = None) -> str:
+    """Send agent text parts to a queue as they arrive.
+
+    Uses *chat_session_id* (when provided) as the ADK session_id for
+    context isolation — same strategy as _run_agent.
+    """
+    session_id = chat_session_id or str(_uuid.uuid4())
+
+    # Ensure a session object exists
+    try:
+        session_result = session_service.get_session(
+            app_name=APP_NAME, user_id=user_id, session_id=session_id,
         )
         import inspect
         if inspect.iscoroutine(session_result):
             session = await session_result
         else:
             session = session_result
-        user_sessions[user_id] = session.id
+    except Exception:
+        session = None
 
-    session_id = user_sessions[user_id]
+    if session is None:
+        session_result = session_service.create_session(
+            app_name=APP_NAME, user_id=user_id, session_id=session_id,
+        )
+        import inspect
+        if inspect.iscoroutine(session_result):
+            await session_result
 
     contextual_message = _build_contextual_message(user_id, message)
 
@@ -430,7 +493,7 @@ async def _stream_agent(user_id: str, message: str, queue: Queue) -> str:
                         elif name == "get_missed_lecture_summaries":
                             status_msg = "Generating missed lecture summaries"
                         elif name == "transfer_to_agent":
-                            target = args_dict.get("target_agent_name", "")
+                            target = args_dict.get("agent_name", args_dict.get("target_agent_name", ""))
                             status_msg = f"Routing request to {target}" if target else "Routing request"
                         elif name == "study_agent":
                             status_msg = "Accessing study assistant"
@@ -635,6 +698,7 @@ def instructor_required(f):
 
 # ── Chat (with Supabase persistence — Feature 1) ──────────────────────
 @app.route("/api/chat", methods=["POST"])
+@limiter.limit("20 per minute")   # W-12: rate limit chat to prevent credit abuse
 @token_required
 def chat(current_user_id: str):
     """Send a message to the root agent and return the response. Saves to DB."""
@@ -670,7 +734,7 @@ def chat(current_user_id: str):
             })
 
         # Get agent response (UUID passed; _build_contextual_message resolves student_code)
-        response = run_async(_run_agent(current_user_id, message))
+        response = run_async(_run_agent(current_user_id, message, chat_session_id=chat_session_id))
 
         # Save bot response
         _save_chat_message(chat_session_id, "bot", response)
@@ -692,6 +756,7 @@ def chat(current_user_id: str):
 
 # ── Feature 1: Chat Sessions CRUD ─────────────────────────────────────
 @app.route("/api/chat/stream", methods=["POST"])
+@limiter.limit("20 per minute")   # W-12: rate limit streaming chat
 @token_required
 def chat_stream(current_user_id: str):
     """Stream agent text parts as newline-delimited JSON for a faster chat feel."""
@@ -738,7 +803,7 @@ def chat_stream(current_user_id: str):
 
         async def run_and_finish():
             try:
-                response_text = await _stream_agent(current_user_id, message, queue)
+                response_text = await _stream_agent(current_user_id, message, queue, chat_session_id=chat_session_id)
                 if not response_text:
                     response_text = "عذرًا، مفيش رد متاح دلوقتي."
                 _save_chat_message(chat_session_id, "bot", response_text)
@@ -916,6 +981,7 @@ def rename_chat_session(session_id, current_user_id: str):
 
 # ── Prompt Generation ─────────────────────────────────────────────────
 @app.route("/api/prompt/generate", methods=["POST"])
+@limiter.limit("10 per minute")   # W-12: rate limit prompt generation
 @token_required
 def generate_prompt(current_user_id: str):
     data = request.get_json()
@@ -936,6 +1002,7 @@ def generate_prompt(current_user_id: str):
 
 # ── Code Generation (Vibe Coder) ──────────────────────────────────────
 @app.route("/api/code/generate", methods=["POST"])
+@limiter.limit("10 per minute")   # W-12: rate limit code generation
 def generate_code():
     data = request.get_json()
     prompt = data.get("prompt", "").strip()
@@ -1115,10 +1182,6 @@ def proxy_check_identity(current_user_id: str):
             verify=False, timeout=120,
         )
         resp_data = r.json()
-        sys.stderr.write(f"[FACE-DEBUG] verified={resp_data.get('verified')}, "
-              f"distance={resp_data.get('distance')}, msg={resp_data.get('message')}, "
-              f"faceBox={resp_data.get('faceBox')}\n")
-        sys.stderr.flush()
         return jsonify(resp_data), r.status_code
     except Exception as e:
         return jsonify({"status": "error", "message": f"Server unreachable: {e}"}), 502
@@ -1134,8 +1197,6 @@ def proxy_check_pose(current_user_id: str):
             verify=False, timeout=10,
         )
         resp_data = r.json()
-        sys.stderr.write(f"[POSE-DEBUG] pose={resp_data.get('pose')}\n")
-        sys.stderr.flush()
         return jsonify(resp_data), r.status_code
     except Exception as e:
         return jsonify({"status": "error", "message": f"Server unreachable: {e}"}), 502
@@ -1244,4 +1305,4 @@ if __name__ == "__main__":
     # print("   on your mobile and accept the 'Not Secure' warning.")
     # print("=" * 60 + "\n")
 
-    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False, ssl_context=ssl_ctx)
+    app.run(host="0.0.0.0", port=5000, use_reloader=False, ssl_context=ssl_ctx)

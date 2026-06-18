@@ -3,6 +3,7 @@ litellm>=1.66.3
 openai>=1.0.0
 flask>=3.0.0
 flask-cors>=4.0.0
+flask-limiter>=3.5.0
 requests>=2.31.0
 deepface>=0.0.89
 opencv-python>=4.8.0

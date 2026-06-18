@@ -59,7 +59,7 @@ def _run_attendance_server():
 
         print("[INFO] Attendance Server starting on port 5001...")
         att_app.run(host="0.0.0.0", port=5001, ssl_context=ssl_ctx,
-                    debug=False, use_reloader=False)
+                    use_reloader=False)
     except Exception as exc:
         print(f"[ERROR] Attendance Server failed to start: {exc}")
 
@@ -83,4 +83,4 @@ from server import app  # noqa: E402  (import after path setup)
 PORT = int(os.getenv("PORT", 7860))
 print(f"[INFO] Main Server listening on port {PORT}")
 
-app.run(host="0.0.0.0", port=PORT, debug=False, use_reloader=False)
+app.run(host="0.0.0.0", port=PORT, use_reloader=False)
