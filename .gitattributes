@@ -11,6 +11,8 @@
 *-shard1 filter=lfs diff=lfs merge=lfs -text
 frontend/js/instructor.js linguist-generated
 frontend/js/chat.js linguist-generated
+frontend/js/supabase-client.js linguist-generated
 frontend/js/three-experience.js linguist-generated
 frontend/dashboard.html linguist-generated
 frontend/instructor.html linguist-generated
+frontend/index.html linguist-generated
