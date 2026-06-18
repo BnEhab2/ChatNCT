@@ -17,6 +17,14 @@
 let API_BASE = '';
 if (localStorage.getItem('chatnct_backend') === 'php') {
     API_BASE = '../php_backend/api/proxy.php?path=';
+} else {
+    const isLiveServer = window.location.port && window.location.port !== '5000';
+    const isLocalFile = window.location.protocol === 'file:';
+    if (isLiveServer) {
+        API_BASE = `https://${window.location.hostname}:5000`;
+    } else if (isLocalFile) {
+        API_BASE = 'https://localhost:5000';
+    }
 }
 
 // ── DOM Element References ─────────────────────────────────
