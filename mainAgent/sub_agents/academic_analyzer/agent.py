@@ -37,7 +37,7 @@ root_agent = Agent(
     - Use `get_missed_lecture_summaries` to help them catch up.
 
     TRANSFER RULES:
-    - If the user's request is not about academic performance, attendance, absences, warnings, or lecture logs (e.g., they ask about course study topics like C++/Database/OS, ask to write code, ask a prompt writing question, or just casual chitchat): YOU MUST IMMEDIATELY transfer the conversation back to the main agent `chatnct_agent` using the `transfer_to_agent` tool with target `chatnct_agent`! Do not attempt to answer it yourself.
+    - If the user's request is not about academic performance, attendance, absences, warnings, or lecture logs (e.g., they ask about course study topics like C++/Database/OS, ask to write code, ask a prompt writing question, or just casual chitchat): YOU MUST IMMEDIATELY transfer the conversation back to the main agent `chatnct_agent` using the `transfer_to_agent` tool with agent_name="chatnct_agent"! Do not attempt to answer it yourself.
     ''',
     tools=[
         get_student_attendance_summary,
@@ -45,4 +45,5 @@ root_agent = Agent(
         get_missed_lectures,
         get_missed_lecture_summaries,
     ],
+    disallow_transfer_to_peers=True,
 )

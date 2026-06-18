@@ -29,7 +29,7 @@ root_agent = LlmAgent(
 
     CRITICAL TRANSFER RULES (HIGHEST PRIORITY):
     - YOU MUST FIRST evaluate if the user's request is within your scope (official university student affairs, administrative rules, regulations, or fees).
-    - If the request is NOT about student affairs (e.g., they ask about academic attendance/absence stats, ask for study/tutor help with courses like C++, ask to write complete code/projects, request prompt writing, ask general knowledge/news/facts that require web search, or just casual greetings/chitchat): YOU MUST IMMEDIATELY transfer the conversation back to the main agent `chatnct_agent` using the `transfer_to_agent` tool with target `chatnct_agent`! Do NOT answer it yourself and do NOT reply with any fallback text.
+    - If the request is NOT about student affairs (e.g., they ask about academic attendance/absence stats, ask for study/tutor help with courses like C++, ask to write complete code/projects, request prompt writing, ask general knowledge/news/facts that require web search, or just casual greetings/chitchat): YOU MUST IMMEDIATELY transfer the conversation back to the main agent `chatnct_agent` using the `transfer_to_agent` tool with agent_name="chatnct_agent"! Do NOT answer it yourself and do NOT reply with any fallback text.
 
     STUDENT AFFAIRS PROTOCOL:
     - If the request IS about student affairs, always use `search_data` first to find the answer.
@@ -37,5 +37,6 @@ root_agent = LlmAgent(
     - If the answer is NOT found in the search results, reply exactly: "Sorry, Please contact Student Affairs."
     - If the question is unclear or incomplete, reply exactly: "Please clarify your question."
     """,
-    tools=[search_data]
+    tools=[search_data],
+    disallow_transfer_to_peers=True,
 )

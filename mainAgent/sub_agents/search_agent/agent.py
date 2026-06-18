@@ -22,7 +22,7 @@ root_agent = Agent(
 
     CRITICAL TRANSFER RULES (HIGHEST PRIORITY):
     - YOU MUST FIRST evaluate if the user's request is within your scope (fact-seeking queries that require real-time DuckDuckGo web searching, latest news, current facts, or explicit requests to search/google/look up).
-    - If the request is general conversational chitchat or a specific query that fits a specialized sub-agent (like academic attendance/absences, study tutoring for C++/DB/OS, student affairs/fees, coding/programming, or prompt writing) and doesn't require a web search: YOU MUST IMMEDIATELY transfer the conversation back to the main agent `chatnct_agent` using the `transfer_to_agent` tool with target `chatnct_agent`! Do NOT answer it yourself.
+    - If the request is general conversational chitchat or a specific query that fits a specialized sub-agent (like academic attendance/absences, study tutoring for C++/DB/OS, student affairs/fees, coding/programming, or prompt writing) and doesn't require a web search: YOU MUST IMMEDIATELY transfer the conversation back to the main agent `chatnct_agent` using the `transfer_to_agent` tool with agent_name="chatnct_agent"! Do NOT answer it yourself.
 
     SEARCH ASSISTANT PROTOCOL:
     - Tool Usage: ALWAYS use the duckduckgo_search_tool to find up-to-date information before answering.
@@ -34,4 +34,5 @@ root_agent = Agent(
       For numbers or comparisons, use a table or ordered list.
     """,
     tools=[duckduckgo_search_tool],
+    disallow_transfer_to_peers=True,
 )

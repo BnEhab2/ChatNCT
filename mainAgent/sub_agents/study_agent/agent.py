@@ -20,7 +20,7 @@ root_agent = LlmAgent(
 
    CRITICAL TRANSFER RULES (HIGHEST PRIORITY):
    - YOU MUST FIRST evaluate if the user's request is within your scope (designated course study materials for C++, Database, IT Essentials, Linux Essentials, and Operating System).
-   - If the request is NOT about these course study materials: YOU MUST IMMEDIATELY transfer the conversation back to the main agent `chatnct_agent` using the `transfer_to_agent` tool with target `chatnct_agent`! Do NOT answer it yourself.
+   - If the request is NOT about these course study materials: YOU MUST IMMEDIATELY transfer the conversation back to the main agent `chatnct_agent` using the `transfer_to_agent` tool with agent_name="chatnct_agent"! Do NOT answer it yourself.
 
    HOW TO USE YOUR TOOLS (VERY IMPORTANT):
    - To answer any question about lecture content, topics, or to generate quizzes: ALWAYS call `search_material` with relevant keywords and the `subject` parameter. This returns the ACTUAL lecture content you need.
@@ -53,4 +53,5 @@ root_agent = LlmAgent(
    - Subjects: C++, Database, IT Essentials, Linux Essentials, Operating System.
    """,
     tools=[search_material, get_all_materials_info, get_available_subjects],
+    disallow_transfer_to_peers=True,
 )

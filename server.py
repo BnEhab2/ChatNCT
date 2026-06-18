@@ -109,7 +109,7 @@ import uuid as _uuid
 
 APP_NAME = "chatnct"
 _SESSIONS_DB = os.path.join(os.path.dirname(__file__), "sessions.db")
-session_service = DatabaseSessionService(db_url=f"sqlite:///{_SESSIONS_DB}")
+session_service = DatabaseSessionService(db_url=f"sqlite+aiosqlite:///{_SESSIONS_DB}")
 runner = Runner(
     agent=root_agent,
     app_name=APP_NAME,
@@ -118,7 +118,7 @@ runner = Runner(
 
 # Dedicated runner for prompt_wizard — bypasses the root agent entirely
 PROMPT_APP_NAME = "chatnct_prompt"
-prompt_session_service = DatabaseSessionService(db_url=f"sqlite:///{_SESSIONS_DB}")
+prompt_session_service = DatabaseSessionService(db_url=f"sqlite+aiosqlite:///{_SESSIONS_DB}")
 prompt_runner = Runner(
     agent=prompt_wizard_agent,
     app_name=PROMPT_APP_NAME,
@@ -510,8 +510,8 @@ async def _stream_agent(user_id: str, message: str, queue: Queue, chat_session_i
 
                         if status_msg:
                             queue.put({"type": "status", "status": status_msg})
-                except Exception as status_err:
-                    print(f"[DEBUG] Error extracting status: {status_err}")
+                except Exception:
+                    pass
 
                 if part.text:
                     response_parts.append(part.text)

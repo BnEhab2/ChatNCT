@@ -17,3 +17,4 @@ psycopg2-binary>=2.9.0
 tf-keras
 duckduckgo-search>=8.1.1
 ddgs
+aiosqlite

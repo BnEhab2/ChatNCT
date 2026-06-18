@@ -662,15 +662,9 @@ def check_identity():
         except Exception as e:
             return _error("FACE_DECODE_ERROR", {"detail": str(e)})
 
-        print(f"[DEBUG] check_identity: student={student_code}, captured_shape={captured.shape}, photo={photo_path}")
-
         t0 = time.time()
         verification = face_verifier.verifyIdentity(captured, photo_path)
         elapsed = time.time() - t0
-
-        print(f"[DEBUG] verification result: verified={verification.get('verified')}, "
-              f"distance={verification.get('distance')}, message={verification.get('message')}, "
-              f"faceBox={verification.get('faceBox')} | took {elapsed:.3f}s")
         
         # We need faceBox formatted cleanly for JSON: x, y, w, h
         fb = verification.get("faceBox")
@@ -739,8 +733,7 @@ def verify_attendance():
     try:
         cur = conn.cursor()
 
-        # Debug: log what we're looking for
-        print(f"[VERIFY] Looking for session_code='{session_code}', is_active=1")
+
 
         cur.execute(
             "SELECT * FROM attendance_sessions WHERE session_code = %s AND is_active = 1",
@@ -748,25 +741,12 @@ def verify_attendance():
         )
         session = cur.fetchone()
         if not session:
-            # Debug: check if session exists at all (without is_active filter)
-            cur.execute(
-                "SELECT session_code, is_active, expires_at FROM attendance_sessions WHERE session_code = %s",
-                (session_code,)
-            )
-            debug_row = cur.fetchone()
-            if debug_row:
-                debug_row = dict(debug_row)
-                print(f"[VERIFY] Session EXISTS but is_active={debug_row['is_active']}, "
-                      f"expires_at={debug_row['expires_at']}, now={datetime.now()}")
-            else:
-                print(f"[VERIFY] Session '{session_code}' does NOT exist in DB at all!")
             return _error("SESSION_NOT_FOUND")
 
         session = dict(session)
         now = datetime.utcnow()
         expires_str = str(session["expires_at"]).replace("+00:00", "")
-        print(f"[VERIFY] Session found: is_active={session['is_active']}, "
-              f"expires_at={expires_str}, now_utc={now}")
+
         if now > datetime.fromisoformat(expires_str):
             return _error("SESSION_EXPIRED")
 

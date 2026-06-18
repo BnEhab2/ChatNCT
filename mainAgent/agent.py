@@ -26,7 +26,7 @@ from .sub_agents.prompt_wizard.agent import root_agent as prompt_wizard
 from .sub_agents.study_agent.agent import root_agent as study_agent
 from .sub_agents.search_agent.agent import root_agent as search_agent
 from .sub_agents.student_chatbot.agent import root_agent as student_chatbot
-from .sub_agents.vibe_coder.agent import vibe_coder_agent as coding_agent
+from .sub_agents.vibe_coder.agent import vibe_coder_agent
 from .sub_agents.academic_analyzer.agent import root_agent as academic_analyzer
 import os
 
@@ -68,7 +68,7 @@ root_agent = LlmAgent(
            - Writing complete projects, code files, debugging error codes/bugs, or building software → vibe_coder_agent
            - General web search, news, current facts → search_agent
 
-        CRITICAL ROUTING FOR CODE/PROJECTS (coding_agent):
+        CRITICAL ROUTING FOR CODE/PROJECTS (vibe_coder_agent):
         - If the user sends a message that contains a project blueprint, implementation plan, tech stack, folder structure, build steps, or code blocks (```), this is a REQUEST to BUILD the project! Route it to `vibe_coder_agent` IMMEDIATELY.
         - Do NOT just comment on or acknowledge blueprints/plans. The user wants the code to be WRITTEN.
         - Keywords that indicate code requests: "Implementation Blueprint", "Project Overview", "Tech Stack", "Folder Structure", "Build Steps", "snake_game/", "src/main.py", "requirements.txt", code blocks with ```python or ```bash, or any message containing multiple code filenames.
@@ -104,7 +104,6 @@ root_agent = LlmAgent(
         - CRITICAL RULE FOR QUIZZES: Any quiz, test, practice question, or exam you or your sub-agents generate MUST be written ENTIRELY in English (questions, choices, and answers). You may write introductory or explanatory text in Egyptian Arabic, but the quiz content itself must be 100% English.
         - Important: When generating responses with mixed Arabic and English, make sure to structure the sentence so that RTL (Right-to-Left) rendering doesn't break. Avoid ending sentences with an English word if possible.
     """,
-    # List of sub-agents this agent can delegate to
-    sub_agents=[prompt_wizard, study_agent, student_chatbot, coding_agent, search_agent, academic_analyzer],
+    sub_agents=[prompt_wizard, study_agent, student_chatbot, vibe_coder_agent, search_agent, academic_analyzer],
     disallow_transfer_to_peers=True,
 )

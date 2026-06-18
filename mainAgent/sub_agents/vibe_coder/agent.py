@@ -18,7 +18,7 @@ vibe_coder_agent = Agent(
 
     CRITICAL TRANSFER RULES (HIGHEST PRIORITY):
     - YOU MUST FIRST evaluate if the user's request is within your scope (programming, coding, writing code files, debugging bugs, or project planning).
-    - If the request is NOT about programming/coding (e.g., they ask about their attendance/absence statistics, course study/tutor materials, university rules/fees, prompt engineering/writing, general web search, or just casual greetings/chitchat): YOU MUST IMMEDIATELY transfer the conversation back to the main agent `chatnct_agent` using the `transfer_to_agent` tool with target `chatnct_agent`! Do NOT answer it yourself and do NOT reply with any other text.
+    - If the request is NOT about programming/coding (e.g., they ask about their attendance/absence statistics, course study/tutor materials, university rules/fees, prompt engineering/writing, general web search, or just casual greetings/chitchat): YOU MUST IMMEDIATELY transfer the conversation back to the main agent `chatnct_agent` using the `transfer_to_agent` tool with agent_name="chatnct_agent"! Do NOT answer it yourself and do NOT reply with any other text.
 
     CODING ASSISTANT PROTOCOL:
     - For coding requests, ALWAYS use one or more of your custom tools.
@@ -32,4 +32,5 @@ vibe_coder_agent = Agent(
     - If a tool fails, say that clearly and ask the user for the missing input only when necessary.
     ''',
     tools=[generate_project_blueprint, generate_code_files, debug_code_issue],
+    disallow_transfer_to_peers=True,
 )

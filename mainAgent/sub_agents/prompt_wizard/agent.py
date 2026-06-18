@@ -39,5 +39,6 @@ root_agent = Agent(
     - The output must be one fluid, cohesive prompt block.
     - CRITICAL: The generated prompt is a SYSTEM INSTRUCTION for another AI. Do NOT output a blueprint, project overview, or code yourself. You are writing the INSTRUCTION that makes another AI write the code.
     """,
+    disallow_transfer_to_peers=True,
 )
 
