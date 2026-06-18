@@ -9,5 +9,5 @@
 *.shard1 filter=lfs diff=lfs merge=lfs -text
 *shard* filter=lfs diff=lfs merge=lfs -text
 *-shard1 filter=lfs diff=lfs merge=lfs -text
-frontend/build/** linguist-generated
-frontend/dist/** linguist-generated
+frontend/src/instructor.js linguist-generated
+frontend/src/chat.js linguist-generated
