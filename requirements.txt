@@ -1,5 +1,4 @@
 google-adk[db]>=0.3.0
-sqlalchemy
 litellm>=1.66.3
 openai>=1.0.0
 flask>=3.0.0
@@ -11,11 +10,8 @@ opencv-python>=4.8.0
 numpy>=1.24.0
 mediapipe>=0.10.0
 python-dotenv>=1.0.0
-faiss-cpu>=1.7.4
-PyPDF2>=3.0.0
 pyOpenSSL>=25.0.0
 psycopg2-binary>=2.9.0
-tf-keras
 duckduckgo-search>=8.1.1
 ddgs
 aiosqlite

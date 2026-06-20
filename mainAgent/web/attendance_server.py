@@ -687,7 +687,6 @@ def check_identity():
 # ── API: Check Head Pose (Web Liveness Loop Phase 2) ──────────────────
 @app.route("/api/attendance/check_pose", methods=["POST"])
 def check_pose():
-    global _pose_frame_counter
     data = request.get_json()
     image_data = data.get("image", "")
     face_box = data.get("faceBox", None)
