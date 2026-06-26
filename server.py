@@ -130,15 +130,15 @@ def handle_exception(e):
         return jsonify({
             "status": "error",
             "code": "SERVER_ERROR",
-            "message": str(e),
-            "traceback": tb
+            "message": str(e)
+            # VULN-03 FIX: Removed traceback from client response
         }), e.code
         
     return jsonify({
         "status": "error",
         "code": "INTERNAL_SERVER_ERROR",
-        "message": f"An unexpected error occurred: {str(e)}",
-        "traceback": tb
+        "message": f"An unexpected error occurred: {str(e)}"
+        # VULN-03 FIX: Removed traceback from client response
     }), 500
 
 def is_greeting(message: str) -> bool:
@@ -333,18 +333,23 @@ def _should_force_code(message: str) -> bool:
     return False
 
 
+import re
+
 def _build_contextual_message(user_id: str, message: str) -> str:
+    # VULN-04 FIX: Sanitize message to prevent tag injection (e.g., [USER_ROLE: ...])
+    sanitized_message = re.sub(r'\[.*?\]', '', message)
+    
     resolved_code, resolved_name, resolved_role = _resolve_student_info(user_id)
     prefixes = [f"[STUDENT_CODE: {resolved_code}]"]
     if resolved_name:
         prefixes.append(f"[STUDENT_NAME: {resolved_name}]")
     if resolved_role:
         prefixes.append(f"[USER_ROLE: {resolved_role}]")
-    if _should_force_search(message):
+    if _should_force_search(sanitized_message):
         prefixes.append("[FORCE_SEARCH: true]")
-    if _should_force_code(message):
+    if _should_force_code(sanitized_message):
         prefixes.append("[FORCE_CODE: true]")
-    prefixes.append(message)
+    prefixes.append(sanitized_message)
     return "\n".join(prefixes)
 
 
@@ -926,8 +931,9 @@ def chat_stream(current_user_id: str):
 @token_required
 def list_chat_sessions(current_user_id: str):
     """List chat sessions for the authenticated user with pagination."""
-    page = int(request.args.get("page", 1))
-    per_page = int(request.args.get("per_page", 20))
+    page = max(1, int(request.args.get("page", 1)))
+    # VULN-10 FIX: Cap per_page to a maximum of 50 to prevent DoS
+    per_page = min(max(1, int(request.args.get("per_page", 20))), 50)
     offset = (page - 1) * per_page
 
     conn = get_connection()
@@ -1092,10 +1098,13 @@ def generate_prompt(current_user_id: str):
 # ── Code Generation (Vibe Coder) ──────────────────────────────────────
 @app.route("/api/code/generate", methods=["POST"])
 @limiter.limit("10 per minute")   # W-12: rate limit code generation
-def generate_code():
+@token_required # VULN-02 FIX: Require authentication
+def generate_code(current_user_id: str):
     data = request.get_json()
     prompt = data.get("prompt", "").strip()
-    user_id = data.get("user_id", "code_user")
+    
+    # Use authenticated user ID instead of client-provided one
+    user_id = current_user_id
 
     if not prompt:
         return jsonify({"status": "error", "message": "Prompt is required."}), 400
@@ -1111,6 +1120,7 @@ def generate_code():
 
 # ── Auth (Supabase Auth — server-side validation) ─────────────────────
 @app.route("/api/auth/login", methods=["POST"])
+@limiter.limit("5 per minute") # VULN-05 FIX: Rate limit login attempts
 def login():
     """Validate user credentials via Supabase Auth and return profile info."""
     data = request.get_json()

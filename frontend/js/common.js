@@ -338,11 +338,14 @@ function renderGlobalSessionList(sessions, container) {
         const item = document.createElement('div');
         item.className = 'chat-history-item';
         item.dataset.sessionId = s.id;
+        
+        // VULN-06 FIX: Escape title to prevent Stored XSS
+        const safeTitle = s.title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 
         if (isOnChatPage) {
             // On chat page: use the existing chat.js functions (resumeSession, etc.)
             item.innerHTML = `
-                <span class="chat-history-title" onclick="resumeSession('${s.id}')">${s.title}</span>
+                <span class="chat-history-title" onclick="resumeSession('${s.id}')">${safeTitle}</span>
                 <div class="chat-history-actions">
                     <button class="chat-history-btn" onclick="renameSession('${s.id}')" title="Rename">
                         <i class="fas fa-edit"></i>
@@ -355,7 +358,7 @@ function renderGlobalSessionList(sessions, container) {
         } else {
             // On other pages: clicking navigates to chat.html with the session
             item.innerHTML = `
-                <span class="chat-history-title">${s.title}</span>
+                <span class="chat-history-title">${safeTitle}</span>
             `;
             item.addEventListener('click', () => {
                 window.location.href = `chat.html?session=${s.id}`;
