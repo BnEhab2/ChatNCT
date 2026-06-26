@@ -123,8 +123,8 @@ def handle_exception(e):
             "message": f"The requested URL was not found: {request.path}"
         }), 404
 
-    # Log full traceback for actual errors (500, etc.)
-    logger.error(f"[ERROR] Exception on {request.method} {request.path}: {str(e)}\n{tb}")
+    # Log error message only (no traceback)
+    logger.error(f"[ERROR] Exception on {request.method} {request.path}: {str(e)}")
     
     if hasattr(e, "code"):
         return jsonify({
