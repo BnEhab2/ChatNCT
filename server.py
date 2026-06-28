@@ -218,6 +218,9 @@ else:
 
 ATTENDANCE_SERVER = os.getenv("ATTENDANCE_SERVER_URL", _DEFAULT_ATTENDANCE_URL)
 
+
+
+
 # ── Persistent Event Loop (Feature 9: Performance) ────────────────────
 _loop = asyncio.new_event_loop()
 _loop_thread = threading.Thread(target=_loop.run_forever, daemon=True)
