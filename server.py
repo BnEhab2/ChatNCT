@@ -210,7 +210,13 @@ except Exception as e:
     traceback.print_exc()
 
 
-ATTENDANCE_SERVER = os.getenv("ATTENDANCE_SERVER_URL", "https://127.0.0.1:5001")
+# Detect if running on Hugging Face Spaces (HF_SPACE is automatically set by Hugging Face)
+if os.getenv("HF_SPACE") or os.getenv("SPACE_ID"):
+    _DEFAULT_ATTENDANCE_URL = "http://127.0.0.1:5001"
+else:
+    _DEFAULT_ATTENDANCE_URL = "https://127.0.0.1:5001"
+
+ATTENDANCE_SERVER = os.getenv("ATTENDANCE_SERVER_URL", _DEFAULT_ATTENDANCE_URL)
 
 # ── Persistent Event Loop (Feature 9: Performance) ────────────────────
 _loop = asyncio.new_event_loop()
