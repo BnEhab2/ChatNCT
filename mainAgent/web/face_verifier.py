@@ -96,7 +96,7 @@ class FaceVerifier:
         self._landmarker = None
         if _MP_AVAILABLE:
             # Download the model file if it doesn't exist yet
-            if not os.path.exists(_MODEL_PATH):
+            if not os.path.exists(_MODEL_PATH) or os.path.getsize(_MODEL_PATH) < 1000000:
                 print(f"[FaceVerifier] Downloading MediaPipe model...")
                 import urllib.request
                 try:

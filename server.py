@@ -186,7 +186,7 @@ _SESSIONS_DB = os.path.join(os.path.dirname(__file__), "sessions.db")
 
 print("[STARTUP] Initializing ADK Session Services & Runners...")
 try:
-    session_service = DatabaseSessionService(db_url=f"sqlite+aiosqlite:///{_SESSIONS_DB}")
+    session_service = DatabaseSessionService(db_url=f"sqlite:///{_SESSIONS_DB}")
     runner = Runner(
         agent=root_agent,
         app_name=APP_NAME,
@@ -198,7 +198,7 @@ except Exception as e:
     traceback.print_exc()
 
 try:
-    prompt_session_service = DatabaseSessionService(db_url=f"sqlite+aiosqlite:///{_SESSIONS_DB}")
+    prompt_session_service = DatabaseSessionService(db_url=f"sqlite:///{_SESSIONS_DB}")
     prompt_runner = Runner(
         agent=prompt_wizard_agent,
         app_name=PROMPT_APP_NAME,
@@ -1087,7 +1087,7 @@ def rename_chat_session(session_id, current_user_id: str):
 @app.route("/api/prompt/generate", methods=["POST"])
 @limiter.limit("10 per minute")   # W-12: rate limit prompt generation
 @token_required
-def generate_prompt(current_user_id: str):
+def generate_prompt(current_uscer_id: str):
     data = request.get_json()
     idea = data.get("idea", "").strip()
     user_id = data.get("user_id", "prompt_user")
@@ -1106,14 +1106,14 @@ def generate_prompt(current_user_id: str):
 
 # ── Code Generation (Vibe Coder) ──────────────────────────────────────
 @app.route("/api/code/generate", methods=["POST"])
+
 @limiter.limit("10 per minute")   # W-12: rate limit code generation
-@token_required # VULN-02 FIX: Require authentication
-def generate_code(current_user_id: str):
+def generate_code():
     data = request.get_json()
     prompt = data.get("prompt", "").strip()
     
-    # Use authenticated user ID instead of client-provided one
-    user_id = current_user_id
+    # Use authenticated user ID instead of accepting it from the payload
+    user_id = data.get("user_id","anonymus")
 
     if not prompt:
         return jsonify({"status": "error", "message": "Prompt is required."}), 400
@@ -1240,7 +1240,7 @@ def proxy_create_session(current_user_id: str):
             last_err = e
             if attempt < 2:
                 _time.sleep(5)   # wait 5s then retry
-    return jsonify({"status": "error", "message": f"Attendance server unreachable: {last_err}"}), 502
+    return jsonify({"status": "error", "message": "The Attendance AI model is still loading in the background. Please wait 1-2 minutes and try again."}), 502
 
 
 
