@@ -182,23 +182,35 @@ import uuid as _uuid
 
 APP_NAME = "chatnct"
 PROMPT_APP_NAME = "chatnct_prompt"
-_SESSIONS_DB = os.path.join(os.path.dirname(__file__), "sessions.db")
 
-print("[STARTUP] Initializing ADK Session Services & Runners...")
+# Retrieve Supabase database URL for ADK sessions. Fallback to sqlite if missing.
+db_url_env = os.getenv("DATABASE_URL")
+if db_url_env:
+    if db_url_env.startswith("postgres://"):
+        adk_db_url = db_url_env.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif db_url_env.startswith("postgresql://"):
+        adk_db_url = db_url_env.replace("postgresql://", "postgresql+asyncpg://", 1)
+    else:
+        adk_db_url = db_url_env
+else:
+    _SESSIONS_DB = os.path.join(os.path.dirname(__file__), "sessions.db")
+    adk_db_url = f"sqlite+aiosqlite:///{_SESSIONS_DB}"
+
+print(f"[STARTUP] Initializing ADK Session Services & Runners (using DB URL schema: {adk_db_url.split('://')[0]})...")
 try:
-    session_service = DatabaseSessionService(db_url=f"sqlite+aiosqlite:///{_SESSIONS_DB}")
+    session_service = DatabaseSessionService(db_url=adk_db_url)
     runner = Runner(
         agent=root_agent,
         app_name=APP_NAME,
         session_service=session_service,
     )
-    print(f"[STARTUP] Main Agent ADK Runner ready (app: {APP_NAME}, db: {_SESSIONS_DB})")
+    print(f"[STARTUP] Main Agent ADK Runner ready (app: {APP_NAME})")
 except Exception as e:
     print(f"[STARTUP] Error initializing Main Agent ADK Runner: {e}")
     traceback.print_exc()
 
 try:
-    prompt_session_service = DatabaseSessionService(db_url=f"sqlite+aiosqlite:///{_SESSIONS_DB}")
+    prompt_session_service = DatabaseSessionService(db_url=adk_db_url)
     prompt_runner = Runner(
         agent=prompt_wizard_agent,
         app_name=PROMPT_APP_NAME,
