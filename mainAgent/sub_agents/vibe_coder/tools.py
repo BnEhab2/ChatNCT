@@ -6,7 +6,6 @@ ADK built-in coding tools. Each tool uses the project's allowed OpenRouter
 configuration to generate structured outputs for programming tasks.
 """
 
-from __future__ import annotations
 
 import os
 from pathlib import Path
