@@ -45,27 +45,25 @@ def _wait_for_port(host: str, port: int, timeout: int = 180) -> bool:
 # ── Attendance Server Thread ──────────────────────────────────────────
 
 def _run_attendance_server():
-    """Load and start the attendance Flask app on port 5001 with SSL."""
+    """Load and start the attendance Flask app on port 5001 in HTTP mode."""
     try:
         # Heavy imports happen here (TensorFlow / DeepFace)
         from mainAgent.web.attendance_server import app as att_app
-        from mainAgent.web.generate_cert import generate_self_signed_cert
 
-        cert_dir = os.path.join(PROJECT_DIR, "mainAgent", "web")
-        cert_path, key_path = generate_self_signed_cert(cert_dir)
-
-        ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ssl_ctx.load_cert_chain(cert_path, key_path)
-
-        print("[INFO] Attendance Server starting on port 5001...")
-        att_app.run(host="0.0.0.0", port=5001, ssl_context=ssl_ctx,
-                    use_reloader=False)
+        print("[INFO] Attendance Server starting on port 5001 (HTTP)...")
+        # Bind to 127.0.0.1 for internal container communication
+        att_app.run(host="127.0.0.1", port=5001, use_reloader=False)
     except Exception as exc:
         print(f"[ERROR] Attendance Server failed to start: {exc}")
+        import traceback
+        traceback.print_exc()
 
 
 # ── Start Attendance Server in background ─────────────────────────────
 print("[INFO] Launching Attendance Server thread (loading AI models)...")
+# Set environment variable BEFORE importing server.py to override default URL to use HTTP
+os.environ["ATTENDANCE_SERVER_URL"] = "http://127.0.0.1:5001"
+
 _att_thread = threading.Thread(target=_run_attendance_server, daemon=True)
 _att_thread.start()
 
