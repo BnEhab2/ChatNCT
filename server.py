@@ -186,7 +186,7 @@ _SESSIONS_DB = os.path.join(os.path.dirname(__file__), "sessions.db")
 
 print("[STARTUP] Initializing ADK Session Services & Runners...")
 try:
-    session_service = DatabaseSessionService(db_url=f"sqlite:///{_SESSIONS_DB}")
+    session_service = DatabaseSessionService(db_url=f"sqlite+aiosqlite:///{_SESSIONS_DB}")
     runner = Runner(
         agent=root_agent,
         app_name=APP_NAME,
@@ -198,7 +198,7 @@ except Exception as e:
     traceback.print_exc()
 
 try:
-    prompt_session_service = DatabaseSessionService(db_url=f"sqlite:///{_SESSIONS_DB}")
+    prompt_session_service = DatabaseSessionService(db_url=f"sqlite+aiosqlite:///{_SESSIONS_DB}")
     prompt_runner = Runner(
         agent=prompt_wizard_agent,
         app_name=PROMPT_APP_NAME,
